@@ -1,2 +1,4 @@
 clinical_pathways_pdfs/
 .venv/
+scratch/
+cursor*

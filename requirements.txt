@@ -1,3 +1,6 @@
 pgvector
 llama-cpp-python
 docling
+sentence-transformers
+langchain
+torch
