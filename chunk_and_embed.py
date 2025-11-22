@@ -1,4 +1,8 @@
 from pathlib import Path
+from sentence_transformers import SentenceTransformer
+import psycopg2
+
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
 def chunk_markdown(md_texts, max_len=1000):
     chunks = []
@@ -24,11 +28,20 @@ for md_path in Path("scratch").glob("*.md"):
     print(md_path.name, len(chunks))
 
 
-
 """ Testing to see if the output actually comes out as expected """
-output_path = Path("scratch/chunk_test_output.txt")
+output_path = Path("scratch/chunks.txt")
 with output_path.open("w") as f:
     for i, chunk in enumerate(chunks):
         f.write(f"\n\n===== CHUNK {i} =====\n\n")
         f.write(chunk)
         f.write("\n")
+
+def embed_chunks(chunks):
+    embeddings = model.encode(chunks)
+    with open("embeddings.txt", "w") as f:
+        for i, emb in enumerate(embeddings):
+            f.write(f"Chunk {i}:\n{emb.tolist() if hasattr(emb, 'tolist') else emb}\n\n")
+    
+embed_chunks(chunks)
+
+# conn = psycopg2.connect("dbname=pathways user=admin password=password host=your_host")
