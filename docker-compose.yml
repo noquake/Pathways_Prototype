@@ -1,7 +1,7 @@
 
 services:
   db:
-    image: ankane/pgvector:v0.5.1  # Postgres 18 with pgvector
+    image: pgvector/pgvector:pg18-trixie  # Postgres 18 with pgvector
     container_name: pathways_db
     environment:
       POSTGRES_DB: pathways
@@ -19,8 +19,8 @@ services:
       PGADMIN_DEFAULT_PASSWORD: password
     ports:
       - "7001:80"      # host port 7001 maps to container port 80 (web UI)
+    volumes:
+      - ./config/servers.json:/pgadmin4/servers.json:ro
     depends_on:
       - db
-
-volumes:
-  pgdata:
+  

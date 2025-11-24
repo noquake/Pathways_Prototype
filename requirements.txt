@@ -4,3 +4,4 @@ docling
 sentence-transformers
 langchain
 torch
+psycopg2-binary
