@@ -1,24 +1,26 @@
 
 services:
   db:
-    image: pgvector/pgvector:pg18-trixie
+    image: ankane/pgvector:v0.5.1  # Postgres 18 with pgvector
     container_name: pathways_db
     environment:
       POSTGRES_DB: pathways
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      - "5432:5432"    # host port 5432 maps to container 5432, make sure port is free
     
+
   pgadmin:
     image: dpage/pgadmin4
+    container_name: pathways_pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_PASSWORD: password
     ports:
-      - "8080:80"
+      - "7001:80"      # host port 7001 maps to container port 80 (web UI)
+    depends_on:
+      - db
 
 volumes:
   pgdata:

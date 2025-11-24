@@ -2,31 +2,75 @@ from pathlib import Path
 from sentence_transformers import SentenceTransformer # type: ignore
 import psycopg2
 from pgvector.psycopg2 import register_vector
+import hashlib
+from typing import List, Dict, Any
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
-def chunk_markdown(md_texts, max_len=1000):
+def chunk_markdown(md_texts: str, source_file: str = None, max_len: int = 1000) -> List[Dict[str, Any]]:
+    """
+    Chunk markdown text and return chunks with metadata.
+    
+    Args:
+        md_texts: The markdown text to chunk
+        source_file: The source file name/path (optional)
+        max_len: Maximum length for each chunk
+    
+    Returns:
+        List of dictionaries, each containing chunk text and metadata
+    """
     chunks = []
     current = []
+    chunk_index = 0
 
     for line in md_texts.split("\n"):
         if line.startswith("# "):
             if current:
-                chunks.append("\n".join(current))
+                chunk_text = "\n".join(current)
+                chunk_id = hashlib.md5(f"{source_file}_{chunk_index}".encode()).hexdigest() if source_file else hashlib.md5(f"chunk_{chunk_index}".encode()).hexdigest()
+                chunks.append({
+                    "chunk_id": chunk_id,
+                    "chunk_index": chunk_index,
+                    "chunk_text": chunk_text,
+                    "chunk_length": len(chunk_text),
+                    "source_file": source_file,
+                })
+                chunk_index += 1
                 current = []
         current.append(line)
         if sum(len(l) for l in current) + len(line) > max_len:
-            chunks.append("\n".join(current))
+            chunk_text = "\n".join(current)
+            chunk_id = hashlib.md5(f"{source_file}_{chunk_index}".encode()).hexdigest() if source_file else hashlib.md5(f"chunk_{chunk_index}".encode()).hexdigest()
+            chunks.append({
+                "chunk_id": chunk_id,
+                "chunk_index": chunk_index,
+                "chunk_text": chunk_text,
+                "chunk_length": len(chunk_text),
+                "source_file": source_file,
+            })
+            chunk_index += 1
             current = []
     if current:
-        chunks.append("\n".join(current))
+        chunk_text = "\n".join(current)
+        chunk_id = hashlib.md5(f"{source_file}_{chunk_index}".encode()).hexdigest() if source_file else hashlib.md5(f"chunk_{chunk_index}".encode()).hexdigest()
+        chunks.append({
+            "chunk_id": chunk_id,
+            "chunk_index": chunk_index,
+            "chunk_text": chunk_text,
+            "chunk_length": len(chunk_text),
+            "source_file": source_file,
+            "starts_with_header": current[0].startswith("# ") if current else False,
+        })
     return chunks
 
+all_chunks = []
 for md_path in Path("scratch").glob("*.md"):
     md_texts = md_path.read_text()
-    chunks = chunk_markdown(md_texts)
-
+    chunks = chunk_markdown(md_texts, source_file=md_path.name)
+    all_chunks.extend(chunks)
     print(md_path.name, len(chunks))
+
+chunks = all_chunks  # Keep for backward compatibility with rest of code
 
 
 # """ Testing to see if the output actually comes out as expected """
@@ -38,28 +82,65 @@ for md_path in Path("scratch").glob("*.md"):
 #         f.write("\n")
 
 def embed_chunks(chunks):
-    embeddings = model.encode(chunks)
+    # Extract chunk texts if chunks are dictionaries
+    if chunks and isinstance(chunks[0], dict):
+        chunk_texts = [chunk["chunk_text"] for chunk in chunks]
+    else:
+        chunk_texts = chunks
+    
+    embeddings = model.encode(chunk_texts)
     with open("embeddings.txt", "w") as f:
         for i, emb in enumerate(embeddings):
-            f.write(f"Chunk {i}:\n{emb.tolist() if hasattr(emb, 'tolist') else emb}\n\n")
+            chunk_info = f"Chunk {i}"
+            if isinstance(chunks[i], dict):
+                chunk_info = f"Chunk {i} (ID: {chunks[i].get('chunk_id', 'N/A')}, Source: {chunks[i].get('source_file', 'N/A')})"
+            f.write(f"{chunk_info}:\n{emb.tolist() if hasattr(emb, 'tolist') else emb}\n\n")
     
 embed_chunks(chunks) # Run the embedding function
 
 # connect to the PostgreSQL database, casting the connection from variable -> to a vector type for psycopg2
-conn = psycopg2.connect("dbname=pathways user=admin password=password host=localhost port=8080")
+conn = psycopg2.connect("dbname=pathways user=admin password=password host=localhost port=5432")
 register_vector(conn)
 
 # creates a cursor object to start executing SQL commands
 cur = conn.cursor()
-cur.execute('CREATE EXTENSION IF NOT EXISTS vector')
+cur.execute('CREATE EXTENSION IF NOT EXISTS pgvector;')
 
-# create table of items with vector embeddings
-cur.execute('CREATE TABLE IF NOT EXISTS items (id bigserial PRIMARY KEY, text TEXT, embedding vector(384))')
+# create table of items with vector embeddings and metadata
+cur.execute('''
+    CREATE TABLE IF NOT EXISTS items (
+        chunk_id bigserial PRIMARY KEY,
+        chunk_index INTEGER NOT NULL,
+        chunk_text TEXT NOT NULL,
+        chunk_length INTEGER NOT NULL,
+        source_file VARCHAR(255),
+        embedding vector(384) NOT NULL
+    )
+''')
 
 # embed by chunk, and insert into the database
 for chunk in chunks:
-    emb = model.encode(chunk)
-    cur.execute('INSERT INTO items (text, embedding) VALUES (%s, %s)', (chunk, emb))
+    # Extract chunk data if it's a dictionary
+    if isinstance(chunk, dict):
+        chunk_id = chunk["chunk_id"]
+        chunk_index = chunk["chunk_index"]
+        chunk_text = chunk["chunk_text"]
+        chunk_length = chunk["chunk_length"]
+        source_file = chunk["source_file"]
+    else:
+        # Fallback for backward compatibility (shouldn't happen with new code)
+        chunk_id = hashlib.md5(f"chunk_{chunk[:50]}".encode()).hexdigest()
+        chunk_index = 0
+        chunk_text = chunk
+        chunk_length = len(chunk)
+        source_file = None
+    
+    emb = model.encode(chunk_text)
+    cur.execute('''
+        INSERT INTO items (chunk_id, chunk_index, chunk_text, chunk_length, source_file, embedding) 
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON CONFLICT (chunk_id) DO NOTHING
+    ''', (chunk_id, chunk_index, chunk_text, chunk_length, source_file, emb))
     conn.commit()
 
 """ Index types for pgvector """
@@ -71,7 +152,18 @@ cur.execute('CREATE INDEX IF NOT EXISTS ON items USING hnsw (embedding vector_l2
 # get the nearest neighbors for a given embedding/chunk to use for LLM context
 query = "What is Pathways?"
 query_emb = model.encode(query)
-cur.execute('SELECT text FROM items ORDER BY embedding <-> %s LIMIT 5', (query_emb,))
+cur.execute('''
+    SELECT chunk_id, chunk_index, chunk_text, chunk_length, source_file 
+    FROM items 
+    ORDER BY embedding <-> %s 
+    LIMIT 5
+''', (query_emb,))
 results = cur.fetchall()
 for r in results:
-    print(r[0])
+    chunk_id, chunk_index, chunk_text, chunk_length, source_file = r
+    print(f"Chunk ID: {chunk_id}")
+    print(f"Chunk Index: {chunk_index}")
+    print(f"Source File: {source_file}")
+    print(f"Chunk Length: {chunk_length}")
+    print(f"Chunk Text: {chunk_text[:200]}..." if len(chunk_text) > 200 else f"Chunk Text: {chunk_text}")
+    print("-" * 80)

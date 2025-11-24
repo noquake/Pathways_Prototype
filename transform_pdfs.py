@@ -108,7 +108,7 @@ def main():
     # Location of sample PDFs used by this example. If your checkout does not
     # include test data, change `data_folder` or point `input_doc_paths` to
     # your own files.
-    data_folder = Path(__file__).parent / "clinical_pathways_pdfs/"
+    data_folder = Path(__file__).parent / "data/"
     input_doc_paths = [
         data_folder / "anaphylaxis_-_1.16.25.pdf",
         data_folder / "anaphylaxis_educational_module_1.16.25.pdf",
