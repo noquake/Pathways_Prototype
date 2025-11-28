@@ -1,6 +1,6 @@
-clinical_pathways_pdfs/
 data/
 .venv/
 scratch/
-cursor*
+cursor*s
 embeddings.txt
+__pycache__/

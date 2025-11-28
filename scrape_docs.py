@@ -1,85 +1,92 @@
 import os
-import asyncio
+import requests
+from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
-from playwright.async_api import async_playwright
 
 START_URL = "https://www.connecticutchildrens.org/medical-professionals/clinical-pathways"
 BASE_URL = "https://www.connecticutchildrens.org"
-OUTPUT_FOLDER = "data"
+BASE_DOMAIN = urlparse(BASE_URL).netloc
 
+OUTPUT_FOLDER = "data"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 
-async def extract_links(page):
-    """Extract all fully-qualified links AFTER the page hydrates."""
-    await page.wait_for_load_state("networkidle")
-
-    return [
-        urljoin(page.url, href)
-        for href in await page.eval_on_selector_all(
-            "a[href]", "els => els.map(e => e.getAttribute('href'))"
-        )
-        if href
-    ]
+def get_soup(url):
+    """Fetch a URL and return a BeautifulSoup object."""
+    r = requests.get(url, timeout=15)
+    r.raise_for_status()
+    return BeautifulSoup(r.text, "html.parser")
 
 
-async def find_pdf_links(page, url):
-    await page.goto(url)
-    links = await extract_links(page)
-    return [l for l in links if l.lower().endswith(".pdf")]
+def find_sections():
+    """Extract all internal /clinical-pathways/ URLs from the main page."""
+    soup = get_soup(START_URL)
+    sections = set()
+
+    for a in soup.find_all("a", href=True):
+        href = a["href"].strip()
+        full = urljoin(START_URL, href)
+
+        if urlparse(full).netloc == BASE_DOMAIN and "/clinical-pathways/" in full:
+            if full != START_URL:
+                sections.add(full)
+
+    return sorted(sections)
 
 
-async def find_sections(page):
-    await page.goto(START_URL)
-    links = await extract_links(page)
-    return [
-        l for l in links
-        if "/clinical-pathways/" in l
-        and urlparse(l).netloc == urlparse(BASE_URL).netloc
-    ]
+def find_pdfs(section_url):
+    """Find all PDF links in a given section page."""
+    soup = get_soup(section_url)
+    pdfs = set()
+
+    for a in soup.find_all("a", href=True):
+        href = a["href"].strip().lower()
+
+        if href.endswith(".pdf"):
+            pdfs.add(urljoin(section_url, href))
+
+    return sorted(pdfs)
 
 
-async def download_pdf(page, pdf_url):
-    filename = pdf_url.split("/")[-1]
+def download_pdf(pdf_url):
+    """Download a PDF to the data/ folder."""
+    filename = pdf_url.split("/")[-1].split("?")[0]
     path = os.path.join(OUTPUT_FOLDER, filename)
 
     if os.path.exists(path):
-        print(f"Already exists: {filename}")
+        print(f"[skip] {filename}")
         return
 
-    print(f"Downloading: {filename}")
+    print(f"[download] {filename}")
 
-    async with page.expect_download() as dl:
-        await page.goto(pdf_url)
+    r = requests.get(pdf_url, timeout=20)
+    if r.headers.get("content-type", "").lower().startswith("application/pdf"):
+        with open(path, "wb") as f:
+            f.write(r.content)
+        print(f"[saved] {filename}")
+    else:
+        print(f"[warning] Not a PDF content type: {pdf_url}")
 
-    download = await dl.value
-    await download.save_as(path)
 
+def main():
+    print("Collecting sections...")
+    sections = find_sections()
+    print(f"Found {len(sections)} sections.")
 
-async def main():
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
+    total = 0
+    for section in sections:
+        print(f"\nSection: {section}")
+        pdfs = find_pdfs(section)
+        print(f"PDFs found: {pdfs}")
 
-        print("Collecting sections...")
-        sections = list(set(await find_sections(page)))
-        print(f"Found {len(sections)} sections.")
+        for pdf in pdfs:
+            download_pdf(pdf)
+            total += 1
 
-        total = 0
-        for section in sections:
-            print(f"\nSection: {section}")
-            pdfs = await find_pdf_links(page, section)
-            print(f"PDFs found: {pdfs}")
-
-            for pdf in pdfs:
-                await download_pdf(page, pdf)
-                total += 1
-
-        print("\nDone.")
-        print(f"Total processed PDFs: {total}")
-
-        await browser.close()
+    print("\nDone.")
+    print(f"Total PDFs downloaded: {total}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
+
