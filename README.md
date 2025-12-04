@@ -17,7 +17,6 @@ Project is fully local, cross-platform (Linux/macOS), and optimized for small fo
 - Generate dense embeddings using SentenceTransformers
 - Store text and embeddings in PostgreSQL using pgvector
 - Perform vector similarity search to retrieve relevant context
-- Optionally serve queries via a REST API using FastAPI + Uvicorn
 
 ---
 
