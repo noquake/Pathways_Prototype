@@ -59,11 +59,13 @@ def chunk(texts: str, source_file: str = None, max_len: int = 1000) -> List[Dict
 # Generating chunks from markdown files in the "scratch" directory
 def generate_chunks() -> List[Dict[str, Any]]:
     all_chunk_data = []
-    for md_path in Path("scratch").glob("*.md"):
+    md_files = list(Path("scratch").glob("*.md"))
+    print(f"Processing {len(md_files)} markdown files...")
+    for i, md_path in enumerate(md_files, 1):
         md_texts = md_path.read_text()
         file_chunks = chunk(md_texts, source_file=md_path.name)
         all_chunk_data.extend(file_chunks)
-        print(md_path.name, len(file_chunks))
+        print(f"[{i}/{len(md_files)}] {md_path.name}: {len(file_chunks)} chunks")
     return all_chunk_data
 
 """ Testing to see if the output actually comes out as expected """
@@ -126,6 +128,8 @@ def save_embeddings_file(chunks, embeddings, output_file="embeddings.txt"):
             f.write(f"{chunk_info}:\n{emb.tolist() if hasattr(emb, 'tolist') else emb}\n\n")
 
 def insert_chunks_and_embeddings_to_db(chunks, embeddings, cur, conn):
+    # Prepare batch data
+    batch_data = []
     for chunk, emb in zip(chunks, embeddings):
         if isinstance(chunk, dict):
             chunk_index = chunk["chunk_index"]
@@ -138,18 +142,32 @@ def insert_chunks_and_embeddings_to_db(chunks, embeddings, cur, conn):
             chunk_length = len(chunk)
             source_file = None
         
-        cur.execute('''
-            INSERT INTO items (chunk_index, chunk_text, chunk_length, source_file, embedding) 
-            VALUES (%s, %s, %s, %s, %s)
-        ''', (chunk_index, chunk_text, chunk_length, source_file, emb))
+        batch_data.append((chunk_index, chunk_text, chunk_length, source_file, emb.tolist() if hasattr(emb, "tolist") else emb))
+    
+    # Batch insert for better performance
+    print(f"Inserting {len(batch_data)} chunks into database...")
+    cur.executemany('''
+        INSERT INTO items (chunk_index, chunk_text, chunk_length, source_file, embedding) 
+        VALUES (%s, %s, %s, %s, %s::vector)
+    ''', batch_data)
     conn.commit()
+    print(f"Successfully inserted {len(batch_data)} chunks.")
 
 
 def main():
+    print("Starting chunking and embedding process...")
     conn, cur = create_db_connection()
+    
+    print("Generating chunks from markdown files...")
     chunks = generate_chunks()
+    print(f"Generated {len(chunks)} total chunks.")
+    
     chunk_texts = get_chunk_text(chunks)
+    print(f"Generating embeddings for {len(chunk_texts)} chunks (this may take a while)...")
     embeddings = get_embeddings(chunk_texts)
+    print("Embeddings generated successfully.")
+    
+    print("Saving embeddings to file...")
     save_embeddings_file(chunks, embeddings)
 
     insert_chunks_and_embeddings_to_db(chunks, embeddings, cur, conn)

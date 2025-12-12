@@ -4,3 +4,8 @@ scratch/
 cursor*s
 embeddings.txt
 __pycache__/
+
+# Generated outputs
+*.png
+*.json
+!servers.json

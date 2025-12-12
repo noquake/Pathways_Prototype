@@ -2,20 +2,13 @@ from typing import List, Dict
 from sentence_transformers import SentenceTransformer
 import psycopg2
 # import openai
-from ollama import Ollama
 from ollama import Client
 
 # ----------------------
 # Models and DB
 # ----------------------
 model = SentenceTransformer("all-MiniLM-L6-v2")
-ollama = Ollama()  # defaults to localhost
 ollama = Client(host="http://localhost:11434")  # default port for local server
-
-response = ollama.chat(model="qwen2.5:7b", messages=[{"role": "user", "content": "Hello, Ollama!"}])
-print(response['content'])
-
-ollama = Ollama()  # Only if using local LLaMA
 
 def get_embeddings(chunk_texts: List[str]):
     """Return embeddings for a list of texts."""
@@ -104,7 +97,7 @@ Answer:
 
     response = ollama.chat(model=model_name, messages=[{"role": "user", "content": prompt}])
     print("\n=== Local LLaMA Answer ===\n")
-    print(response['content'])
+    print(response.message.content)
 
 # ----------------------
 # Example usage
@@ -116,3 +109,5 @@ if __name__ == "__main__":
     query = input("Enter your query: ")
     # rag_openai(cur, query, top_k=5)
     rag_ollama(cur, query, top_k=5)
+    
+    conn.close()
