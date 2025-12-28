@@ -6,13 +6,14 @@ from typing import Iterator, List, Dict, Any
 
 from sentence_transformers import SentenceTransformer # type: ignore
 from docling.chunking import HybridChunker
-from docling.document import Document
+from docling_core.types.doc import DoclingDocument
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from transformers import AutoTokenizer
 
 MAX_TOKENS = 384
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
+EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
 
 tokenizer = HuggingFaceTokenizer(
     tokenizer=AutoTokenizer.from_pretrained(EMBED_MODEL_ID),
@@ -34,7 +35,7 @@ def generate_chunks(md_dir: str, chunker: HybridChunker) -> Iterator:
     assert md_files, f"No markdown files found in ({md_dir})"
 
     for file in md_files:
-        doc = Document(text=file.read_text(), source_file=str(file))
+        doc = DoclingDocument(text=file.read_text(), source_file=str(file))
 
         for raw_chunk in chunker.chunk(dl_doc=doc):
             chunk_total += 1
@@ -75,14 +76,6 @@ def create_db_connection():
 def get_embedding(chunk):
     return model.encode(chunk)
 
-# Save embeddings to a file with chunk info.
-def save_embeddings_file(chunks, embeddings, output_file="embeddings.txt"):
-    with open(output_file, "w") as f:
-        for i, (chunk, emb) in enumerate(zip(chunks, embeddings)):
-            chunk_info = f"Chunk {i}"
-            if isinstance(chunk, dict):
-                chunk_info = f"Chunk {i} (Source: {chunk.get('source_file', 'N/A')})"
-            f.write(f"{chunk_info}:\n{emb.tolist() if hasattr(emb, 'tolist') else emb}\n\n")
 
 def insert_chunk_and_embedding_to_db(chunk, embedding, cur, conn):
     # Prepare batch data
@@ -108,31 +101,24 @@ def insert_chunk_and_embedding_to_db(chunk, embedding, cur, conn):
         VALUES (%s, %s, %s, %s, %s::vector)
     ''', batch_data)
     conn.commit()
-    print(f"Successfully inserted {len(batch_data)} chunks.")
+    print(f"Successfully inserted {len(batch_data)} chunks.\n")
 
 
 def main():
-    print("Starting chunking and embedding process...")
+    print("Creating connection to PGVector database...\n")
     conn, cur = create_db_connection()
     
-    print("Generating chunks from markdown files...")
+    print("Starting for loop to stream chunk generation -> contextualization -> embedding -> DB insertion...\n")
+    
     for raw_chunk in generate_chunks("/data", chunker):
+        print(f"Processing chunk #{chunk_total}...\n")
         chunk = chunker.contextualize(raw_chunk)
+        print(f"Chunk #{chunk_total} contextualized. Now embedding...\n")
         emb = get_embedding(chunk)
+        print(f"Chunk #{chunk_total} embedded. Now inserting into DB...\n")
         insert_chunk_and_embedding_to_db(chunk, emb, cur, conn)
+        print(f"Chunk #{chunk_total} inserted into DB.\n")
 
-
-    print(f"Generated {chunk_total} total chunks.")
-    
-    chunk_texts = get_chunk_text(chunks)
-    print(f"Generating embeddings for {len(chunk_texts)} chunks (this may take a while)...")
-    embeddings = get_embeddings(chunk_texts)
-    print("Embeddings generated successfully.")
-    
-    print("Saving embeddings to file...")
-    save_embeddings_file(chunks, embeddings)
-
-    insert_chunks_and_embeddings_to_db(chunks, embeddings, cur, conn)
     conn.close()
 
     print("Chunking and embedding complete.\n")
