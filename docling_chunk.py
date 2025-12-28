@@ -2,10 +2,11 @@ from pathlib import Path
 import psycopg2
 from pgvector.psycopg2 import register_vector
 
-from typing import List, Dict, Any
+from typing import Iterator, List, Dict, Any
 
 from sentence_transformers import SentenceTransformer # type: ignore
 from docling.chunking import HybridChunker
+from docling.document import Document
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from transformers import AutoTokenizer
 
@@ -23,86 +24,22 @@ chunker = HybridChunker(
     merge_peers=True,
 )
 
-chunk_iter = chunker.chunk(dl_doc=doc)
-chunks = list(chunk_iter)
+chunk_total = 0
 
-# Function to create chunks with single file its metadata, stored in file_chunks
-def chunk(texts: str, source_file: str = None, max_len: int = 700) -> List[Dict[str, Any]]:
-    """
-    Chunk markdown text in a file and return chunks with metadata.
-    
-    Args:
-        md_texts: The markdown text to chunk
-        source_file: The source file name/path (optional)
-        max_len: Maximum length for each chunk
-    
-    Returns:
-        List of dictionaries, each containing chunk text and metadata
-    """
-    file_chunks = []
-    current = []
-    chunk_index = 0
+# Retrieve docling-ized md files, generate chunks and append them to an all_chunks list
+def generate_chunks(md_dir: str, chunker: HybridChunker) -> Iterator:
+    md_dir = Path("/data")
+    md_files = (md_dir.glob("*.md"))
 
-    for line in texts.split("\n"):
-        if line.startswith("# "):
-            if current:
-                chunk_text = "\n".join(current)
-                file_chunks.append({
-                    "chunk_index": chunk_index,
-                    "chunk_text": chunk_text,
-                    "chunk_length": len(chunk_text),
-                    "source_file": source_file,
-                })
-                chunk_index += 1
-                current = []
-        current.append(line)
-        if sum(len(l) for l in current) + len(line) > max_len:
-            chunk_text = "\n".join(current)
-            file_chunks.append({
-                "chunk_index": chunk_index,
-                "chunk_text": chunk_text,
-                "chunk_length": len(chunk_text),
-                "source_file": source_file,
-            })
-            chunk_index += 1
-            current = []
-    if current:
-        chunk_text = "\n".join(current)
-        file_chunks.append({
-            "chunk_index": chunk_index,
-            "chunk_text": chunk_text,
-            "chunk_length": len(chunk_text),
-            "source_file": source_file,
-        })
-    return file_chunks
+    assert md_files, f"No markdown files found in ({md_dir})"
 
-# Generating chunks from markdown files in the "scratch" directory
-def generate_chunks() -> List[Dict[str, Any]]:
-    all_chunk_data = []
-    md_files = list(Path("scratch").glob("*.md"))
-    print(f"Processing {len(md_files)} markdown files...")
-    for i, md_path in enumerate(md_files, 1):
-        md_texts = md_path.read_text()
-        file_chunks = chunk(md_texts, source_file=md_path.name)
-        all_chunk_data.extend(file_chunks)
-        print(f"[{i}/{len(md_files)}] {md_path.name}: {len(file_chunks)} chunks")
-    return all_chunk_data
+    for file in md_files:
+        doc = Document(text=file.read_text(), source_file=str(file))
 
-# Extract chunk texts from the all_chunks dictionaries which contains texts + other metadata
-def get_chunk_text(chunks):
-    if chunks and isinstance(chunks[0], dict):
-        chunk_texts = [chunk["chunk_text"] for chunk in chunks]
-    else:
-        chunk_texts = chunks
-    return chunk_texts
+        for raw_chunk in chunker.chunk(dl_doc=doc):
+            chunk_total += 1
+            yield raw_chunk
 
-""" Testing to see if the output actually comes out as expected """
-# output_path = Path("scratch/chunks.txt")
-# with output_path.open("w") as f:
-#     for i, chunk in enumerate(chunks):
-#         f.write(f"\n\n===== CHUNK {i} =====\n\n")
-#         f.write(chunk)
-#         f.write("\n")
 
 def create_db_connection():
     # connect to the PostgreSQL database, casting the connection from variable -> to a vector type for psycopg1
@@ -135,9 +72,8 @@ def create_db_connection():
     
     return conn, cur
 
-
-def get_embeddings(chunk_texts):
-    return model.encode(chunk_texts)
+def get_embedding(chunk):
+    return model.encode(chunk)
 
 # Save embeddings to a file with chunk info.
 def save_embeddings_file(chunks, embeddings, output_file="embeddings.txt"):
@@ -148,10 +84,10 @@ def save_embeddings_file(chunks, embeddings, output_file="embeddings.txt"):
                 chunk_info = f"Chunk {i} (Source: {chunk.get('source_file', 'N/A')})"
             f.write(f"{chunk_info}:\n{emb.tolist() if hasattr(emb, 'tolist') else emb}\n\n")
 
-def insert_chunks_and_embeddings_to_db(chunks, embeddings, cur, conn):
+def insert_chunk_and_embedding_to_db(chunk, embedding, cur, conn):
     # Prepare batch data
     batch_data = []
-    for chunk, emb in zip(chunks, embeddings):
+    for chunk, emb in zip(chunk, embedding):
         if isinstance(chunk, dict):
             chunk_index = chunk["chunk_index"]
             chunk_text = chunk["chunk_text"]
@@ -180,8 +116,13 @@ def main():
     conn, cur = create_db_connection()
     
     print("Generating chunks from markdown files...")
-    chunks = generate_chunks()
-    print(f"Generated {len(chunks)} total chunks.")
+    for raw_chunk in generate_chunks("/data", chunker):
+        chunk = chunker.contextualize(raw_chunk)
+        emb = get_embedding(chunk)
+        insert_chunk_and_embedding_to_db(chunk, emb, cur, conn)
+
+
+    print(f"Generated {chunk_total} total chunks.")
     
     chunk_texts = get_chunk_text(chunks)
     print(f"Generating embeddings for {len(chunk_texts)} chunks (this may take a while)...")
