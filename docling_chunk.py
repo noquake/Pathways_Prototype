@@ -25,12 +25,12 @@ chunker = HybridChunker(
     merge_peers=True,
 )
 
-chunk_total = 0
+
 
 # Retrieve docling-ized md files, generate chunks and append them to an all_chunks list
 def generate_chunks(md_dir: str, chunker: HybridChunker) -> Iterator:
     md_dir = Path("/data")
-    md_files = (md_dir.glob("*.md"))
+    md_files = list(md_dir.glob("*.md"))
 
     assert md_files, f"No markdown files found in ({md_dir})"
 
@@ -38,6 +38,7 @@ def generate_chunks(md_dir: str, chunker: HybridChunker) -> Iterator:
         doc = DoclingDocument(text=file.read_text(), source_file=str(file))
 
         for raw_chunk in chunker.chunk(dl_doc=doc):
+            global chunk_total
             chunk_total += 1
             yield raw_chunk
 
@@ -74,54 +75,53 @@ def create_db_connection():
     return conn, cur
 
 def get_embedding(chunk):
-    return model.encode(chunk)
+    return model.encode(chunk.text)
 
 
 def insert_chunk_and_embedding_to_db(chunk, embedding, cur, conn):
     # Prepare batch data
-    batch_data = []
-    for chunk, emb in zip(chunk, embedding):
-        if isinstance(chunk, dict):
-            chunk_index = chunk["chunk_index"]
-            chunk_text = chunk["chunk_text"]
-            chunk_length = chunk["chunk_length"]
-            source_file = chunk["source_file"]
-        else:
-            chunk_index = 0
-            chunk_text = chunk
-            chunk_length = len(chunk)
-            source_file = None
-        
-        batch_data.append((chunk_index, chunk_text, chunk_length, source_file, emb.tolist() if hasattr(emb, "tolist") else emb))
-    
-    # Batch insert for better performance
-    print(f"Inserting {len(batch_data)} chunks into database...")
-    cur.executemany('''
+    if hasattr(chunk, "text"):
+        chunk_text = chunk.text
+        source_file = getattr(chunk.meta, "source_file", None)
+    else:
+        chunk_text = str(chunk)
+        source_file = None
+   
+    cur.execute('''
         INSERT INTO items (chunk_index, chunk_text, chunk_length, source_file, embedding) 
         VALUES (%s, %s, %s, %s, %s::vector)
-    ''', batch_data)
+    ''',
+    ( 
+        0,  # or pass a real index
+        chunk_text,
+        len(chunk_text),
+        source_file,
+        embedding.tolist() if hasattr(embedding, "tolist") else embedding,
+        ), 
+        )
     conn.commit()
-    print(f"Successfully inserted {len(batch_data)} chunks.\n")
-
 
 def main():
     print("Creating connection to PGVector database...\n")
     conn, cur = create_db_connection()
-    
+
     print("Starting for loop to stream chunk generation -> contextualization -> embedding -> DB insertion...\n")
-    
-    for raw_chunk in generate_chunks("/data", chunker):
-        print(f"Processing chunk #{chunk_total}...\n")
+
+    for idx, raw_chunk in enumerate(generate_chunks("/data", chunker), start=1):
+        print(f"Processing chunk #{idx}...\n")
+
         chunk = chunker.contextualize(raw_chunk)
-        print(f"Chunk #{chunk_total} contextualized. Now embedding...\n")
-        emb = get_embedding(chunk)
-        print(f"Chunk #{chunk_total} embedded. Now inserting into DB...\n")
+        print(f"Chunk #{idx} contextualized. Now embedding...\n")
+
+        emb = get_embedding(chunk.text)
+        print(f"Chunk #{idx} embedded. Now inserting into DB...\n")
+
         insert_chunk_and_embedding_to_db(chunk, emb, cur, conn)
-        print(f"Chunk #{chunk_total} inserted into DB.\n")
+        print(f"Chunk #{idx} inserted into DB.\n")
 
     conn.close()
-
     print("Chunking and embedding complete.\n")
+    
 
 if __name__ == "__main__":
     main()
