@@ -2,7 +2,7 @@ from pathlib import Path
 import psycopg2
 from pgvector.psycopg2 import register_vector
 
-from typing import Iterator, List, Dict, Any
+import hashlib
 
 from sentence_transformers import SentenceTransformer # type: ignore
 from docling.chunking import HybridChunker
@@ -10,7 +10,7 @@ from docling_core.types.doc import DoclingDocument
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from transformers import AutoTokenizer
 
-MAX_TOKENS = 384
+MAX_TOKENS = 128
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
@@ -25,22 +25,37 @@ chunker = HybridChunker(
     merge_peers=True,
 )
 
-
+def hash_chunk_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 # Retrieve docling-ized md files, generate chunks and append them to an all_chunks list
-def generate_chunks(md_dir: str, chunker: HybridChunker) -> Iterator:
-    md_dir = Path("/data")
-    md_files = list(md_dir.glob("*.md"))
+def generate_chunks(md_dir: str, chunker: HybridChunker):
+    md_dir = Path(md_dir)
+    preferred = "*.doctags.txt"
+    md_files = list(md_dir.glob(preferred))
+    print(f"Found {len(md_files)} files matching {preferred}")
+    
 
-    assert md_files, f"No markdown files found in ({md_dir})"
-
-    for file in md_files:
-        doc = DoclingDocument(text=file.read_text(), source_file=str(file))
-
+    assert md_files, f"No markdown files found in md_dir"
+    global_idx = 0
+    for i, file in enumerate(md_files, 1):
+        doc = DoclingDocument.load_from_doctags(file)
+        
+        doc_chunk_idx = 0
         for raw_chunk in chunker.chunk(dl_doc=doc):
-            global chunk_total
-            chunk_total += 1
-            yield raw_chunk
+            global_idx += 1
+            doc_chunk_idx += 1
+            contextualized_chunk = chunker.contextualize(raw_chunk)
+            chunk_text = contextualized_chunk.text
+            chunk_hash = hash_chunk_text(chunk_text)
+            yield {
+                "global_index": global_idx,
+                "doc_name": file.stem,
+                "doc_chunk_index": doc_chunk_idx,
+                "chunk_hash": chunk_hash,
+                "contextualized_chunk": contextualized_chunk,
+                "chunk_text": chunk_text
+            }
 
 
 def create_db_connection():
@@ -74,54 +89,58 @@ def create_db_connection():
     
     return conn, cur
 
-def get_embedding(chunk):
-    return model.encode(chunk.text)
+def get_embedding(contextualized_chunk):
+    return model.encode(contextualized_chunk.text)
+
 
 
 def insert_chunk_and_embedding_to_db(chunk, embedding, cur, conn):
-    # Prepare batch data
-    if hasattr(chunk, "text"):
-        chunk_text = chunk.text
-        source_file = getattr(chunk.meta, "source_file", None)
-    else:
-        chunk_text = str(chunk)
-        source_file = None
-   
-    cur.execute('''
-        INSERT INTO items (chunk_index, chunk_text, chunk_length, source_file, embedding) 
-        VALUES (%s, %s, %s, %s, %s::vector)
-    ''',
-    ( 
-        0,  # or pass a real index
-        chunk_text,
-        len(chunk_text),
-        source_file,
-        embedding.tolist() if hasattr(embedding, "tolist") else embedding,
-        ), 
+    cur.execute(
+        '''
+        INSERT INTO items (
+            chunk_hash,
+            doc_name,
+            doc_chunk_index,
+            chunk_text,
+            chunk_length,
+            embedding
         )
+        VALUES (%s, %s, %s, %s, %s, %s::vector)
+        ON CONFLICT (chunk_hash) DO NOTHING
+        ''',
+        (
+            chunk["chunk_hash"],
+            chunk["doc_name"],
+            chunk["doc_chunk_index"],
+            chunk["chunk_text"],
+            len(chunk["chunk_text"]),
+            embedding.tolist() if hasattr(embedding, "tolist") else embedding,
+        ),
+    )
     conn.commit()
 
 def main():
     print("Creating connection to PGVector database...\n")
     conn, cur = create_db_connection()
 
-    print("Starting for loop to stream chunk generation -> contextualization -> embedding -> DB insertion...\n")
+    print(
+        "Starting for loop to stream chunk generation -> "
+        "embedding -> DB insertion...\n"
+    )
 
-    for idx, raw_chunk in enumerate(generate_chunks("/data", chunker), start=1):
-        print(f"Processing chunk #{idx}...\n")
+    for item in generate_chunks("scratch/", chunker):
+        print(f"Processing chunk #{item['global_index']}...\n")
 
-        chunk = chunker.contextualize(raw_chunk)
-        print(f"Chunk #{idx} contextualized. Now embedding...\n")
+        # contextualization already happened in the generator
+        emb = get_embedding(item["contextualized_chunk"])
+        print(f"Chunk #{item['global_index']} embedded. Now inserting into DB...\n")
 
-        emb = get_embedding(chunk.text)
-        print(f"Chunk #{idx} embedded. Now inserting into DB...\n")
-
-        insert_chunk_and_embedding_to_db(chunk, emb, cur, conn)
-        print(f"Chunk #{idx} inserted into DB.\n")
+        insert_chunk_and_embedding_to_db(item, emb, cur, conn)
+        print(f"Chunk #{item['global_index']} inserted into DB.\n")
 
     conn.close()
     print("Chunking and embedding complete.\n")
-    
+
 
 if __name__ == "__main__":
     main()
