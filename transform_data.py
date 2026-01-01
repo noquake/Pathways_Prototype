@@ -40,6 +40,10 @@ def save_document_yaml(document, output_path: Path):
     with output_path.open("w") as fp:
         fp.write(yaml.safe_dump(document.export_to_dict()))
 
+def save_document_doctags(document, output_path: Path):
+    with output_path.open("w") as fp:
+        fp.write(document.export_to_doctags())
+
 # save each conversion result into a directory of all documents formats
 def save_all_document_formats(conv_res: ConversionResult, output_dir: Path):
     doc_filename = conv_res.input.file.stem
@@ -73,10 +77,10 @@ def save_all_document_formats(conv_res: ConversionResult, output_dir: Path):
     #     image_mode=ImageRefMode.EMBEDDED
     # )
 
-    # save_document_doctags(
-    #     conv_res.document,
-    #     output_dir / f"{doc_filename}.doctags.txt"
-    # )
+    save_document_doctags(
+        conv_res.document,
+        output_dir / f"{doc_filename}.doctags.txt"
+    )
 
 # True if successful, False otherwise
 def handle_successful_conversion(conv_res: ConversionResult, output_dir: Path) -> bool:

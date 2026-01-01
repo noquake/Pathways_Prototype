@@ -6,4 +6,7 @@ langchain
 torch
 psycopg2-binary
 openai
+google-generativeai
 ollama
+matplotlib # For plotting and visualization during test branches
+seaborn # For enhanced data visualization via matplotlib

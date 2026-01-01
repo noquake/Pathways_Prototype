@@ -1,0 +1,103 @@
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 20px;
+}
+
+/* Medical/Clinical aesthetic - clean and professional */
+.chat-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.chat-messages {
+  max-height: 600px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  padding: 10px;
+}
+
+.message {
+  margin-bottom: 15px;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.message.user {
+  background-color: #e3f2fd;
+  margin-left: 20%;
+}
+
+.message.assistant {
+  background-color: #f5f5f5;
+  margin-right: 20%;
+}
+
+.message-header {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1976d2;
+}
+
+.citations {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #fafafa;
+  border-left: 3px solid #1976d2;
+  border-radius: 4px;
+}
+
+.citation-item {
+  margin: 5px 0;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.citation-item strong {
+  color: #1976d2;
+}
+
+.input-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.query-input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.submit-button {
+  padding: 12px 24px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.submit-button:hover {
+  background-color: #1565c0;
+}
+
+.submit-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+

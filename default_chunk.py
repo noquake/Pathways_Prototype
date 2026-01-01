@@ -3,11 +3,12 @@ from sentence_transformers import SentenceTransformer # type: ignore
 import psycopg2
 from pgvector.psycopg2 import register_vector
 from typing import List, Dict, Any
+from docling.chunking import HybridChunker
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # Function to create chunks with single file its metadata, stored in file_chunks
-def chunk(texts: str, source_file: str = None, max_len: int = 1000) -> List[Dict[str, Any]]:
+def chunk(texts: str, source_file: str = None, max_len: int = 700) -> List[Dict[str, Any]]:
     """
     Chunk markdown text in a file and return chunks with metadata.
     
