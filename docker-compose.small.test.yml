@@ -1,4 +1,21 @@
+volumes:
+  keycloak_db_data:
+
 services:
+  keycloak_db:
+    image: postgres:16
+    container_name: keycloak_db
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     container_name: pathways_keycloak
@@ -7,14 +24,14 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://db:5432/pathways
-      KC_DB_USERNAME: admin
-      KC_DB_PASSWORD: password
+      KC_DB_URL: jdbc:postgresql://keycloak_db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
       KC_HTTP_RELATIVE_PATH: /auth
     ports:
       - "8080:8080"
     depends_on:
-      db:
+      keycloak_db:
         condition: service_healthy
     volumes:
       - ./keycloak/config:/opt/keycloak/data/import:ro
