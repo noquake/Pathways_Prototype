@@ -4,7 +4,7 @@ volumes:
 services:
    # Reverse Proxy (Traefik)
   traefik:
-    image: traefik:v2.10
+    image: traefik:v3.6
     container_name: pathways_traefik
     command:
       - "--api.insecure=true"
