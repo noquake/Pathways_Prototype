@@ -54,3 +54,20 @@ services:
     #   keycloak:
     #     condition: service_healthy
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+    container_name: pathways_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./services/frontend:/app
+      - /app/node_modules
+    environment:
+      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_KEYCLOAK_URL: http://localhost:8080
+      REACT_APP_KEYCLOAK_REALM: pathways
+      REACT_APP_KEYCLOAK_CLIENT_ID: pathways-frontend
+    depends_on:
+      - backend
