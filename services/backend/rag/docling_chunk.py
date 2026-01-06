@@ -10,6 +10,7 @@ from docling_core.types.doc import DoclingDocument
 from docling.document_converter import DocumentConverter
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from transformers import AutoTokenizer
+import os
 
 MAX_TOKENS = 128
 
@@ -61,7 +62,8 @@ def generate_chunks(md_dir: str, chunker: HybridChunker):
 
 def create_db_connection():
     # connect to the PostgreSQL database, casting the connection from variable -> to a vector type for psycopg1
-    conn = psycopg2.connect("dbname=pathways user=admin password=password host=localhost port=5432")
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    conn = psycopg2.connect(DATABASE_URL)
 
     # creates a cursor object to start executing SQL commands
     cur = conn.cursor()

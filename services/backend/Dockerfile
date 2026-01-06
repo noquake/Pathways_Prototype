@@ -11,12 +11,3 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy Python files
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-EXPOSE 8000
-
-# Run ingestion automatically when building
-# RUN python ingest.py
-
-CMD ["python", "app.py"]

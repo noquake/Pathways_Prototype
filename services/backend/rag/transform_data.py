@@ -38,11 +38,11 @@ def save_document_doctags(document, output_path: Path):
 def save_all_document_formats(conv_res: ConversionResult, output_dir: Path):
     doc_filename = conv_res.input.file.stem
     
-    save_document_json(
-        conv_res.document,
-        output_dir / f"{doc_filename}.json",
-        image_mode=ImageRefMode.PLACEHOLDER
-    )
+    # save_document_json(
+    #     conv_res.document,
+    #     output_dir / f"{doc_filename}.json",
+    #     image_mode=ImageRefMode.PLACEHOLDER
+    # )
     
     save_document_markdown(
         conv_res.document,
@@ -50,16 +50,16 @@ def save_all_document_formats(conv_res: ConversionResult, output_dir: Path):
         image_mode=ImageRefMode.PLACEHOLDER
     )
     
-    save_document_text(
-        conv_res.document,
-        output_dir / f"{doc_filename}.txt",
-        image_mode=ImageRefMode.PLACEHOLDER
-    )
+    # save_document_text(
+    #     conv_res.document,
+    #     output_dir / f"{doc_filename}.txt",
+    #     image_mode=ImageRefMode.PLACEHOLDER
+    # )
     
-    save_document_yaml(
-        conv_res.document,
-        output_dir / f"{doc_filename}.yaml"
-    )
+    # save_document_yaml(
+    #     conv_res.document,
+    #     output_dir / f"{doc_filename}.yaml"
+    # )
     
     # save_document_html(
     #     conv_res.document,
@@ -172,7 +172,7 @@ def main():
     )
     # Write outputs to ./transformed_files and log a summary.
     _success_count, _partial_success_count, failure_count = export_conversion_summary(
-        conv_results, output_dir=Path("transformed_files/")
+        conv_results, output_dir=Path("data/transformed_files/")
     )
 
     end_time = time.time() - start_time
