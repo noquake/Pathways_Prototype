@@ -100,70 +100,46 @@ def rag_api_llm(cur, query: str, top_k: int = 5, model_name: str = "gemini-1.5-f
     else:
         raise ValueError(f"Unsupported API provider: {api_provider}")
 
-# ----------------------
-# Retrieval + RAG with Local LLM (Ollama)
-# ----------------------
-def rag_ollama(cur, query: str, top_k: int = 5, model_name: str = "llama3"):
-    """
-    Retrieve top-k chunks and use local Ollama to answer the query.
-    """
-    # 1. Compute query embedding
-    query_emb = get_embeddings([query])[0]
-    query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
 
-    # 2. Retrieve top-k chunks
-    cur.execute('''
-        SELECT chunk_text, source_file
-        FROM items
-        ORDER BY embedding <-> %s::vector
-        LIMIT %s
-    ''', (query_emb_list, top_k))
+# def rag_ollama(cur, query: str, top_k: int = 5, model_name: str = "llama3"):
+#     """
+#     Retrieve top-k chunks and use local Ollama to answer the query.
+#     """
+#     # 1. Compute query embedding
+#     query_emb = get_embeddings([query])[0]
+#     query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
+
+#     # 2. Retrieve top-k chunks
+#     cur.execute('''
+#         SELECT chunk_text, source_file
+#         FROM items
+#         ORDER BY embedding <-> %s::vector
+#         LIMIT %s
+#     ''', (query_emb_list, top_k))
     
-    results = cur.fetchall()
-    if not results:
-        return "No relevant clinical pathways found."
+#     results = cur.fetchall()
+#     if not results:
+#         return "No relevant clinical pathways found."
 
-    context = "\n\n".join([f"Source ({r[1]}): {r[0]}" for r in results])
+#     context = "\n\n".join([f"Source ({r[1]}): {r[0]}" for r in results])
     
-    prompt = f"""
-    Use the following clinical context to answer the question.
+#     prompt = f"""
+#     Use the following clinical context to answer the question.
 
-    Context:
-    {context}
+#     Context:
+#     {context}
 
-    Question:
-    {query}
+#     Question:
+#     {query}
 
-    Answer:
-    """
+#     Answer:
+#     """
 
-    # 3. Call Ollama (Using the correct function syntax)
-    # Note: Ensure you have pulled the model first: `ollama pull llama3`
-    response = ollama.chat(
-        model=model_name, 
-        messages=[{"role": "user", "content": prompt}]
-    )
+#     # 3. Call Ollama (Using the correct function syntax)
+#     # Note: Ensure you have pulled the model first: `ollama pull llama3`
+#     response = ollama.chat(
+#         model=model_name, 
+#         messages=[{"role": "user", "content": prompt}]
+#     )
     
-    return response['message']['content']
-
-# ----------------------
-# Local Testing Block
-# ----------------------
-if __name__ == "__main__":
-    # Test connection locally (outside Docker)
-    try:
-        conn = psycopg2.connect("dbname=pathways user=admin password=password host=localhost port=5432")
-        cur = conn.cursor()
-
-        query = input("Enter your query: ")
-        
-        # Uncomment to test Gemini:
-        # print("Gemini Answer:", rag_api_llm(cur, query, api_provider="gemini"))
-        
-        # Test Ollama:
-        print("Ollama Answer:", rag_ollama(cur, query))
-        
-        cur.close()
-        conn.close()
-    except Exception as e:
-        print(f"Error: {e}")
+#     return response['message']['content']

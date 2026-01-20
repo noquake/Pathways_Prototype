@@ -70,12 +70,14 @@ docker ps # check status of containers
 
 ## Frontend Structure
 
+```
+
 services/frontend/
 ├── .env # API URLs and Keycloak Client IDs
 ├── Dockerfile # Containerization for deployment
 ├── package.json
 ├── public/ # Static assets (Not processed by React)
-│ ├── favicon.ico  
+│ ├── favicon.ico
 │ ├── manifest.json # Metadata for mobile/web app install
 │ └── robots.txt # SEO/Crawler instructions
 ├── src/ # The "Engine Room"
@@ -120,3 +122,4 @@ services/frontend/
 │ └── routes/ # Access Control
 │ ├── AppRoutes.jsx # Central route definitions
 │ └── ProtectedRoute.jsx # Wrapper to check Login/Roles
+```
