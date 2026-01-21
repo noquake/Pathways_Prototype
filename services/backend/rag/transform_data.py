@@ -4,7 +4,7 @@ import time
 from collections.abc import Iterable
 from pathlib import Path
 
-import yaml
+# import yaml
 from docling_core.types.doc import ImageRefMode
 
 from docling.document_converter import DocumentConverter, PdfFormatOption

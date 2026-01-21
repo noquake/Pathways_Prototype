@@ -7,7 +7,7 @@ START_URL = "https://www.connecticutchildrens.org/medical-professionals/clinical
 BASE_URL = "https://www.connecticutchildrens.org"
 BASE_DOMAIN = urlparse(BASE_URL).netloc
 
-OUTPUT_FOLDER = "/data/raw_files"
+OUTPUT_FOLDER = "data/raw_files"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 

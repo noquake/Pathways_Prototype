@@ -4,26 +4,28 @@ import os
 import subprocess
 import sys
 
-from fastapi import FastAPI, HTTPException, Depends, Header
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-
-
-
+from rag.scrape_docs import main as scrape_docs
 from rag.transform_data import main as transform_data
 from rag.default_chunk import main as default_chunk
 from rag.docling_chunk import main as docling_chunk
 
 def spin_up_docker():
     # subprocess.run(["docker", "compose", "up", "-d", ])
-    subprocess.run(["docker", "compose", "-f", "docker-compose.test.yml", "up", "-d"])
+    subprocess.run(["docker", "compose", "-f", "docker-compose.db.yml", "up", "-d"])
 
 def main():
+    from sentence_transformers import SentenceTransformer
     """ spin up all docker containers ->  prepare data for RAG -> chunk and embed data into pathways_db """
+
     # create and start all docker containers
     print("Spinning up docker containers...\n")
     spin_up_docker()
     print("Docker containers are up and running.\n")
+
+    # scrape documents from specified sources
+    print("Starting document scraping...\n")
+    scrape_docs()
+    print("Document scraping complete.\n")
     
     # transform the retrieved documents into usable data formats
     print("Transforming data for RAG...\n")
