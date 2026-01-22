@@ -16,6 +16,8 @@ services:
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"  
+    # volumes:
+    #   - pathways_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin"]
       interval: 10s
@@ -50,13 +52,12 @@ services:
       DATABASE_URL: postgresql://admin:password@pathways_db:5432/pathways
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: pathways
-      JWT_SECRET: ${JWT_SECRET}
+      RUN_INGESTION: true
+      # JWT_SECRET: ${JWT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "8000:8000"
-    volumes:
-      - ./services/backend:/app
     depends_on:
       - pathways_db
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload

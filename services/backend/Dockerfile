@@ -4,6 +4,9 @@ WORKDIR /app
 
 # Install OS deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    gcc \
+    netcat-openbsd \
     build-essential \
     curl \
     cmake \
@@ -11,7 +14,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy Python files
 COPY requirements.txt .
-COPY . .
+
 # RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install -r requirements.txt
-CMD ["python", "app.py"]
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entrypoint script and make it executable
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+
+COPY . .
+
+# Set the entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
+# CMD ["python", "app.py"]
