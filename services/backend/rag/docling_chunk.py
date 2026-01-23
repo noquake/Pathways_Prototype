@@ -147,7 +147,7 @@ def main():
         "embedding -> DB insertion...\n"
     )
 
-    for item in generate_chunks("services/rag/data/transformed_files/", chunker):
+    for item in generate_chunks("data/transformed_files/", chunker):
         print(f"Processing chunk #{item['global_index']}...\n")
 
         # contextualization already happened in the generator

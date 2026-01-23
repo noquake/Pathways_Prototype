@@ -34,16 +34,18 @@ services:
       PGADMIN_CONFIG_FILE_LOG_LEVEL: 10
     ports:
       - "7001:80"      
-    volumes:
-      - ./config/servers.json:/pgadmin4/servers.json:ro
+    # volumes:
+    #   - ./config/servers.json:/pgadmin4/servers.json:ro
     depends_on:
       - pathways_db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/misc/ping"]
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 30s
   backend:
+    image: pathways-backend:0.3.7
     build:
       context: ./services/backend
       dockerfile: Dockerfile
@@ -56,6 +58,8 @@ services:
       # JWT_SECRET: ${JWT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    volumes:
+      - ./data:/app/data
     ports:
       - "8000:8000"
     depends_on:

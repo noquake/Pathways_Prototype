@@ -3,13 +3,18 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install OS deps
+# Install OS deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev \
-    gcc \
-    netcat-openbsd \
     build-essential \
-    curl \
     cmake \
+    libpq-dev \
+    curl \
+    netcat-openbsd \
+    # NEEDED for Docling / OpenCV:
+    libgl1 \
+    libglib2.0-0 \
+    libxcb1 \
+    libx11-6 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python files
