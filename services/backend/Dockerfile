@@ -24,12 +24,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the entrypoint script and make it executable
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# COPY entrypoint.sh /entrypoint.sh
+# RUN chmod +x /entrypoint.sh
 
 
 COPY . .
 
 # Set the entrypoint
-ENTRYPOINT ["/entrypoint.sh"]
-# CMD ["python", "app.py"]
+# ENTRYPOINT ["/entrypoint.sh"]
+# CMD ["python", "docling_chunk.py"]
+CMD ["python", "app.py"]
