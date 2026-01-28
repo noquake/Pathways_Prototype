@@ -13,7 +13,7 @@ import httpx
 # Import existing RAG components
 import sys
 sys.path.append('/app')
-from rag.query import get_embeddings, rag_ollama, rag_openai
+from rag.query import get_embeddings, rag_ollama, rag_api_llm
 
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 
