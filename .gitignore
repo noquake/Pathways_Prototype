@@ -21,3 +21,4 @@ share/
 # npm package files
 node_modules/
 .lock
+model_cache/

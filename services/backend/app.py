@@ -29,7 +29,7 @@ def main():
     
     # transform the retrieved documents into usable data formats
     print("Transforming data for RAG...\n")
-    # transform_data()
+    transform_data()
     print("Data transformation complete.\n")
 
     # chunk and embed the transformed data for use in retrieval-augmented generation

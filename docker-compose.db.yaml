@@ -45,7 +45,7 @@ services:
       retries: 5
       start_period: 30s
   backend:
-    image: pathways-backend:0.3.12
+    image: pathways-backend:0.3.15
     build:
       context: ./services/backend
       dockerfile: Dockerfile
@@ -67,6 +67,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./model_cache:/root/.cache/huggingface
+      - ./services/backend:/app
     ports:
       - "8000:8000"
     depends_on:

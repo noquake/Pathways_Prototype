@@ -143,7 +143,7 @@ def main():
     # include test data, change `data_folder` or point `input_doc_paths` to
     # your own files.
     
-    data_folder = Path(__file__).parent / "/app/data/raw_files"
+    data_folder = Path("/app/data/raw_files")
 
     input_doc_paths = list(data_folder.glob("*")) 
 
@@ -172,7 +172,7 @@ def main():
     )
     # Write outputs to ./transformed_files and log a summary.
     _success_count, _partial_success_count, failure_count = export_conversion_summary(
-        conv_results, output_dir=Path("/app/data/transformed_files/")
+        conv_results, output_dir=Path("/app/data/transformed_files")
     )
 
     end_time = time.time() - start_time
