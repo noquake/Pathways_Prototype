@@ -150,6 +150,7 @@ def main():
     # Configure the PDF pipeline. Enabling page image generation improves HTML
     # previews (embedded images) but adds processing time.
     pipeline_options = PdfPipelineOptions()
+    pipeline_options.do_table_structure = False
 
     """ ENABLE ON BETTER MACHINE """
     # pipeline_options.generate_page_images = True 
