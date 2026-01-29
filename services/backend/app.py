@@ -14,6 +14,16 @@ def spin_up_docker():
     subprocess.run(["docker", "compose", "-f", "docker-compose.db.yml", "up", "-d"])
 
 def main():
+    run_ingestion = os.getenv("RUN_INGESTION", "true").lower() == "true"
+
+    if not run_ingestion:
+        print("!!! SKIPPING INGESTION !!!")
+        print("RUN_INGESTION is set to false. Using existing database data.\n")
+        # We can just return here, or keep the process alive if this script
+        # is supposed to do other things (like start a server).
+        # If this script's ONLY job is ingestion, just return.
+        return
+    
     from sentence_transformers import SentenceTransformer
     """ spin up all docker containers ->  prepare data for RAG -> chunk and embed data into pathways_db """
 

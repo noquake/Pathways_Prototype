@@ -16,10 +16,10 @@ services:
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"  
-    # volumes:
-    #   - pathways_db_data:/var/lib/postgresql/data
+    volumes:
+      - pathways_db_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d pathways"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,8 +34,8 @@ services:
       PGADMIN_CONFIG_FILE_LOG_LEVEL: 10
     ports:
       - "7001:80"      
-    # volumes:
-    #   - ./config/servers.json:/pgadmin4/servers.json:ro
+    volumes:
+      - ./config/servers.json:/pgadmin4/servers.json:ro
     depends_on:
       - pathways_db
     healthcheck:
@@ -45,7 +45,7 @@ services:
       retries: 5
       start_period: 30s
   backend:
-    image: pathways-backend:0.3.17
+    image: pathways-backend:0.3.18
     build:
       context: ./services/backend
       dockerfile: Dockerfile
@@ -54,7 +54,7 @@ services:
       DATABASE_URL: postgresql://admin:password@pathways_db:5432/pathways
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: pathways
-      # RUN_INGESTION: false
+      RUN_INGESTION: true
       # JWT_SECRET: ${JWT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
@@ -72,5 +72,4 @@ services:
       - "8000:8000"
     depends_on:
       - pathways_db
-    # command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     
