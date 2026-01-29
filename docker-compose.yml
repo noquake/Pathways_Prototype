@@ -6,7 +6,6 @@ volumes:
   keycloak_db_data:
   pathways_db_data:
 
-
 services:
   pathways_db: # refactor to pathways_db at some point
     image: pgvector/pgvector:pg18-trixie
@@ -16,33 +15,61 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"  
+      - "5432:5432"
     volumes:
       - pathways_db_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d pathways"]
       interval: 10s
       timeout: 5s
       retries: 5
-      
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: pathways_pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: password
-      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 20
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 10
+      PGADMIN_CONFIG_FILE_LOG_LEVEL: 10
     ports:
-      - "7001:80"      
+      - "7001:80"
     volumes:
       - ./config/servers.json:/pgadmin4/servers.json:ro
     depends_on:
       - pathways_db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/misc/ping"]
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 30s
+  backend:
+    image: pathways-backend:0.3.18
+    build:
+      context: ./services/backend
+      dockerfile: Dockerfile
+    container_name: pathways_backend
+    environment:
+      DATABASE_URL: postgresql://admin:password@pathways_db:5432/pathways
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: pathways
+      RUN_INGESTION: true
+      # JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      PYTHONUNBUFFERED: 1
+      HF_TOKEN: ""
+      HUGGING_FACE_HUB_TOKEN: ""
+
+    volumes:
+      - ./data:/app/data
+      - ./model_cache:/root/.cache/huggingface
+      - ./services/backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - pathways_db
 
   keycloak_db:
     image: postgres:16
@@ -79,7 +106,8 @@ services:
     volumes:
       - ./keycloak/config:/opt/keycloak/data/import:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
       interval: 30s
       timeout: 15s
       retries: 15
@@ -104,34 +132,15 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8081:8080"  # Traefik dashboard
+      - "8081:8080" # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/letsencrypt:/letsencrypt 
+      - ./traefik/letsencrypt:/letsencrypt
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`traefik.localhost`)"
       - "traefik.http.routers.api.service=api@internal"
 
-  backend:
-    build:
-      context: ./services/backend
-      dockerfile: Dockerfile
-    container_name: pathways_backend
-    environment:
-      DATABASE_URL: postgresql://admin:password@pathways_db:5432/pathways
-      KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_REALM: pathways
-      JWT_SECRET: ${JWT_SECRET}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-    ports:
-      - "8000:8000"
-    depends_on:
-      - pathways_db
-      - keycloak
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    
   frontend:
     build:
       context: ./services/frontend

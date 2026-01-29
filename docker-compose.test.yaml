@@ -5,7 +5,6 @@ networks:
 volumes:
   pathways_db_data:
 
-
 services:
   pathways_db: # refactor to pathways_db at some point
     image: pgvector/pgvector:pg18-trixie
@@ -15,14 +14,15 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"  
+      - "5432:5432"
     volumes:
-      - pathways_db_data:/var/lib/postgresql/data
+      - pathways_db_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d pathways"]
       interval: 10s
       timeout: 5s
       retries: 5
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: pathways_pgadmin
@@ -32,17 +32,20 @@ services:
       PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 10
       PGADMIN_CONFIG_FILE_LOG_LEVEL: 10
     ports:
-      - "7001:80"      
+      - "7001:80"
     volumes:
       - ./config/servers.json:/pgadmin4/servers.json:ro
     depends_on:
       - pathways_db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/misc/ping"]
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 30s
   backend:
+    # image: pathways-backend:0.3.18
+    image: pathways-backend:0.3.19
     build:
       context: ./services/backend
       dockerfile: Dockerfile
@@ -51,15 +54,25 @@ services:
       DATABASE_URL: postgresql://admin:password@pathways_db:5432/pathways
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: pathways
-      JWT_SECRET: ${JWT_SECRET}
+      RUN_INGESTION: true
+      # JWT_SECRET: ${JWT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+
+      PYTHONUNBUFFERED: 1
+
+      HF_TOKEN: ""
+      HUGGING_FACE_HUB_TOKEN: ""
+
+    volumes:
+      - ./data:/app/data
+      - ./model_cache:/root/.cache/huggingface
+      - ./services/backend:/app
     ports:
       - "8000:8000"
     depends_on:
       - pathways_db
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    
+
   frontend:
     build:
       context: ./services/frontend

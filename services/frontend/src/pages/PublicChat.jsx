@@ -3,6 +3,7 @@ import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import "./Chat.css";
 
+
 function PublicChat({ apiUrl }) {
 	const [query, setQuery] = useState("");
 	const [messages, setMessages] = useState([]);
@@ -21,7 +22,7 @@ function PublicChat({ apiUrl }) {
 			const response = await axios.post(`${apiUrl}/chat/public`, {
 				query: query,
 				// model: 'ollama',
-				model: "gemini-pro",
+				model: "gemini-3-flash-preview",
 				top_k: 5,
 			});
 

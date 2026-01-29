@@ -1,158 +1,119 @@
-from typing import List, Dict
-from sentence_transformers import SentenceTransformer
-import psycopg2
-import openai
 import os
-import google.generativeai as gemini
-import ollama
-from ollama import Client
+import psycopg2
+import google.generativeai as genai
+from sentence_transformers import SentenceTransformer
+from typing import List, Optional
 
-# API Keys from environment variables
+# 1. Load API Key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not GEMINI_API_KEY:
+    # Fallback for local testing if env var isn't set
+    print("Warning: GEMINI_API_KEY not found in environment.")
 
-# ----------------------
-# Models and DB
-# ----------------------
-model = SentenceTransformer("all-MiniLM-L6-v2")
-ollama_client = Client(host="http://localhost:11434")  # default port for local Ollama server
+# 2. Initialize Models (Load once to save time)
+# Note: In production, you might want to load the embedding model globally or via a singleton
+embed_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-def get_embeddings(chunk_texts: List[str]):
-    """Return embeddings for a list of texts."""
-    return model.encode(chunk_texts)
+def get_embeddings(text: str) -> List[float]:
+    """Generate embedding for a single query string."""
+    # model.encode returns a numpy array, we need a list for pgvector
+    return embed_model.encode(text).tolist()
 
-# ----------------------
-# Retrieval + RAG with API-based LLMs
-# ----------------------
-def rag_api_llm(cur, query: str, top_k: int = 5, model_name: str = "gpt-4", api_provider: str = "gemini"):
-    """
-    Retrieve top-k chunks and use an API-based LLM (OpenAI, Gemini, etc.) to answer the query.
-    
-    Args:
-        cur: Database cursor
-        query: User query string
-        top_k: Number of top chunks to retrieve
-        model_name: Name of the model to use
-        api_provider: API provider to use ("openai" or "gemini")
-    """
-    # Compute query embedding
-    query_emb = get_embeddings([query])[0]
-    query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
-
-    # Retrieve top-k chunks
-    cur.execute('''
-        SELECT chunk_text, source_file
-        FROM items
-        ORDER BY embedding <-> %s::vector
-        LIMIT %s
-    ''', (query_emb_list, top_k))
-    
-    results = cur.fetchall()
-    if not results:
-        print("No relevant chunks found.")
-        return
-
-    context = "\n\n".join([f"{r[1]}: {r[0]}" for r in results])
-    prompt = f"""
-Use the following context to answer the question.
-
-Context:
-{context}
-
-Question:
-{query}
-
-Answer:
-"""
-    
-    if api_provider.lower() == "openai":
-        if not OPENAI_API_KEY:
-            raise ValueError("OPENAI_API_KEY environment variable not set")
-        openai.api_key = OPENAI_API_KEY
-        response = openai.ChatCompletion.create(
-            model=model_name,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0
+def get_db_connection():
+    """Connect to the database using Docker network credentials."""
+    try:
+        # We use 'pathways_db' as the host because that is the service name in docker-compose
+        conn = psycopg2.connect(
+            dbname=os.getenv("POSTGRES_DB", "pathways"),
+            user=os.getenv("POSTGRES_USER", "admin"),
+            password=os.getenv("POSTGRES_PASSWORD", "password"),
+            host=os.getenv("DB_HOST", "pathways_db"), # Defaults to Docker service name
+            port=os.getenv("DB_PORT", "5432")
         )
-        answer = response.choices[0].message.content
-        print("\n=== OpenAI Answer ===\n")
-        print(answer)
-        return answer
-    elif api_provider.lower() == "gemini":
-        if not GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY environment variable not set")
-        
-        # Configure Gemini API
-        gemini.configure(api_key=GEMINI_API_KEY)
-        
-        # Get the model (default to gemini-pro if model_name not specified or is OpenAI model)
-        if model_name.startswith("gpt") or model_name not in ["gemini-pro", "gemini-pro-vision", "gemini-1.5-pro", "gemini-1.5-flash"]:
-            # Default to gemini-pro if an OpenAI model name is provided
-            model_name = "gemini-pro"
-        
-        # Create the model instance
-        gemini_model = gemini.GenerativeModel(model_name)
-        
-        # Generate response
-        response = gemini_model.generate_content(prompt)
-        
-        # Extract answer
-        answer = response.text
-        print("\n=== Gemini Answer ===\n")
-        print(answer)
-        return answer
-    else:
-        raise ValueError(f"Unsupported API provider: {api_provider}. Use 'openai' or 'gemini'.")
+        return conn
+    except Exception as e:
+        print(f"Error connecting to database: {e}")
+        return None
 
-# ----------------------
-# Retrieval + RAG with local LLaMA
-# ----------------------
-def rag_ollama(cur, query: str, top_k: int = 5, model_name: str = "llama2"):
-    """
-    Retrieve top-k chunks and use local LLaMA (Ollama) to answer the query.
-    """
-    query_emb = get_embeddings([query])[0]
-    query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
-
-    # Retrieve top-k chunks
-    cur.execute('''
-        SELECT chunk_text, source_file
-        FROM items
-        ORDER BY embedding <-> %s::vector
-        LIMIT %s
-    ''', (query_emb_list, top_k))
+def query_gemini(context: str, query: str):
+    """Send the context and query to Gemini."""
+    genai.configure(api_key=GEMINI_API_KEY)
     
-    results = cur.fetchall()
-    if not results:
-        print("No relevant chunks found.")
-        return
+    # gemini-1.5-flash is faster and cheaper for RAG; use 1.5-pro for complex reasoning
+    model = genai.GenerativeModel('gemini-1.5-flash')
 
-    context = "\n\n".join([f"{r[1]}: {r[0]}" for r in results])
     prompt = f"""
-Use the following context to answer the question.
+    You are a helpful assistant for a clinical pathway documentation system.
+    Use the following retrieved context to answer the user's question.
+    If the answer is not in the context, say "I cannot find the answer in the provided documents."
 
-Context:
-{context}
+    Context:
+    {context}
 
-Question:
-{query}
+    Question:
+    {query}
 
-Answer:
-"""
+    Answer:
+    """
 
-    response = ollama_client.chat(model=model_name, messages=[{"role": "user", "content": prompt}])
-    answer = response['message']['content']
-    print("\n=== Local LLaMA Answer ===\n")
-    print(answer)
-    return answer
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Error generating response from Gemini: {e}"
 
-# ----------------------
-# Example usage
-# ----------------------
+def rag_pipeline(query: str, top_k: int = 5):
+    """Main function to retrieve data and generate answer."""
+    
+    # 1. Embed the query
+    query_vector = get_embeddings(query)
+
+    # 2. Retrieve relevant chunks from Postgres
+    conn = get_db_connection()
+    if not conn:
+        return "Database connection failed."
+    
+    try:
+        cur = conn.cursor()
+        # The <-> operator is L2 distance (Euclidean). 
+        # For cosine similarity (if normalized), use <=> 
+        sql = """
+            SELECT chunk_text, source_file
+            FROM items
+            ORDER BY embedding <-> %s::vector
+            LIMIT %s;
+        """
+        cur.execute(sql, (query_vector, top_k))
+        results = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        if not results:
+            return "No relevant documents found in the database."
+
+        # 3. Format Context
+        # We combine the source file name with the text for better context
+        context_str = "\n\n".join([f"Source ({r[1]}): {r[0]}" for r in results])
+
+        # 4. Generate Answer
+        print(f"\n--- Retrieved {len(results)} chunks. Generating answer... ---\n")
+        answer = query_gemini(context_str, query)
+        return answer
+
+    except Exception as e:
+        if conn:
+            conn.close()
+        return f"Error during RAG pipeline: {e}"
+
 if __name__ == "__main__":
-    conn = psycopg2.connect("dbname=pathways user=admin password=password host=localhost port=5432")
-    cur = conn.cursor()
-
-    query = input("Enter your query: ")
-    # rag_api_llm(cur, query, top_k=5, api_provider="openai")
-    rag_ollama(cur, query, top_k=5)
+    # Simple CLI loop for testing inside the container
+    print("RAG System Ready (Gemini Powered). Type 'exit' to quit.")
+    while True:
+        user_query = input("\nEnter your query: ")
+        if user_query.lower() in ['exit', 'quit']:
+            break
+        
+        response = rag_pipeline(user_query)
+        print("\n=== Gemini Response ===")
+        print(response)
+        print("=======================")

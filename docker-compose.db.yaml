@@ -5,7 +5,6 @@ networks:
 volumes:
   pathways_db_data:
 
-
 services:
   pathways_db: # refactor to pathways_db at some point
     image: pgvector/pgvector:pg18-trixie
@@ -15,7 +14,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"  
+      - "5432:5432"
     volumes:
       - pathways_db_data:/var/lib/postgresql
     healthcheck:
@@ -23,7 +22,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: pathways_pgadmin
@@ -33,7 +32,7 @@ services:
       PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 10
       PGADMIN_CONFIG_FILE_LOG_LEVEL: 10
     ports:
-      - "7001:80"      
+      - "7001:80"
     volumes:
       - ./config/servers.json:/pgadmin4/servers.json:ro
     depends_on:
@@ -61,9 +60,9 @@ services:
 
       PYTHONUNBUFFERED: 1
 
-      HF_TOKEN: "" 
+      HF_TOKEN: ""
       HUGGING_FACE_HUB_TOKEN: ""
-      
+
     volumes:
       - ./data:/app/data
       - ./model_cache:/root/.cache/huggingface
@@ -72,4 +71,3 @@ services:
       - "8000:8000"
     depends_on:
       - pathways_db
-    
