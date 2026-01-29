@@ -5,8 +5,14 @@ cursor*s
 embeddings.txt
 __pycache__/
 
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+
 # Generated outputs
 *.png
+!tests/**/results/*.png
 *.json
 !servers.json
 !package.json

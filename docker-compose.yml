@@ -18,7 +18,7 @@ services:
     ports:
       - "5432:5432"  
     volumes:
-      - pathways_db_data:/var/lib/postgresql/data
+      - pathways_db_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin"]
       interval: 10s
