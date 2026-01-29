@@ -4,7 +4,7 @@ import psycopg2
 import openai
 import os
 import google.generativeai as gemini
-from ollama import Ollama
+import ollama
 from ollama import Client
 
 # API Keys from environment variables
@@ -15,13 +15,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Models and DB
 # ----------------------
 model = SentenceTransformer("all-MiniLM-L6-v2")
-ollama = Ollama()  # defaults to localhost
-ollama = Client(host="http://localhost:11434")  # default port for local server
-
-response = ollama.chat(model="llama2", messages=[{"role": "user", "content": "Hello, Ollama!"}])
-print(response['content'])
-
-ollama = Ollama()  # Only if using local LLaMA
+ollama_client = Client(host="http://localhost:11434")  # default port for local Ollama server
 
 def get_embeddings(chunk_texts: List[str]):
     """Return embeddings for a list of texts."""
@@ -83,6 +77,7 @@ Answer:
         answer = response.choices[0].message.content
         print("\n=== OpenAI Answer ===\n")
         print(answer)
+        return answer
     elif api_provider.lower() == "gemini":
         if not GEMINI_API_KEY:
             raise ValueError("GEMINI_API_KEY environment variable not set")
@@ -105,6 +100,7 @@ Answer:
         answer = response.text
         print("\n=== Gemini Answer ===\n")
         print(answer)
+        return answer
     else:
         raise ValueError(f"Unsupported API provider: {api_provider}. Use 'openai' or 'gemini'.")
 
@@ -144,9 +140,11 @@ Question:
 Answer:
 """
 
-    response = ollama.chat(model=model_name, messages=[{"role": "user", "content": prompt}])
+    response = ollama_client.chat(model=model_name, messages=[{"role": "user", "content": prompt}])
+    answer = response['message']['content']
     print("\n=== Local LLaMA Answer ===\n")
-    print(response['content'])
+    print(answer)
+    return answer
 
 # ----------------------
 # Example usage

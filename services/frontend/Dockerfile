@@ -2,7 +2,7 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better Docker layer caching
 COPY package*.json ./
 
 # Install dependencies

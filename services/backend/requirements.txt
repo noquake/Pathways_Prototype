@@ -1,13 +1,22 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-jose[cryptography]==3.3.0
-python-multipart==0.0.6
-psycopg2-binary==2.9.9
-pgvector==0.2.4
-sentence-transformers==2.2.2
-python-dotenv==1.0.0
-pydantic==2.5.0
-pydantic-settings==2.1.0
-httpx==0.25.2
-cryptography==41.0.7
+fastapi
+uvicorn[standard]
+python-jose[cryptography]
+python-multipart
+python-dotenv
+pydantic
+pydantic-settings
+httpx
+cryptography
 
+pgvector
+llama-cpp-python
+docling
+sentence-transformers
+langchain
+torch
+psycopg2-binary
+openai
+google-generativeai
+ollama
+matplotlib # For plotting and visualization during test branches
+seaborn # For enhanced data visualization via matplotlib

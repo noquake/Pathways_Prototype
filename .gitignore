@@ -5,7 +5,26 @@ cursor*s
 embeddings.txt
 __pycache__/
 
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+
 # Generated outputs
 *.png
+!tests/**/results/*.png
 *.json
 !servers.json
+!package.json
+
+# Windows venv files
+pyvenv.cfg
+Scripts/
+Lib/
+Include/
+share/
+
+# npm package files
+node_modules/
+.lock
+model_cache/

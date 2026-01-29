@@ -4,7 +4,7 @@ import time
 from collections.abc import Iterable
 from pathlib import Path
 
-import yaml
+# import yaml
 from docling_core.types.doc import ImageRefMode
 
 from docling.document_converter import DocumentConverter, PdfFormatOption
@@ -38,11 +38,11 @@ def save_document_doctags(document, output_path: Path):
 def save_all_document_formats(conv_res: ConversionResult, output_dir: Path):
     doc_filename = conv_res.input.file.stem
     
-    save_document_json(
-        conv_res.document,
-        output_dir / f"{doc_filename}.json",
-        image_mode=ImageRefMode.PLACEHOLDER
-    )
+    # save_document_json(
+    #     conv_res.document,
+    #     output_dir / f"{doc_filename}.json",
+    #     image_mode=ImageRefMode.PLACEHOLDER
+    # )
     
     save_document_markdown(
         conv_res.document,
@@ -50,16 +50,16 @@ def save_all_document_formats(conv_res: ConversionResult, output_dir: Path):
         image_mode=ImageRefMode.PLACEHOLDER
     )
     
-    save_document_text(
-        conv_res.document,
-        output_dir / f"{doc_filename}.txt",
-        image_mode=ImageRefMode.PLACEHOLDER
-    )
+    # save_document_text(
+    #     conv_res.document,
+    #     output_dir / f"{doc_filename}.txt",
+    #     image_mode=ImageRefMode.PLACEHOLDER
+    # )
     
-    save_document_yaml(
-        conv_res.document,
-        output_dir / f"{doc_filename}.yaml"
-    )
+    # save_document_yaml(
+    #     conv_res.document,
+    #     output_dir / f"{doc_filename}.yaml"
+    # )
     
     # save_document_html(
     #     conv_res.document,
@@ -143,13 +143,14 @@ def main():
     # include test data, change `data_folder` or point `input_doc_paths` to
     # your own files.
     
-    data_folder = Path(__file__).parent / "data/transformed_files"
+    data_folder = Path("/app/data/raw_files")
 
     input_doc_paths = list(data_folder.glob("*")) 
 
     # Configure the PDF pipeline. Enabling page image generation improves HTML
     # previews (embedded images) but adds processing time.
     pipeline_options = PdfPipelineOptions()
+    pipeline_options.do_table_structure = False
 
     """ ENABLE ON BETTER MACHINE """
     # pipeline_options.generate_page_images = True 
@@ -172,7 +173,7 @@ def main():
     )
     # Write outputs to ./transformed_files and log a summary.
     _success_count, _partial_success_count, failure_count = export_conversion_summary(
-        conv_results, output_dir=Path("transformed_files/")
+        conv_results, output_dir=Path("/app/data/transformed_files")
     )
 
     end_time = time.time() - start_time

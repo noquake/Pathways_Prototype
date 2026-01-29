@@ -7,7 +7,7 @@ START_URL = "https://www.connecticutchildrens.org/medical-professionals/clinical
 BASE_URL = "https://www.connecticutchildrens.org"
 BASE_DOMAIN = urlparse(BASE_URL).netloc
 
-OUTPUT_FOLDER = "/data/raw_files"
+OUTPUT_FOLDER = "/app/data/raw_files"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 
@@ -58,8 +58,9 @@ def download_pdf(pdf_url):
         return
 
     print(f"[download] {filename}")
-
-    r = requests.get(pdf_url, timeout=20)
+    
+# WARNING: verify=False is used to bypass SSL verification for this specific site.
+    r = requests.get(pdf_url, timeout=20, verify=False)
     if r.headers.get("content-type", "").lower().startswith("application/pdf"):
         with open(path, "wb") as f:
             f.write(r.content)

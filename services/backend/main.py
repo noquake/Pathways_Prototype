@@ -1,7 +1,3 @@
-"""
-MVP 1: Backend API Service
-Handles chat queries, role-based routing, and RAG pipeline integration.
-"""
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -17,7 +13,7 @@ import httpx
 # Import existing RAG components
 import sys
 sys.path.append('/app')
-from services.rag.query import get_embeddings, rag_ollama, rag_openai
+from rag.query import get_embeddings, rag_ollama, rag_api_llm
 
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 

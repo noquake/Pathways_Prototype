@@ -6,7 +6,7 @@
       "Port": 5432,
       "Username": "admin",
       "Password": "password",
-      "Host": "db",
+      "Host": "pathways_db",
       "MaintenanceDB": "postgres",
       "SSLMode": "prefer"
     }

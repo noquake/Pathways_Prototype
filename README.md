@@ -67,3 +67,59 @@ pip install -r requirements.txt
 docker compose up -d
 docker ps # check status of containers
 ```
+
+## Frontend Structure
+
+```
+
+services/frontend/
+├── .env # API URLs and Keycloak Client IDs
+├── Dockerfile # Containerization for deployment
+├── package.json
+├── public/ # Static assets (Not processed by React)
+│ ├── favicon.ico
+│ ├── manifest.json # Metadata for mobile/web app install
+│ └── robots.txt # SEO/Crawler instructions
+├── src/ # The "Engine Room"
+│ ├── index.jsx # React entry point & Keycloak initialization
+│ ├── App.jsx # Top-level Routing & Theme Provider
+│ ├── index.css # Your Burgundy/Green CSS Variables & Global styles
+│ │
+│ ├── assets/ # Brand assets (Processed by Vite/Webpack)
+│ │ ├── logo-burgundy.svg
+│ │ ├── logo-white.svg
+│ │ └── icons/ # Medical-specific SVGs (Stethoscopes, Checklists)
+│ │
+│ ├── components/ # Reusable building blocks
+│ │ ├── ui/ # "Atoms": Buttons, Inputs, Modals
+│ │ ├── layout/ # "Templates": Nav, Footer, Sidebar
+│ │ ├── clinical/ # Specialized: PathwayCards, CitationBox, ChatBubble
+│ │ └── roles/ # Role-specific dashboard components
+│ │ ├── AdminDashboard.jsx
+│ │ ├── HRDashboard.jsx
+│ │ └── PractitionerDashboard.jsx
+│ │
+│ ├── pages/ # Route-level views (The "Destinations")
+│ │ ├── Landing.jsx # The public home page
+│ │ ├── Dashboard.jsx # The main "Switcher" for authenticated users
+│ │ ├── Chat.jsx # Clinical Chat Interface
+│ │ ├── Explorer.jsx # Pathway Explorer
+│ │ └── Unauthorized.jsx # 403 error page (User has wrong role)
+│ │
+│ ├── hooks/ # Custom Logic (The "Brain")
+│ │ ├── useAuth.js # Custom wrapper for Keycloak
+│ │ ├── useRole.js # Helper: const { isAdmin } = useRole()
+│ │ └── useChat.js # Logic for managing AI chat streams
+│ │
+│ ├── services/ # External Communications
+│ │ ├── api.js # Axios/Fetch wrapper for backend calls
+│ │ └── auth.js # Keycloak configuration/logic
+│ │
+│ ├── utils/ # Helper functions
+│ │ ├── validators.js # Data validation (Clinical code checks)
+│ │ └── formatters.js # Date and text formatting
+│ │
+│ └── routes/ # Access Control
+│ ├── AppRoutes.jsx # Central route definitions
+│ └── ProtectedRoute.jsx # Wrapper to check Login/Roles
+```

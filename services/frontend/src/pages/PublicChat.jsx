@@ -1,34 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import "./Chat.css";
 
-function PractitionerChat({ apiUrl, keycloak }) {
+function PublicChat({ apiUrl }) {
 	const [query, setQuery] = useState("");
 	const [messages, setMessages] = useState([]);
 	const [loading, setLoading] = useState(false);
-	const [history, setHistory] = useState([]);
-
-	useEffect(() => {
-		// Load conversation history
-		if (keycloak && keycloak.tokenParsed) {
-			const userId = keycloak.tokenParsed.sub;
-			loadHistory(userId);
-		}
-	}, [keycloak]);
-
-	const loadHistory = async (userId) => {
-		try {
-			const response = await axios.get(`${apiUrl}/history/${userId}`, {
-				headers: {
-					Authorization: `Bearer ${keycloak.token}`,
-				},
-			});
-			setHistory(response.data);
-		} catch (error) {
-			console.error("Error loading history:", error);
-		}
-	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -37,24 +15,15 @@ function PractitionerChat({ apiUrl, keycloak }) {
 		const userMessage = { role: "user", content: query, citations: [] };
 		setMessages((prev) => [...prev, userMessage]);
 		setLoading(true);
-		const currentQuery = query;
 		setQuery("");
 
 		try {
-			const response = await axios.post(
-				`${apiUrl}/chat/practitioner`,
-				{
-					query: currentQuery,
-					// model: 'ollama',
-					model: "gemini-pro",
-					top_k: 5,
-				},
-				{
-					headers: {
-						Authorization: `Bearer ${keycloak.token}`,
-					},
-				}
-			);
+			const response = await axios.post(`${apiUrl}/chat/public`, {
+				query: query,
+				// model: 'ollama',
+				model: "gemini-pro",
+				top_k: 5,
+			});
 
 			const assistantMessage = {
 				role: "assistant",
@@ -79,24 +48,21 @@ function PractitionerChat({ apiUrl, keycloak }) {
 	return (
 		<div className="chat-page">
 			<div className="chat-container">
-				<h2>Practitioner Chat</h2>
+				<h2>Public Clinical Chat</h2>
 				<p className="disclaimer">
-					Your conversation history is saved for context. Previous interactions
-					will inform responses.
+					This is a public chat interface. No login required. Responses are
+					based on clinical pathways and do not constitute medical advice.
 				</p>
 
-				{history.length > 0 && (
-					<div className="history-section">
-						<h3>Recent History</h3>
-						{history.slice(0, 3).map((item, idx) => (
-							<div key={idx} className="history-item">
-								<strong>Q:</strong> {item.query}
-							</div>
-						))}
-					</div>
-				)}
-
 				<div className="chat-messages">
+					{messages.length === 0 && (
+						<div className="welcome-message">
+							<p>
+								Welcome to Pathways Clinical Chat. Ask a question about clinical
+								pathways.
+							</p>
+						</div>
+					)}
 					{messages.map((msg, idx) => (
 						<div key={idx} className={`message ${msg.role}`}>
 							<div className="message-header">
@@ -147,4 +113,4 @@ function PractitionerChat({ apiUrl, keycloak }) {
 	);
 }
 
-export default PractitionerChat;
+export default PublicChat;

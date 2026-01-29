@@ -16,40 +16,93 @@ const KEYCLOAK_CLIENT_ID = process.env.REACT_APP_KEYCLOAK_CLIENT_ID || 'pathways
 
 function App() {
   const [keycloak, setKeycloak] = useState(null);
+  const [keycloakInstance, setKeycloakInstance] = useState(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState('public');
+  const [keycloakReady, setKeycloakReady] = useState(false);
 
   useEffect(() => {
-    const keycloakInstance = new Keycloak({
+    const kc = new Keycloak({
       url: KEYCLOAK_URL,
       realm: KEYCLOAK_REALM,
       clientId: KEYCLOAK_CLIENT_ID
     });
 
-    keycloakInstance.init({ onLoad: 'check-sso' })
+    setKeycloakInstance(kc);
+
+    // Handle authentication status updates
+    const updateAuthState = (kcInstance) => {
+      const isAuthenticated = kcInstance.authenticated;
+      setAuthenticated(isAuthenticated);
+      if (isAuthenticated && kcInstance.tokenParsed) {
+        const token = kcInstance.tokenParsed;
+        setUserRole(token?.realm_access?.roles?.[0] || 'public');
+      } else {
+        setUserRole('public');
+      }
+    };
+
+    // Handle token refresh
+    kc.onTokenExpired = () => {
+      kc.updateToken(30).then((refreshed) => {
+        if (refreshed) {
+          console.log('Token refreshed');
+          updateAuthState(kc);
+        }
+      }).catch(() => {
+        console.error('Failed to refresh token');
+        setAuthenticated(false);
+      });
+    };
+
+    // Handle successful authentication
+    kc.onAuthSuccess = () => {
+      console.log('Authentication successful');
+      updateAuthState(kc);
+    };
+
+    // Handle authentication errors
+    kc.onAuthError = (error) => {
+      console.error('Authentication error:', error);
+      setAuthenticated(false);
+    };
+
+    kc.init({ onLoad: 'check-sso', checkLoginIframe: false })
       .then((authenticated) => {
-        setKeycloak(keycloakInstance);
-        setAuthenticated(authenticated);
-        if (authenticated) {
-          // Extract role from token
-          const token = keycloakInstance.tokenParsed;
-          setUserRole(token?.realm_access?.roles?.[0] || 'public');
+        setKeycloak(kc);
+        setKeycloakReady(true);
+        updateAuthState(kc);
+        
+        // If redirected back from login, update state
+        if (window.location.hash || window.location.search.includes('code=')) {
+          updateAuthState(kc);
         }
       })
       .catch((error) => {
         console.error('Keycloak initialization failed:', error);
+        setKeycloakReady(true); // Set ready even on error so login can be attempted
+        setKeycloakInstance(kc); // Ensure instance is set for login attempts
       });
   }, []);
 
   const handleLogin = () => {
-    if (keycloak) {
-      keycloak.login();
+    // Use the instance even if not fully initialized
+    const kc = keycloak || keycloakInstance;
+    if (kc) {
+      kc.login().catch((error) => {
+        console.error('Keycloak login failed:', error);
+      });
+    } else {
+      console.error('Keycloak instance not available');
     }
   };
 
   const handleLogout = () => {
-    if (keycloak) {
-      keycloak.logout();
+    const kc = keycloak || keycloakInstance;
+    if (kc) {
+      kc.logout().catch((error) => {
+        console.error('Keycloak logout failed:', error);
+      });
     }
   };
 

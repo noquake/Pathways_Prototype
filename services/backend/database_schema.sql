@@ -1,3 +1,15 @@
+-- Users table (if not managed by Keycloak)
+-- Note: In production, users are typically managed by Keycloak
+-- This table is for reference/analytics only
+CREATE TABLE IF NOT EXISTS users (
+    user_id VARCHAR(255) PRIMARY KEY,
+    email VARCHAR(255) UNIQUE,
+    role VARCHAR(50) NOT NULL CHECK (role IN ('public', 'practitioner', 'hr', 'admin')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP,
+    mfa_enabled BOOLEAN DEFAULT FALSE
+);
+
 -- Chat logs for public users (anonymized)
 CREATE TABLE IF NOT EXISTS chat_logs_public (
     id BIGSERIAL PRIMARY KEY,
@@ -21,18 +33,6 @@ CREATE TABLE IF NOT EXISTS chat_logs_practitioner (
 CREATE INDEX IF NOT EXISTS idx_chat_logs_practitioner_user_id ON chat_logs_practitioner(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_logs_practitioner_timestamp ON chat_logs_practitioner(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_logs_public_timestamp ON chat_logs_public(timestamp DESC);
-
--- Users table (if not managed by Keycloak)
--- Note: In production, users are typically managed by Keycloak
--- This table is for reference/analytics only
-CREATE TABLE IF NOT EXISTS users (
-    user_id VARCHAR(255) PRIMARY KEY,
-    email VARCHAR(255) UNIQUE,
-    role VARCHAR(50) NOT NULL CHECK (role IN ('public', 'practitioner', 'hr', 'admin')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP,
-    mfa_enabled BOOLEAN DEFAULT FALSE
-);
 
 -- Metadata views for HR/Admin dashboards
 CREATE OR REPLACE VIEW practitioner_metadata AS
