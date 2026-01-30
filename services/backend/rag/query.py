@@ -3,7 +3,8 @@ from sentence_transformers import SentenceTransformer
 import psycopg2
 import openai
 import os
-import google.generativeai as gemini
+from google import genai
+from google.genai import types
 import ollama
 from ollama import Client
 
@@ -52,7 +53,12 @@ def rag_api_llm(cur, query: str, top_k: int = 5, model_name: str = "gpt-4", api_
         print("No relevant chunks found.")
         return
 
-    context = "\n\n".join([f"{r[1]}: {r[0]}" for r in results])
+    # Handle both tuple and dict results from cursor
+    if results and isinstance(results[0], dict):
+        context = "\n\n".join([f"{r['source_file']}: {r['chunk_text']}" for r in results])
+    else:
+        context = "\n\n".join([f"{r[1]}: {r[0]}" for r in results])
+    
     prompt = f"""
 Use the following context to answer the question.
 
@@ -82,19 +88,33 @@ Answer:
         if not GEMINI_API_KEY:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         
-        # Configure Gemini API
-        gemini.configure(api_key=GEMINI_API_KEY)
+        # Create Gemini client with API key
+        client = genai.Client(api_key=GEMINI_API_KEY)
         
-        # Get the model (default to gemini-pro if model_name not specified or is OpenAI model)
-        if model_name.startswith("gpt") or model_name not in ["gemini-pro", "gemini-pro-vision", "gemini-1.5-pro", "gemini-1.5-flash"]:
-            # Default to gemini-pro if an OpenAI model name is provided
-            model_name = "gemini-pro"
+        # Map model names to correct format for new API (2026 models)
+        model_mapping = {
+            "gemini-1.5-flash": "gemini-2.5-flash",
+            "gemini-1.5-pro": "gemini-2.5-pro",
+            "gemini-2.5-flash": "gemini-2.5-flash",
+            "gemini-2.5-pro": "gemini-2.5-pro",
+            "gemini-2.0-flash": "gemini-2.0-flash",
+            "gemini-pro": "gemini-2.5-flash",  # Map old name to new model
+            "gemini-pro-vision": "gemini-2.5-pro",
+            "gemini-flash-latest": "gemini-flash-latest",
+            "gemini-pro-latest": "gemini-pro-latest",
+        }
         
-        # Create the model instance
-        gemini_model = gemini.GenerativeModel(model_name)
+        # Get the correct model name
+        if model_name.startswith("gpt"):
+            model_name = "gemini-2.5-flash"  # Default for OpenAI model names
         
-        # Generate response
-        response = gemini_model.generate_content(prompt)
+        actual_model = model_mapping.get(model_name, "gemini-2.5-flash")
+        
+        # Generate response using new API
+        response = client.models.generate_content(
+            model=actual_model,
+            contents=prompt
+        )
         
         # Extract answer
         answer = response.text
@@ -127,7 +147,12 @@ def rag_ollama(cur, query: str, top_k: int = 5, model_name: str = "llama2"):
         print("No relevant chunks found.")
         return
 
-    context = "\n\n".join([f"{r[1]}: {r[0]}" for r in results])
+    # Handle both tuple and dict results from cursor
+    if results and isinstance(results[0], dict):
+        context = "\n\n".join([f"{r['source_file']}: {r['chunk_text']}" for r in results])
+    else:
+        context = "\n\n".join([f"{r[1]}: {r[0]}" for r in results])
+        
     prompt = f"""
 Use the following context to answer the question.
 
@@ -154,5 +179,6 @@ if __name__ == "__main__":
     cur = conn.cursor()
 
     query = input("Enter your query: ")
-    # rag_api_llm(cur, query, top_k=5, api_provider="openai")
-    rag_ollama(cur, query, top_k=5)
+    # Use Gemini by default (with gemini-2.5-flash for faster responses)
+    rag_api_llm(cur, query, top_k=5, model_name="gemini-2.5-flash", api_provider="gemini")
+    # rag_ollama(cur, query, top_k=5)

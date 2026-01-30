@@ -76,7 +76,8 @@ def get_user_role(user_info: Optional[Dict[str, Any]] = Depends(verify_token)) -
 # Request/Response models
 class ChatRequest(BaseModel):
     query: str
-    model: Optional[str] = "ollama"
+    model: Optional[str] = "gemini"  # Changed default from "ollama" to "gemini"
+    model_name: Optional[str] = "gemini-2.5-flash"  # Specific Gemini model to use (2026 API)
     top_k: Optional[int] = 5
 
 class ChatResponse(BaseModel):
@@ -124,12 +125,16 @@ async def chat_public(request: ChatRequest):
         
         # Generate response using LLM
         if request.model == "ollama":
-            # Use ollama (local)
-            context = "\n\n".join([f"{r['source_file']}: {r['chunk_text']}" for r in citations])
-            # For now, return a simple response - integrate with rag_ollama later
-            response_text = f"Based on the clinical pathways, here's information related to your query: {request.query}"
+            # Use ollama (local) - fallback option
+            response_text = rag_ollama(cur, request.query, top_k=request.top_k)
+        elif request.model == "gemini":
+            # Use Gemini API (default)
+            response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
+                                       model_name=request.model_name, api_provider="gemini")
         else:
-            response_text = f"Response for: {request.query}"
+            # Default to Gemini if unknown model specified
+            response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
+                                       model_name="gemini-2.5-flash", api_provider="gemini")
         
         # Log public query (anonymized)
         cur.execute('''
@@ -198,9 +203,16 @@ async def chat_practitioner(
         results = cur.fetchall()
         citations = [dict(r) for r in results]
         
-        # Generate response with context
-        context = "\n\n".join([f"{r['source_file']}: {r['chunk_text']}" for r in citations])
-        response_text = f"Based on your previous questions and the clinical pathways: {request.query}"
+        # Generate response with context using specified model
+        if request.model == "ollama":
+            response_text = rag_ollama(cur, request.query, top_k=request.top_k)
+        elif request.model == "gemini":
+            response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
+                                       model_name=request.model_name, api_provider="gemini")
+        else:
+            # Default to Gemini
+            response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
+                                       model_name="gemini-2.5-flash", api_provider="gemini")
         
         # Store in practitioner memory
         cur.execute('''
