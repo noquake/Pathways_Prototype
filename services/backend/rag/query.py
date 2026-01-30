@@ -55,18 +55,22 @@ def rag_api_llm(cur, query: str, top_k: int = 5, model_name: str = "gpt-4", api_
 
     # Handle both tuple and dict results from cursor
     if results and isinstance(results[0], dict):
-        context = "\n\n".join([f"{r['source_file']}: {r['chunk_text']}" for r in results])
+        context = "\n\n".join([f"[{i+1}] {r['source_file']}: {r['chunk_text']}" for i, r in enumerate(results)])
     else:
-        context = "\n\n".join([f"{r[1]}: {r[0]}" for r in results])
+        context = "\n\n".join([f"[{i+1}] {r[1]}: {r[0]}" for i, r in enumerate(results)])
     
     prompt = f"""
-Use the following context to answer the question.
+You are a clinical assistant. Use the following context sources to answer the question.
 
-Context:
+IMPORTANT: When you reference information from the context, cite the source using [1], [2], etc.
+
+Context Sources:
 {context}
 
 Question:
 {query}
+
+Provide a clear, structured answer using the context above. Include citation numbers [1], [2], etc. when referencing specific information.
 
 Answer:
 """
@@ -149,18 +153,22 @@ def rag_ollama(cur, query: str, top_k: int = 5, model_name: str = "llama2"):
 
     # Handle both tuple and dict results from cursor
     if results and isinstance(results[0], dict):
-        context = "\n\n".join([f"{r['source_file']}: {r['chunk_text']}" for r in results])
+        context = "\n\n".join([f"[{i+1}] {r['source_file']}: {r['chunk_text']}" for i, r in enumerate(results)])
     else:
-        context = "\n\n".join([f"{r[1]}: {r[0]}" for r in results])
+        context = "\n\n".join([f"[{i+1}] {r[1]}: {r[0]}" for i, r in enumerate(results)])
         
     prompt = f"""
-Use the following context to answer the question.
+You are a clinical assistant. Use the following context sources to answer the question.
 
-Context:
+IMPORTANT: When you reference information from the context, cite the source using [1], [2], etc.
+
+Context Sources:
 {context}
 
 Question:
 {query}
+
+Provide a clear, structured answer using the context above. Include citation numbers [1], [2], etc. when referencing specific information.
 
 Answer:
 """
