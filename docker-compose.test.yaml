@@ -7,22 +7,22 @@ volumes:
   keycloak_db_data:
 
 services:
-  frontend:
-    image: pathways-frontend:0.0.1
-    build:
-      context: ./services/frontend
-      dockerfile: Dockerfile
-    container_name: pathways_frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./services/frontend:/app
-      - /app/node_modules
-    environment:
-      REACT_APP_API_URL: http://localhost:8000
-      REACT_APP_KEYCLOAK_URL: http://localhost:8080
-      REACT_APP_KEYCLOAK_REALM: pathways
-      REACT_APP_KEYCLOAK_CLIENT_ID: pathways-frontend
+  # frontend:
+  #   image: pathways-frontend:0.0.3
+  #   build:
+  #     context: ./services/frontend
+  #     dockerfile: Dockerfile
+  #   container_name: pathways_frontend
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./services/frontend:/app
+  #     - /app/node_modules
+  #   environment:
+  #     REACT_APP_API_URL: http://localhost:8000
+  #     REACT_APP_KEYCLOAK_URL: http://localhost:8080
+  #     REACT_APP_KEYCLOAK_REALM: pathways
+  #     REACT_APP_KEYCLOAK_CLIENT_ID: pathways-frontend
 
   keycloak_db:
     image: postgres:16

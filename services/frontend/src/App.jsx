@@ -4,9 +4,15 @@ import Header from './components/Header';
 import Landing from './pages/Landing';        
 import PublicChat from './pages/PublicChat'; 
 import './App.css';
+import Login from './pages/Login';
+import './App.css';
 
-// This URL must match where your Python backend is running
-const API_URL = 'http://localhost:8000'; 
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const KEYCLOAK_URL = process.env.REACT_APP_KEYCLOAK_URL || 'http://localhost:8080';
+const KEYCLOAK_REALM = process.env.REACT_APP_KEYCLOAK_REALM || 'pathways';
+const KEYCLOAK_CLIENT_ID = process.env.REACT_APP_KEYCLOAK_CLIENT_ID || 'pathways-frontend';
+
 
 function App() {
   return (
@@ -25,6 +31,7 @@ function App() {
               path="/chat" 
               element={<PublicChat apiUrl={API_URL} />} 
             />
+            <Route path="/login" element={<Login />} />
 			
           </Routes>
         </main>

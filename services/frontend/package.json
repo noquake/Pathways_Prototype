@@ -10,6 +10,7 @@
     "keycloak-js": "^23.0.0",
     "axios": "^1.6.2",
     "react-markdown": "^9.0.1"
+
   },
   "devDependencies": {
     "react-scripts": "5.0.1"
@@ -18,7 +19,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "stop": "npx kill-port 3000"
   },
   "eslintConfig": {
     "extends": [

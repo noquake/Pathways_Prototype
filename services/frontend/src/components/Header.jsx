@@ -1,7 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function Header({ authenticated, onLogin, onLogout }) {
+
+  const navigate = useNavigate();
   // Styles consolidated into the component to keep it non-invasive
   const styles = {
     header: {
@@ -56,10 +58,8 @@ function Header({ authenticated, onLogin, onLogout }) {
           </button>
         ) : (
           <button 
-            onClick={onLogin} 
+            onClick={() => navigate('/login')} 
             style={styles.authButton}
-            onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
           >
             Login
           </button>
