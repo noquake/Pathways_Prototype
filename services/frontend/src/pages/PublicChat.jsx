@@ -13,7 +13,7 @@ function PublicChat({ apiUrl }) {
 		if (!query.trim() || loading) return;
 
 		const userMessage = { role: "user", content: query, citations: [] };
-		setMessages((prev) => [...prev, userMessage]);
+		setMessages((prev) => [userMessage, ...prev]);
 		setLoading(true);
 		setQuery("");
 
@@ -31,7 +31,7 @@ function PublicChat({ apiUrl }) {
 				citations: response.data.citations || [],
 				timestamp: response.data.timestamp,
 			};
-			setMessages((prev) => [...prev, assistantMessage]);
+			setMessages((prev) => [assistantMessage, ...prev]);
 		} catch (error) {
 			console.error("Error:", error);
 			const errorMessage = {
@@ -39,7 +39,7 @@ function PublicChat({ apiUrl }) {
 				content: "Sorry, I encountered an error. Please try again.",
 				citations: [],
 			};
-			setMessages((prev) => [...prev, errorMessage]);
+			setMessages((prev) => [errorMessage, ...prev]);
 		} finally {
 			setLoading(false);
 		}
@@ -53,6 +53,24 @@ function PublicChat({ apiUrl }) {
 					This is a public chat interface. No login required. Responses are
 					based on clinical pathways and do not constitute medical advice.
 				</p>
+
+				<form onSubmit={handleSubmit} className="input-container">
+					<input
+						type="text"
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+						placeholder="Ask a question about clinical pathways..."
+						className="query-input"
+						disabled={loading}
+					/>
+					<button
+						type="submit"
+						className="submit-button"
+						disabled={loading || !query.trim()}
+					>
+						Send
+					</button>
+				</form>
 
 				<div className="chat-messages">
 					{messages.length === 0 && (
@@ -91,23 +109,7 @@ function PublicChat({ apiUrl }) {
 					)}
 				</div>
 
-				<form onSubmit={handleSubmit} className="input-container">
-					<input
-						type="text"
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-						placeholder="Ask a question about clinical pathways..."
-						className="query-input"
-						disabled={loading}
-					/>
-					<button
-						type="submit"
-						className="submit-button"
-						disabled={loading || !query.trim()}
-					>
-						Send
-					</button>
-				</form>
+				
 			</div>
 		</div>
 	);
