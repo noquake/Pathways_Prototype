@@ -60,10 +60,10 @@ services:
       - ./keycloak/config:/opt/keycloak/data/import:ro
     healthcheck:
       test:
-        ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+        ["CMD-SHELL", "curl -f http://localhost:9000/health/ready || exit 1"]
       interval: 30s
       timeout: 15s
-      retries: 15
+      retries: 5
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.keycloak.rule=Host(`auth.pathways.localhost`)"

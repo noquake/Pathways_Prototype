@@ -1,10 +1,18 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 function Header({ authenticated, onLogin, onLogout }) {
-
+  const { isAuthenticated, login, logout, userRole } = useAuth();
   const navigate = useNavigate();
-  // Styles consolidated into the component to keep it non-invasive
+  const getDashboardLink = () => {
+    // You can use the helper flags here too if you prefer
+    if (userRole === 'admin') return '/admin-dashboard';
+    if (userRole === 'hr') return '/hr-dashboard';
+    if (userRole === 'practitioner') return '/practitioner-dashboard';
+    return '/dashboard';
+  };
+  
   const styles = {
     header: {
       backgroundColor: 'var(--accent-burgundy, #800020)', // Matches your theme
@@ -46,8 +54,15 @@ function Header({ authenticated, onLogin, onLogout }) {
         <h1 style={styles.logoText}>Pathways</h1>
       </Link>
 
-      <nav>
-        {authenticated ? (
+      <nav style={styles.navGroup}>
+        {isAuthenticated ? (
+          <>
+            <button 
+              style={styles.dashboardButton}
+              onClick={() => navigate(getDashboardLink())}
+            >
+              Dashboard
+            </button>
           <button 
             onClick={onLogout} 
             style={styles.authButton}
@@ -56,6 +71,7 @@ function Header({ authenticated, onLogin, onLogout }) {
           >
             Logout
           </button>
+          </>
         ) : (
           <button 
             onClick={() => navigate('/login')} 

@@ -1,76 +1,48 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import keycloak from '../keycloak'; // Import the instance we created above
-import './Login.css';
+import { useAuth } from '../hooks/useAuth'; 
+import './Login.css'; // Ensure path is correct based on where you put the CSS file
 
 function Login() {
   const navigate = useNavigate();
-  const [isLoginProcessing, setIsLoginProcessing] = useState(false);
-  const didInit = useRef(false);
+  const { isAuthenticated, userRole, login, isInitialized } = useAuth();
 
   useEffect(() => {
-    // Prevent double-initialization in React 18 Strict Mode
-    if (didInit.current) return;
-    didInit.current = true;
-
-    // Initialize Keycloak
-    keycloak.init({ 
-      onLoad: 'check-sso',
-      silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html' 
-    }).then(authenticated => {
-      if (authenticated) {
-        // User is already logged in, redirect them immediately
-        handlePostLogin();
-      }
-    }).catch(console.error);
-  }, []);
-
-  const handlePostLogin = () => {
-    // 1. Get User Groups/Roles from the token
-    // Note: Adjust the path below depending on how you mapped groups in Keycloak 
-    // (e.g. tokenParsed.groups, tokenParsed.realm_access.roles, or resource_access)
-    const roles = keycloak.tokenParsed?.realm_access?.roles || [];
-    const groups = keycloak.tokenParsed?.groups || []; // If you mapped 'groups' mapper
-
-    // 2. Logic to determine landing page
-    const landingPage = determineLandingPage(roles, groups);
-    
-    // 3. Navigate
-    navigate(landingPage);
-  };
-
-  const determineLandingPage = (roles, groups) => {
-    // Prioritize routing based on hierarchy or specific logic
-    // Checks for both Roles (realm) or Groups (if mapped)
-    if (roles.includes('admin') || groups.includes('admin-group')) {
-      return '/admin-dashboard';
-    } 
-    if (roles.includes('hr') || groups.includes('hr-group')) {
-      return '/hr-dashboard';
-    } 
-    if (roles.includes('practitioner') || groups.includes('practitioner-group')) {
-      return '/practitioner-dashboard';
+    if (isInitialized && isAuthenticated) {
+        let target = '/dashboard';
+        
+        if (userRole === 'admin') target = '/admin-dashboard';
+        else if (userRole === 'hr') target = '/hr-dashboard';
+        else if (userRole === 'practitioner') target = '/practitioner-dashboard';
+        
+        navigate(target);
     }
-    return '/dashboard'; 
-  };
+  }, [isInitialized, isAuthenticated, userRole, navigate]);
 
-  const handleLogin = () => {
-    setIsLoginProcessing(true);
-    keycloak.login(); 
-  };
+  // Uses the new .loading-screen class we added to CSS
+  if (!isInitialized) {
+      return <div className="loading-screen">Loading authentication...</div>;
+  }
 
   return (
+    // Uses .login-page from CSS
     <div className="login-page">
+      
+      {/* Uses .login-container from CSS */}
       <div className="login-container">
+        
+        {/* Matches .login-container h2 */}
         <h2>Login Required</h2>
+        
+        {/* Matches .login-container p */}
         <p>Please log in to access practitioner features, HR dashboard, or admin dashboard.</p>
         
+        {/* Uses .login-button from CSS */}
         <button 
-          onClick={handleLogin} 
+          onClick={login} 
           className="login-button"
-          disabled={isLoginProcessing}
         >
-          {isLoginProcessing ? 'Redirecting...' : 'Login with Keycloak'}
+          Login with Keycloak
         </button>
       </div>
     </div>

@@ -1,42 +1,56 @@
+/* src/Login.css */
 .login-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 60vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 60vh;
 }
 
 .login-container {
-  background: white;
-  padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  max-width: 400px;
+	background: white;
+	padding: 40px;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	text-align: center;
+	max-width: 400px;
 }
 
 .login-container h2 {
-  color: #1976d2;
-  margin-bottom: 20px;
+	/* CHANGED: Use your brand green instead of generic blue */
+	color: var(--color-secondary, #2d5a27);
+	margin-bottom: 20px;
 }
 
 .login-container p {
-  color: #666;
-  margin-bottom: 30px;
+	color: #666;
+	margin-bottom: 30px;
 }
 
 .login-button {
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: background-color 0.2s;
+	/* CHANGED: Use your brand burgundy instead of generic blue */
+	background-color: var(--color-primary, #630330);
+	color: white;
+	border: none;
+	padding: 12px 24px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 16px;
+	font-weight: 600;
+	transition: background-color 0.2s;
 }
 
 .login-button:hover {
-  background-color: #1565c0;
+	/* Darken the burgundy slightly for hover effect */
+	background-color: #4a0224;
 }
 
+/* ADDED: This was missing in your original file */
+.loading-screen {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	font-size: 1.2rem;
+	color: var(--color-secondary);
+	font-weight: 500;
+}
