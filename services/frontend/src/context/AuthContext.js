@@ -16,32 +16,47 @@ export const AuthProvider = ({ children }) => {
 		if (isRun.current) return;
 		isRun.current = true;
 
-		console.log("Initializing Keycloak..."); // LOG 1: Prove code is running
+		console.log("--- STARTING KEYCLOAK INIT (SINGLE RUN) ---");
 
 		keycloak
 			.init({
-				// onLoad: "check-sso",
-				onLoad: undefined,
-
-				// 1. DISABLE the hidden iframe check (This is the #1 cause of hanging)
+				onLoad: "check-sso",
 				checkLoginIframe: false,
-				// 2. REMOVE the silentCheckSsoRedirectUri line entirely for now
 				pkceMethod: "S256",
+				responseMode: "query",
+				enableLogging: true,
 			})
-			.then((authenticated) => {
-				console.log("Keycloak Init Finished. Authenticated: " + authenticated); // LOG 2: The Verdict
-				setIsAuthenticated(true);
+			.then((isAuthenticated) => {
+				console.log(
+					"--- INIT COMPLETE. AUTHENTICATED:",
+					isAuthenticated,
+					"---",
+				);
 
-				if (authenticated) {
-					const roles = keycloak.tokenParsed?.realm_access?.roles || [];
+				if (isAuthenticated) {
+					// 1. View the Raw Token (The confusing string)
+					console.log("Raw Token:", keycloak.token);
+
+					// 2. View the Decoded Data (The JSON payload)
+					console.log("Decoded Token Data:", keycloak.tokenParsed);
+
+					// Specific fields you might care about:
+					console.log("User ID:", keycloak.tokenParsed.sub);
+					console.log("Roles:", keycloak.tokenParsed.realm_access?.roles);
+					console.log("Expires At:", new Date(keycloak.tokenParsed.exp * 1000));
+				}
+				setIsAuthenticated(isAuthenticated);
+
+				if (isAuthenticated) {
+					const realmRoles = keycloak.tokenParsed?.realm_access?.roles || [];
 					const groups = keycloak.tokenParsed?.groups || [];
 
-					if (roles.includes("admin") || groups.includes("admin-group"))
+					if (realmRoles.includes("admin") || groups.includes("admin-group"))
 						setUserRole("admin");
-					else if (roles.includes("hr") || groups.includes("hr-group"))
+					else if (realmRoles.includes("hr") || groups.includes("hr-group"))
 						setUserRole("hr");
 					else if (
-						roles.includes("practitioner") ||
+						realmRoles.includes("practitioner") ||
 						groups.includes("practitioner-group")
 					)
 						setUserRole("practitioner");
@@ -62,20 +77,17 @@ export const AuthProvider = ({ children }) => {
 				}
 				setIsInitialized(true);
 			})
-			.catch(console.error);
+			.catch((err) => {
+				console.error("KEYCLOAK INIT ERROR:", err);
+				setIsInitialized(true);
+			});
 	}, []);
 
-	const login = () => keycloak.login().catch(console.error);
+	const login = () => keycloak.login();
 	const logout = () => {
-		// 1. Reset local state immediately
 		setIsAuthenticated(false);
 		setUserRole(null);
-
-		// Call standard Keycloak logout
-		keycloak.logout({
-			redirectUri: window.location.origin, // Send us back to localhost:3000
-			idTokenHint: keycloak.idToken, // CRITICAL: Tells Keycloak "Yes, it's really me, log me out"
-		});
+		keycloak.logout({ redirectUri: window.location.origin });
 	};
 
 	return (

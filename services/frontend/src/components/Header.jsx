@@ -4,6 +4,9 @@ import { useAuth } from '../hooks/useAuth';
 
 function Header() {
   const { isAuthenticated, logout, userRole } = useAuth();
+
+  console.log("HEADER RENDER DEBUG -> isAuthenticated:", isAuthenticated, "(Type:", typeof isAuthenticated, ")");
+
   const navigate = useNavigate();
   const getDashboardLink = () => {
     // You can use the helper flags here too if you prefer
@@ -74,26 +77,22 @@ function Header() {
           <>
             <button 
               style={styles.dashboardButton}
-              onClick={() => navigate(getDashboardLink())}
-            >
-              Dashboard
-            </button>
+              onClick={() => navigate('/dashboard')}> 
+              Dashboard </button>
           <button 
             onClick={logout} 
             style={styles.authButton}
             onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
             onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
           >
-            Logout
-          </button>
+            Logout</button>
           </>
         ) : (
           <button 
             onClick={() => navigate('/login')} 
             style={styles.authButton}
           >
-            Login
-          </button>
+            Login</button>
         )}
       </nav>
     </header>
