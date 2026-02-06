@@ -1,20 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import keycloak from '../keycloak'; // <--- 1. IMPORT IT DIRECTLY
+import { useAuth } from '../hooks/useAuth'; // Optional: for extra role checks
 import './Dashboard.css';
 
-function AdminDashboard({ apiUrl, keycloak }) {
+function AdminDashboard({ apiUrl }) {
+  const { userRole } = useAuth();
   const [stats, setStats] = useState(null);
   const [systemHealth, setSystemHealth] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (userRole !== 'admin') {
+      console.error("User is not an admin");
+      return;
+    }
     loadData();
-  }, []);
+  }, [userRole]);
 
   const loadData = async () => {
     try {
+
+      const config = {
+        headers: {
+            'Authorization': `Bearer ${keycloak.token}`
+        }
+      };
       // Check backend health
-      const healthResponse = await axios.get(`${apiUrl}/health`);
+      const healthResponse = await axios.get(`${apiUrl}/health`, config);
       setSystemHealth(healthResponse.data);
 
       // Load stats (same as HR for now)

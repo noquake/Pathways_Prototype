@@ -1,0 +1,95 @@
+networks:
+  default:
+    name: pathways_network
+
+volumes:
+  pathways_db_data:
+  keycloak_db_data:
+
+services:
+  # frontend:
+  #   image: pathways-frontend:0.0.3
+  #   build:
+  #     context: ./services/frontend
+  #     dockerfile: Dockerfile
+  #   container_name: pathways_frontend
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./services/frontend:/app
+  #     - /app/node_modules
+  #   environment:
+  #     REACT_APP_API_URL: http://localhost:8000
+  #     REACT_APP_KEYCLOAK_URL: http://localhost:8080
+  #     REACT_APP_KEYCLOAK_REALM: pathways
+  #     REACT_APP_KEYCLOAK_CLIENT_ID: pathways-frontend
+
+  keycloak_db:
+    image: postgres:16
+    container_name: keycloak_db
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.0
+    container_name: pathways_keycloak
+    command: start-dev
+    environment:
+      KC_HEALTH_ENABLED: "true"
+      KC_HEALTH_ENABLED_READINESS: "true"
+      KEYCLOAK_ADMIN: keycloak
+      KEYCLOAK_ADMIN_PASSWORD: keycloak
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak_db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+    ports:
+      - "8080:8080"
+    depends_on:
+      - keycloak_db
+    volumes:
+      - ./keycloak/config:/opt/keycloak/data/import:ro
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:9000/health/ready || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`auth.pathways.localhost`)"
+      - "traefik.http.routers.keycloak.entrypoints=web"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+
+  traefik:
+    image: traefik:v3.6
+    container_name: pathways_traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@example.com}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8081:8080" # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/letsencrypt:/letsencrypt
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.api.service=api@internal"

@@ -1,9 +1,37 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
-function Header({ authenticated, onLogin, onLogout }) {
-  // Styles consolidated into the component to keep it non-invasive
+function Header() {
+  const { isAuthenticated, logout, userRole } = useAuth();
+
+  console.log("HEADER RENDER DEBUG -> isAuthenticated:", isAuthenticated, "(Type:", typeof isAuthenticated, ")");
+
+  const navigate = useNavigate();
+  const getDashboardLink = () => {
+    // You can use the helper flags here too if you prefer
+    if (userRole === 'admin') return '/admin-dashboard';
+    if (userRole === 'hr') return '/hr-dashboard';
+    if (userRole === 'practitioner') return '/practitioner-dashboard';
+    return '/dashboard';
+  };
+  
   const styles = {
+    navGroup: {
+      display: 'flex',
+      gap: '10px',
+      alignItems: 'center'
+    },
+    dashboardButton: {
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      color: 'white',
+      border: 'none',
+      padding: '5px 12px',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '0.85rem',
+      fontWeight: '500'
+    },
     header: {
       backgroundColor: 'var(--accent-burgundy, #800020)', // Matches your theme
       color: 'white',
@@ -44,25 +72,27 @@ function Header({ authenticated, onLogin, onLogout }) {
         <h1 style={styles.logoText}>Pathways</h1>
       </Link>
 
-      <nav>
-        {authenticated ? (
+      <nav style={styles.navGroup}>
+        {isAuthenticated ? (
+          <>
+            <button 
+              style={styles.dashboardButton}
+              onClick={() => navigate('/dashboard')}> 
+              Dashboard </button>
           <button 
-            onClick={onLogout} 
+            onClick={logout} 
             style={styles.authButton}
             onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
             onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
           >
-            Logout
-          </button>
+            Logout</button>
+          </>
         ) : (
           <button 
-            onClick={onLogin} 
+            onClick={() => navigate('/login')} 
             style={styles.authButton}
-            onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
           >
-            Login
-          </button>
+            Login</button>
         )}
       </nav>
     </header>

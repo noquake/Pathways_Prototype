@@ -8,12 +8,20 @@ function PublicChat({ apiUrl }) {
 	const [messages, setMessages] = useState([]);
 	const [loading, setLoading] = useState(false);
 
+	const [showSidebar, setShowSidebar] = useState(true);
+
+	const allCitations = messages
+        .flatMap(msg => msg.citations || [])
+        // Optional: Filter out duplicates if needed
+        .filter((v, i, a) => a.findIndex(t => t.source_file === v.source_file) === i);
+
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (!query.trim() || loading) return;
 
 		const userMessage = { role: "user", content: query, citations: [] };
-		setMessages((prev) => [...prev, userMessage]);
+		setMessages((prev) => [userMessage, ...prev]);
 		setLoading(true);
 		setQuery("");
 
@@ -31,7 +39,7 @@ function PublicChat({ apiUrl }) {
 				citations: response.data.citations || [],
 				timestamp: response.data.timestamp,
 			};
-			setMessages((prev) => [...prev, assistantMessage]);
+			setMessages((prev) => [assistantMessage, ...prev]);
 		} catch (error) {
 			console.error("Error:", error);
 			const errorMessage = {
@@ -39,78 +47,87 @@ function PublicChat({ apiUrl }) {
 				content: "Sorry, I encountered an error. Please try again.",
 				citations: [],
 			};
-			setMessages((prev) => [...prev, errorMessage]);
+			setMessages((prev) => [errorMessage, ...prev]);
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	return (
-		<div className="chat-page">
-			<div className="chat-container">
-				<h2>Public Clinical Chat</h2>
-				<p className="disclaimer">
-					This is a public chat interface. No login required. Responses are
-					based on clinical pathways and do not constitute medical advice.
-				</p>
+        <div className="chat-page">
+            {/* WRAPPER FOR SIDE-BY-SIDE LAYOUT */}
+            <div className="chat-layout">
+                
+                {/* --- LEFT SIDE: CHAT --- */}
+                <div className="chat-main">
+                    <div className="chat-header" style={{padding: '20px', borderBottom: '1px solid #eee'}}>
+                        <h2 style={{margin:0}}>Public Clinical Chat</h2>
+                        <p className="disclaimer" style={{margin:'10px 0 0 0'}}>
+                            Responses based on clinical pathways. Not medical advice.
+                        </p>
+                    </div>
 
-				<div className="chat-messages">
-					{messages.length === 0 && (
-						<div className="welcome-message">
-							<p>
-								Welcome to Pathways Clinical Chat. Ask a question about clinical
-								pathways.
-							</p>
-						</div>
-					)}
-					{messages.map((msg, idx) => (
-						<div key={idx} className={`message ${msg.role}`}>
-							<div className="message-header">
-								{msg.role === "user" ? "You" : "Assistant"}
-							</div>
-							<div className="message-content">
-								<ReactMarkdown>{msg.content}</ReactMarkdown>
-							</div>
-							{msg.citations && msg.citations.length > 0 && (
-								<div className="citations">
-									<strong>Sources:</strong>
-									{msg.citations.map((cite, cIdx) => (
-										<div key={cIdx} className="citation-item">
-											<strong>{cite.source_file}</strong> (Chunk{" "}
-											{cite.chunk_index})
-										</div>
-									))}
-								</div>
-							)}
-						</div>
-					))}
-					{loading && (
-						<div className="message assistant">
-							<div className="message-content">Thinking...</div>
-						</div>
-					)}
-				</div>
+                    {/* Input Area (Pinned to Top) */}
+                    <form onSubmit={handleSubmit} className="input-container" style={{padding: '20px'}}>
+                        <input
+                            type="text"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Ask a question about clinical pathways..."
+                            className="query-input"
+                            disabled={loading}
+                        />
+                        <button type="submit" className="submit-button" disabled={loading || !query.trim()}>
+                            Send
+                        </button>
+                    </form>
 
-				<form onSubmit={handleSubmit} className="input-container">
-					<input
-						type="text"
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-						placeholder="Ask a question about clinical pathways..."
-						className="query-input"
-						disabled={loading}
-					/>
-					<button
-						type="submit"
-						className="submit-button"
-						disabled={loading || !query.trim()}
-					>
-						Send
-					</button>
-				</form>
-			</div>
-		</div>
-	);
+                    {/* Messages Area (Scrollable) */}
+                    <div className="chat-container">
+                        <div className="chat-messages">
+                            {messages.map((msg, idx) => (
+                                <div key={idx} className={`message ${msg.role}`}>
+                                    <div className="message-header">
+                                        {msg.role === "user" ? "You" : "Assistant"}
+                                    </div>
+                                    <div className="message-content">
+                                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                    </div>
+                                </div>
+                            ))}
+                            {loading && <div className="message assistant">Thinking...</div>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* --- RIGHT SIDE: REFERENCES SIDEBAR --- */}
+                {showSidebar && (
+                    <div className="reference-sidebar">
+                        <div className="sidebar-header">
+                            Referenced Documents ({allCitations.length})
+                        </div>
+                        <div className="sidebar-content">
+                            {allCitations.length === 0 ? (
+                                <p style={{color: '#999', fontStyle: 'italic'}}>
+                                    Sources will appear here as you chat.
+                                </p>
+                            ) : (
+                                allCitations.map((cite, idx) => (
+                                    <div key={idx} className="reference-card">
+                                        <div className="reference-title">📄 {cite.source_file}</div>
+                                        {/* Assuming 'cite' has text/snippet content, otherwise remove this div */}
+                                        <div className="reference-snippet">
+                                            Chunk ID: {cite.chunk_index}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }
 
 export default PublicChat;
