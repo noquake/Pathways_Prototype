@@ -147,7 +147,11 @@ def main():
         "embedding -> DB insertion...\n"
     )
 
-    for item in generate_chunks("/app/data/transformed_files/", chunker):
+    # Support both Docker and local paths
+    md_dir = os.getenv("TRANSFORMED_FILES_DIR", "/app/data/transformed_files/")
+    print(f"Looking for transformed files in: {md_dir}\n")
+    
+    for item in generate_chunks(md_dir, chunker):
         print(f"Processing chunk #{item['global_index']}...\n")
 
         # contextualization already happened in the generator

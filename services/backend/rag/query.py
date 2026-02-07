@@ -42,7 +42,7 @@ def rag_api_llm(cur, query: str, top_k: int = 5, model_name: str = "gpt-4", api_
 
     # Retrieve top-k chunks
     cur.execute('''
-        SELECT chunk_text, source_file
+        SELECT chunk_text, doc_name as source_file
         FROM items
         ORDER BY embedding <-> %s::vector
         LIMIT %s
@@ -60,17 +60,23 @@ def rag_api_llm(cur, query: str, top_k: int = 5, model_name: str = "gpt-4", api_
         context = "\n\n".join([f"[{i+1}] {r[1]}: {r[0]}" for i, r in enumerate(results)])
     
     prompt = f"""
-You are a clinical assistant. Use the following context sources to answer the question.
+You are a clinical assistant that STRICTLY follows institutional protocols.
 
-IMPORTANT: When you reference information from the context, cite the source using [1], [2], etc.
+CRITICAL INSTRUCTIONS:
+- You MUST answer ONLY based on the provided context sources below
+- The context sources are AUTHORITATIVE clinical protocols that you must follow exactly
+- DO NOT use any external knowledge or add caveats about missing information
+- DO NOT say "the context doesn't contain" - if information appears in the sources or their references, state it definitively
+- When information is in the sources, present it as established medical protocol
+- ALWAYS cite sources using [1], [2], etc. when referencing information
 
-Context Sources:
+Context Sources (AUTHORITATIVE INSTITUTIONAL PROTOCOLS):
 {context}
 
 Question:
 {query}
 
-Provide a clear, structured answer using the context above. Include citation numbers [1], [2], etc. when referencing specific information.
+Provide a definitive answer based ONLY on the context above. Present the information from the sources as established protocol without hedging or adding external caveats.
 
 Answer:
 """
@@ -140,7 +146,7 @@ def rag_ollama(cur, query: str, top_k: int = 5, model_name: str = "llama2"):
 
     # Retrieve top-k chunks
     cur.execute('''
-        SELECT chunk_text, source_file
+        SELECT chunk_text, doc_name as source_file
         FROM items
         ORDER BY embedding <-> %s::vector
         LIMIT %s
@@ -158,17 +164,23 @@ def rag_ollama(cur, query: str, top_k: int = 5, model_name: str = "llama2"):
         context = "\n\n".join([f"[{i+1}] {r[1]}: {r[0]}" for i, r in enumerate(results)])
         
     prompt = f"""
-You are a clinical assistant. Use the following context sources to answer the question.
+You are a clinical assistant that STRICTLY follows institutional protocols.
 
-IMPORTANT: When you reference information from the context, cite the source using [1], [2], etc.
+CRITICAL INSTRUCTIONS:
+- You MUST answer ONLY based on the provided context sources below
+- The context sources are AUTHORITATIVE clinical protocols that you must follow exactly
+- DO NOT use any external knowledge or add caveats about missing information
+- DO NOT say "the context doesn't contain" - if information appears in the sources or their references, state it definitively
+- When information is in the sources, present it as established medical protocol
+- ALWAYS cite sources using [1], [2], etc. when referencing information
 
-Context Sources:
+Context Sources (AUTHORITATIVE INSTITUTIONAL PROTOCOLS):
 {context}
 
 Question:
 {query}
 
-Provide a clear, structured answer using the context above. Include citation numbers [1], [2], etc. when referencing specific information.
+Provide a definitive answer based ONLY on the context above. Present the information from the sources as established protocol without hedging or adding external caveats.
 
 Answer:
 """
