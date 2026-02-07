@@ -114,7 +114,7 @@ async def chat_public(request: ChatRequest):
         
         # Retrieve top-k chunks
         cur.execute('''
-            SELECT chunk_index, chunk_text, chunk_length, source_file
+            SELECT chunk_id, chunk_text, chunk_length, doc_name as source_file
             FROM items
             ORDER BY embedding <-> %s::vector
             LIMIT %s
@@ -194,7 +194,7 @@ async def chat_practitioner(
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
         
         cur.execute('''
-            SELECT chunk_index, chunk_text, chunk_length, source_file
+            SELECT chunk_id, chunk_text, chunk_length, doc_name as source_file
             FROM items
             ORDER BY embedding <-> %s::vector
             LIMIT %s
