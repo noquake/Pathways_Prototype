@@ -9,6 +9,9 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from jose import JWTError, jwt
 import httpx
+from logger import query_logger
+import time
+import uuid
 
 # Import existing RAG components
 import sys
@@ -83,13 +86,13 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     citations: List[Dict[str, Any]]
-    timestamp: datetime
+    timestamp: str
     role: str
 
 class ChatHistoryItem(BaseModel):
     query: str
     response: str
-    timestamp: datetime
+    timestamp: str
 
 # Health check
 @app.get("/health")
@@ -100,19 +103,29 @@ async def health_check():
 # Public chat endpoint
 @app.post("/chat/public", response_model=ChatResponse)
 async def chat_public(request: ChatRequest):
-    """
-    Public chat endpoint - no authentication required.
-    No memory/context stored.
-    """
+
+    session_id = str(uuid.uuid4())
+    start_time = time.time()
+    
     try:
+        print("="*60)
+        print("=== NEW QUERY RECEIVED ===")
+        print(f"Session ID: {session_id}")
+        print(f"Query: {request.query}")
+        print(f"Model: {request.model}")
+        print(f"Top K: {request.top_k}")
+        print("="*60)
+
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
-        # Get embeddings and perform RAG
+        print("\n[1/6] Generating embeddings...")
         query_emb = get_embeddings([request.query])[0]
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
+        print(f"✓ Embedding generated: dimension={len(query_emb_list)}\n")
         
         # Retrieve top-k chunks
+        print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
         cur.execute('''
             SELECT chunk_id, chunk_text, chunk_length, doc_name as source_file
             FROM items
@@ -121,13 +134,27 @@ async def chat_public(request: ChatRequest):
         ''', (query_emb_list, request.top_k))
         
         results = cur.fetchall()
-        citations = [dict(r) for r in results]
+        print(f"DEBUG: Retrieved {len(results)} results\n")
+
+        citations = []
+        for r in results:
+            citation = {
+                "chunk_id": int(r['chunk_id']),
+                "chunk_text": str(r['chunk_text']),
+                "chunk_length": int(r['chunk_length']) if r['chunk_length'] is not None else 0,
+                "source_file": str(r['source_file']) if r['source_file'] else "",
+                "similarity_score": float(r['similarity_score'])
+            }
+            citations.append(citation)
         
+        if citations:
+            print(f"\nTop chunk:")
+            print(f"  - Source: {citations[0]['source_file']}")
+            print(f"  - Similarity: {citations[0]['similarity_score']:.4f}")
+        
+        print(f"\n[3/6] Sending to {request.model}...")
         # Generate response using LLM
-        if request.model == "ollama":
-            # Use ollama (local) - fallback option
-            response_text = rag_ollama(cur, request.query, top_k=request.top_k)
-        elif request.model == "gemini":
+        if request.model == "gemini":
             # Use Gemini API (default)
             response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
                                        model_name=request.model_name, api_provider="gemini")
@@ -135,6 +162,8 @@ async def chat_public(request: ChatRequest):
             # Default to Gemini if unknown model specified
             response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
                                        model_name="gemini-2.5-flash", api_provider="gemini")
+        
+        print(f"\n[4/6] Response received:")
         
         # Log public query (anonymized)
         cur.execute('''
@@ -149,7 +178,7 @@ async def chat_public(request: ChatRequest):
         return ChatResponse(
             response=response_text,
             citations=citations,
-            timestamp=datetime.now(),
+            timestamp=datetime.now().isoformat(),
             role="public"
         )
     except Exception as e:

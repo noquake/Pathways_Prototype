@@ -30,7 +30,8 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: password
-      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 20
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 10
+      PGADMIN_CONFIG_FILE_LOG_LEVEL: 10
     ports:
       - "7001:80"
     volumes:
@@ -38,10 +39,39 @@ services:
     depends_on:
       - pathways_db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/misc/ping"]
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 30s
+  backend:
+    image: pathways-backend:0.3.18
+    build:
+      context: ./services/backend
+      dockerfile: Dockerfile
+    container_name: pathways_backend
+    environment:
+      DATABASE_URL: postgresql://admin:password@pathways_db:5432/pathways
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: pathways
+      RUN_INGESTION: true
+      # JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+
+      PYTHONUNBUFFERED: 1
+
+      HF_TOKEN: ""
+      HUGGING_FACE_HUB_TOKEN: ""
+
+    volumes:
+      - ./data:/app/data
+      - ./model_cache:/root/.cache/huggingface
+      - ./services/backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - pathways_db
 
   # keycloak_db:
   #   image: postgres:16
@@ -112,39 +142,20 @@ services:
   #     - "traefik.http.routers.api.rule=Host(`traefik.localhost`)"
   #     - "traefik.http.routers.api.service=api@internal"
 
-  backend:
-    build:
-      context: ./services/backend
-      dockerfile: Dockerfile
-    container_name: pathways_backend
-    environment:
-      DATABASE_URL: postgresql://admin:password@pathways_db:5432/pathways
-      KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_REALM: pathways
-      JWT_SECRET: ${JWT_SECRET}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-    ports:
-      - "8000:8000"
-    depends_on:
-      - pathways_db
-      # - keycloak
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-  frontend:
-    build:
-      context: ./services/frontend
-      dockerfile: Dockerfile
-    container_name: pathways_frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./services/frontend:/app
-      - /app/node_modules
-    environment:
-      REACT_APP_API_URL: http://localhost:8000
-      REACT_APP_KEYCLOAK_URL: http://localhost:8080
-      REACT_APP_KEYCLOAK_REALM: pathways
-      REACT_APP_KEYCLOAK_CLIENT_ID: pathways-frontend
-    depends_on:
-      - backend
+  # frontend:
+  #   build:
+  #     context: ./services/frontend
+  #     dockerfile: Dockerfile
+  #   container_name: pathways_frontend
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./services/frontend:/app
+  #     - /app/node_modules
+  #   environment:
+  #     REACT_APP_API_URL: http://localhost:8000
+  #     REACT_APP_KEYCLOAK_URL: http://localhost:8080
+  #     REACT_APP_KEYCLOAK_REALM: pathways
+  #     REACT_APP_KEYCLOAK_CLIENT_ID: pathways-frontend
+  #   depends_on:
+  #     - backend
