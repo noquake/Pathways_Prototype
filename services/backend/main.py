@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -12,9 +15,7 @@ import httpx
 from logger import query_logger
 import time
 import uuid
-from dotenv import load_dotenv
 
-load_dotenv()
 
 # Import existing RAG components
 import sys
