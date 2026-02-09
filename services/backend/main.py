@@ -12,6 +12,9 @@ import httpx
 from logger import query_logger
 import time
 import uuid
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Import existing RAG components
 import sys
@@ -83,9 +86,21 @@ class ChatRequest(BaseModel):
     model_name: Optional[str] = "gemini-2.5-flash"  # Specific Gemini model to use (2026 API)
     top_k: Optional[int] = 5
 
+# class ChatResponse(BaseModel):
+#     response: str
+#     citations: List[Dict[str, Any]]
+#     timestamp: str
+#     role: str
+
+class Citation(BaseModel):
+    chunk_id: str
+    chunk_text: str
+    chunk_length: int
+    source_file: str
+
 class ChatResponse(BaseModel):
     response: str
-    citations: List[Dict[str, Any]]
+    citations: List[Citation]
     timestamp: str
     role: str
 
@@ -164,8 +179,26 @@ async def chat_public(request: ChatRequest):
                                        model_name="gemini-2.5-flash", api_provider="gemini")
         
         print(f"\n[4/6] Response received:")
-        
-        # Log public query (anonymized)
+        print(f"✓ Length: {len(response_text)} chars")
+        print(f"✓ Preview: {response_text[:150]}...")
+
+        response_time_ms = int((time.time() - start_time) * 1000)
+
+        print(f"\n[5/6] Logging to Supabase...")
+        query_logger.log_query(
+            session_id=session_id,
+            user_query=request.query,
+            query_embedding=query_emb_list,
+            bot_response=response_text,
+            retrieved_chunks=citations,
+            llm_provider=request.model,
+            llm_model=request.model_name if request.model == "gemini" else "llama2",
+            response_time_ms=response_time_ms,
+            pathway_id=None,  #TODO: FIGURE OUT PATHWAY ID TRACKING/TABLE
+            user_role="public"
+        )
+
+
         cur.execute('''
             INSERT INTO chat_logs_public (query, response, timestamp)
             VALUES (%s, %s, %s)
@@ -174,14 +207,42 @@ async def chat_public(request: ChatRequest):
         
         cur.close()
         conn.close()
+
+        print(f"\n[6/6] Creating response...")
         
-        return ChatResponse(
+        # different citations for end users, omitting the similarity score
+        client_citations = [
+            {
+                "chunk_id": str(c['chunk_id']),
+                "chunk_text": c['chunk_text'],
+                "chunk_length": c['chunk_length'],
+                "source_file": c['source_file']
+            }
+            for c in citations
+        ]
+        
+        response_obj = ChatResponse(
             response=response_text,
-            citations=citations,
+            citations=client_citations,
             timestamp=datetime.now().isoformat(),
             role="public"
         )
+
+        print(f"✓ Response time: {response_time_ms}ms")
+        print("="*60)
+        print("=== QUERY COMPLETE ===")
+        print("="*60)
+
+        return response_obj
+    
     except Exception as e:
+        print("\n" + "!"*60)
+        print("!!! ERROR OCCURRED !!!")
+        print(f"Query: {request.query}")
+        print(f"Error: {e}")
+        print("!"*60)
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 # Practitioner chat endpoint

@@ -7,7 +7,7 @@ __pycache__/
 services/backend/rag/test_gemini.py
 
 # Environment variables and secrets
-.env*
+.env
 .env.local
 .env.*.local
 
