@@ -68,10 +68,10 @@ def save_all_document_formats(conv_res: ConversionResult, output_dir: Path):
     #     image_mode=ImageRefMode.EMBEDDED
     # )
 
-    save_document_doctags(
-        conv_res.document,
-        output_dir / f"{doc_filename}.doctags.txt"
-    )
+    # save_document_doctags(
+    #     conv_res.document,
+    #     output_dir / f"{doc_filename}.doctags.txt"
+    # )
 
 # True if successful, False otherwise
 def handle_successful_conversion(conv_res: ConversionResult, output_dir: Path) -> bool:
@@ -174,7 +174,7 @@ def main():
     )
     # Write outputs to ./transformed_files and log a summary.
     _success_count, _partial_success_count, failure_count = export_conversion_summary(
-        conv_results, output_dir=Path("/app/data/transformed_files")
+        conv_results, output_dir=Path("/app/data/transformed_files/")
     )
 
     end_time = time.time() - start_time

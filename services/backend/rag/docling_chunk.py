@@ -148,7 +148,7 @@ def main():
     )
 
     # Support both Docker and local paths
-    md_dir = os.getenv("TRANSFORMED_FILES_DIR", "/app/data/transformed_files/")
+    md_dir = os.getenv("TRANSFORMED_FILES_DIR", "/app/data/transformed_files")
     print(f"Looking for transformed files in: {md_dir}\n")
     
     for item in generate_chunks(md_dir, chunker):

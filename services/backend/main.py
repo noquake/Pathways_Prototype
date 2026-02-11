@@ -143,10 +143,15 @@ async def chat_public(request: ChatRequest):
         # Retrieve top-k chunks
         print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
         cur.execute('''
-            SELECT chunk_id, chunk_text, chunk_length, doc_name as source_file
-            FROM items
-            ORDER BY embedding <-> %s::vector
-            LIMIT %s
+        SELECT 
+        chunk_id, 
+        chunk_text, 
+        chunk_length, 
+        doc_name as source_file,
+        (embedding <-> %s::vector) as distance
+        FROM items
+        ORDER BY distance
+        LIMIT %s
         ''', (query_emb_list, request.top_k))
         
         results = cur.fetchall()
@@ -159,10 +164,10 @@ async def chat_public(request: ChatRequest):
                 "chunk_text": str(r['chunk_text']),
                 "chunk_length": int(r['chunk_length']) if r['chunk_length'] is not None else 0,
                 "source_file": str(r['source_file']) if r['source_file'] else "",
-                "similarity_score": float(r['similarity_score'])
+                "similarity_score": float(r['distance'])  # ← Changed this line
             }
             citations.append(citation)
-        
+
         if citations:
             print(f"\nTop chunk:")
             print(f"  - Source: {citations[0]['source_file']}")
@@ -198,13 +203,6 @@ async def chat_public(request: ChatRequest):
             pathway_id=None,  #TODO: FIGURE OUT PATHWAY ID TRACKING/TABLE
             user_role="public"
         )
-
-
-        cur.execute('''
-            INSERT INTO chat_logs_public (query, response, timestamp)
-            VALUES (%s, %s, %s)
-        ''', (request.query[:100], response_text[:500], datetime.now()))
-        conn.commit()
         
         cur.close()
         conn.close()
