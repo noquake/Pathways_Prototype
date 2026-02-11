@@ -8,6 +8,8 @@ from rag.scrape_docs import main as scrape_docs
 from rag.transform_data import main as transform_data
 from rag.default_chunk import main as default_chunk
 from rag.docling_chunk import main as docling_chunk
+from rag.docling_chunk_to_supabase import main as docling_chunk_to_supabase
+
 
 def spin_up_docker():
     # subprocess.run(["docker", "compose", "up", "-d", ])
@@ -44,7 +46,8 @@ def main():
 
     # chunk and embed the transformed data for use in retrieval-augmented generation
     print("Starting document chunking and embedding...\n")
-    docling_chunk()
+    docling_chunk_to_supabase()
+    # docling_chunk()
     # default_chunk()
     print("Document chunking and embedding complete.\n")
 
