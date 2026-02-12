@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 load_dotenv()
-
+from supabase import create_client, Client
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -8,8 +8,6 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 import os
 from datetime import datetime
-import psycopg2
-from psycopg2.extras import RealDictCursor
 from jose import JWTError, jwt
 import httpx
 from logger import query_logger
@@ -20,7 +18,7 @@ import uuid
 # Import existing RAG components
 import sys
 sys.path.append('/app')
-from rag.query import get_embeddings, rag_ollama, rag_api_llm
+from rag.query import get_embeddings, rag_api_llm
 
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 
@@ -34,30 +32,11 @@ app.add_middleware(
 )
 
 # Database connection
-def get_db_connection():
-    """Get PostgreSQL database connection."""
-    db_url = os.getenv("DATABASE_URL", "postgresql://admin:password@db:5432/pathways")
-    # Simple parsing for MVP 1
-    if db_url.startswith("postgresql://"):
-        parts = db_url.replace("postgresql://", "").split("@")
-        if len(parts) == 2:
-            user_pass = parts[0].split(":")
-            host_port_db = parts[1].split("/")
-            return psycopg2.connect(
-                user=user_pass[0],
-                password=user_pass[1],
-                host=host_port_db[0].split(":")[0],
-                port=int(host_port_db[0].split(":")[1]) if ":" in host_port_db[0] else 5432,
-                dbname=host_port_db[1].split("?")[0]
-            )
-    # Fallback
-    return psycopg2.connect(
-        dbname="pathways",
-        user="admin",
-        password="password",
-        host="db",
-        port=5432
-    )
+def get_supabase_client():
+    """Get Supabase client."""
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_ANON_KEY")
+    return create_client(supabase_url, supabase_key)
 
 # JWT validation
 async def verify_token(authorization: Optional[str] = Header(None)) -> Optional[Dict[str, Any]]:
@@ -116,10 +95,8 @@ async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "backend-api"}
 
-# Public chat endpoint
 @app.post("/chat/public", response_model=ChatResponse)
 async def chat_public(request: ChatRequest):
-
     session_id = str(uuid.uuid4())
     start_time = time.time()
     
@@ -132,29 +109,26 @@ async def chat_public(request: ChatRequest):
         print(f"Top K: {request.top_k}")
         print("="*60)
 
-        conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
+        supabase = get_supabase_client()
         
         print("\n[1/6] Generating embeddings...")
         query_emb = get_embeddings([request.query])[0]
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
         print(f"✓ Embedding generated: dimension={len(query_emb_list)}\n")
         
-        # Retrieve top-k chunks
+        # Retrieve top-k chunks using Supabase RPC function
         print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
-        cur.execute('''
-        SELECT 
-        chunk_id, 
-        chunk_text, 
-        chunk_length, 
-        doc_name as source_file,
-        (embedding <-> %s::vector) as distance
-        FROM items
-        ORDER BY distance
-        LIMIT %s
-        ''', (query_emb_list, request.top_k))
         
-        results = cur.fetchall()
+        # Call the match_pathway_chunks RPC function
+        response = supabase.rpc(
+            'match_pathway_chunks',
+            {
+                'query_embedding': query_emb_list,
+                'match_count': request.top_k
+            }
+        ).execute()
+        
+        results = response.data
         print(f"DEBUG: Retrieved {len(results)} results\n")
 
         citations = []
@@ -163,8 +137,8 @@ async def chat_public(request: ChatRequest):
                 "chunk_id": int(r['chunk_id']),
                 "chunk_text": str(r['chunk_text']),
                 "chunk_length": int(r['chunk_length']) if r['chunk_length'] is not None else 0,
-                "source_file": str(r['source_file']) if r['source_file'] else "",
-                "similarity_score": float(r['distance'])  # ← Changed this line
+                "source_file": str(r['pathway_id']),  # Using pathway_id as source
+                "similarity_score": float(r['similarity'])
             }
             citations.append(citation)
 
@@ -176,13 +150,21 @@ async def chat_public(request: ChatRequest):
         print(f"\n[3/6] Sending to {request.model}...")
         # Generate response using LLM
         if request.model == "gemini":
-            # Use Gemini API (default)
-            response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
-                                       model_name=request.model_name, api_provider="gemini")
+            response_text = rag_api_llm(
+                supabase,  # Pass supabase client instead of cursor
+                request.query, 
+                top_k=request.top_k, 
+                model_name=request.model_name, 
+                api_provider="gemini"
+            )
         else:
-            # Default to Gemini if unknown model specified
-            response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
-                                       model_name="gemini-2.5-flash", api_provider="gemini")
+            response_text = rag_api_llm(
+                supabase, 
+                request.query, 
+                top_k=request.top_k, 
+                model_name="gemini-2.5-flash", 
+                api_provider="gemini"
+            )
         
         print(f"\n[4/6] Response received:")
         print(f"✓ Length: {len(response_text)} chars")
@@ -200,16 +182,12 @@ async def chat_public(request: ChatRequest):
             llm_provider=request.model,
             llm_model=request.model_name if request.model == "gemini" else "llama2",
             response_time_ms=response_time_ms,
-            pathway_id=None,  #TODO: FIGURE OUT PATHWAY ID TRACKING/TABLE
+            pathway_id=None,
             user_role="public"
         )
         
-        cur.close()
-        conn.close()
-
         print(f"\n[6/6] Creating response...")
         
-        # different citations for end users, omitting the similarity score
         client_citations = [
             {
                 "chunk_id": str(c['chunk_id']),

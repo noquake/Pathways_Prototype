@@ -45,7 +45,6 @@ def main():
     print("Data transformation complete.\n")
 
     # chunk and embed the transformed data for use in retrieval-augmented generation
-    print("Starting document chunking and embedding...\n")
     docling_chunk_to_supabase()
     # docling_chunk()
     # default_chunk()

@@ -1,6 +1,4 @@
 from pathlib import Path
-import psycopg2
-from pgvector.psycopg2 import register_vector
 import hashlib
 from sentence_transformers import SentenceTransformer # type: ignore
 from docling.chunking import HybridChunker
@@ -11,6 +9,10 @@ from transformers import AutoTokenizer
 import os
 import re
 from datetime import datetime
+from supabase import create_client, Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 MAX_TOKENS = 384
 
@@ -69,110 +71,89 @@ def generate_chunks(md_dir: str, chunker: HybridChunker):
                 "chunk_text": chunk_text
             }
 
-def create_db_connection():
-    DATABASE_URL = os.getenv("DATABASE_URL")
-    conn = psycopg2.connect(DATABASE_URL)
-    cur = conn.cursor()
+def create_supabase_client():
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
     
-    cur.execute('CREATE EXTENSION IF NOT EXISTS vector;')
-    register_vector(conn)
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+    return supabase
+
+def create_tables():
+    """
+    Create tables in Supabase using SQL.
+    Run this ONCE in Supabase SQL Editor, then you can comment it out.
+    """
     
-    # pathway_documents table
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS pathway_documents (
-            pathway_id VARCHAR(100) PRIMARY KEY,
-            doc_name TEXT UNIQUE NOT NULL,
-            doc_display_name VARCHAR(255) NOT NULL,
-            doc_version VARCHAR(50),
-            doc_category VARCHAR(100),
-            doc_file_path TEXT,
-            doc_last_modified TIMESTAMPTZ,
-            active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMPTZ DEFAULT NOW()
-        );
-    """)
+    sql = """
+    -- Enable vector extension (if not already enabled)
+    CREATE EXTENSION IF NOT EXISTS vector;
     
-    # pathway_chunks table
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS pathway_chunks (
-            chunk_id BIGSERIAL PRIMARY KEY,
-            chunk_hash TEXT UNIQUE NOT NULL,
-            pathway_id VARCHAR(100) NOT NULL REFERENCES pathway_documents(pathway_id),
-            doc_chunk_index INTEGER NOT NULL,
-            chunk_text TEXT NOT NULL,
-            chunk_length INTEGER NOT NULL,
-            embedding VECTOR(384) NOT NULL,
-            created_at TIMESTAMPTZ DEFAULT NOW()
-        );
-    """)
+    -- pathway_documents table
+    CREATE TABLE IF NOT EXISTS pathway_documents (
+        pathway_id VARCHAR(100) PRIMARY KEY,
+        doc_name TEXT UNIQUE NOT NULL,
+        doc_display_name VARCHAR(255) NOT NULL,
+        doc_version VARCHAR(50),
+        doc_category VARCHAR(100),
+        doc_file_path TEXT,
+        doc_last_modified TIMESTAMPTZ,
+        active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
     
-    # Basic indexes only (HNSW created after data load)
-    cur.execute("""
-        CREATE INDEX IF NOT EXISTS idx_pathway_chunks_pathway_id
-        ON pathway_chunks (pathway_id);
-    """)
+    -- pathway_chunks table
+    CREATE TABLE IF NOT EXISTS pathway_chunks (
+        chunk_id BIGSERIAL PRIMARY KEY,
+        chunk_hash TEXT UNIQUE NOT NULL,
+        pathway_id VARCHAR(100) NOT NULL REFERENCES pathway_documents(pathway_id),
+        doc_chunk_index INTEGER NOT NULL,
+        chunk_text TEXT NOT NULL,
+        chunk_length INTEGER NOT NULL,
+        embedding VECTOR(384) NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
     
-    cur.execute("""
-        CREATE INDEX IF NOT EXISTS idx_pathway_chunks_hash
-        ON pathway_chunks (chunk_hash);
-    """)
+    -- Basic indexes
+    CREATE INDEX IF NOT EXISTS idx_pathway_chunks_pathway_id
+    ON pathway_chunks (pathway_id);
     
-    conn.commit()
-    return conn, cur
+    CREATE INDEX IF NOT EXISTS idx_pathway_chunks_hash
+    ON pathway_chunks (chunk_hash);
+    """
+    
+    print("Copy and run this SQL in Supabase SQL Editor:")
+    print("="*60)
+    print(sql)
+    print("="*60)
 
 def get_embedding(contextualized_chunk):
     return model.encode(contextualized_chunk)
 
-def insert_pathway_document(metadata: dict, cur, conn):
+def insert_pathway_document(metadata: dict, supabase):
     """Insert or update pathway document metadata."""
-    cur.execute("""
-        INSERT INTO pathway_documents (
-            pathway_id,
-            doc_name,
-            doc_display_name,
-            doc_version,
-            doc_category,
-            doc_file_path,
-            doc_last_modified
-        )
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (pathway_id) DO UPDATE SET
-            doc_name = EXCLUDED.doc_name,
-            doc_version = EXCLUDED.doc_version,
-            doc_last_modified = EXCLUDED.doc_last_modified
-    """, (
-        metadata["pathway_id"],
-        metadata["doc_name"],
-        metadata["doc_display_name"],
-        metadata["doc_version"],
-        get_pathway_category(metadata["pathway_id"]),
-        metadata.get("doc_file_path"),
-        metadata["doc_last_modified"]
-    ))
-    conn.commit()
+    data = {
+        "pathway_id": metadata["pathway_id"],
+        "doc_name": metadata["doc_name"],
+        "doc_display_name": metadata["doc_display_name"],
+        "doc_version": metadata["doc_version"],
+        "doc_category": get_pathway_category(metadata["pathway_id"]),
+        "doc_file_path": metadata.get("doc_file_path"),
+        "doc_last_modified": metadata["doc_last_modified"].isoformat()
+    }
+    supabase.table("pathway_documents").upsert(data).execute()
 
-def insert_chunk_and_embedding_to_db(chunk, embedding, cur, conn):
-    cur.execute("""
-        INSERT INTO pathway_chunks (
-            chunk_hash,
-            pathway_id,
-            doc_chunk_index,
-            chunk_text,
-            chunk_length,
-            embedding
-        )
-        VALUES (%s, %s, %s, %s, %s, %s::vector)
-        ON CONFLICT (chunk_hash) DO NOTHING
-    """, (
-        chunk["chunk_hash"],
-        chunk["pathway_id"],  # Now using pathway_id instead of doc_name
-        chunk["doc_chunk_index"],
-        chunk["chunk_text"],
-        len(chunk["chunk_text"]),
-        embedding.tolist() if hasattr(embedding, "tolist") else embedding,
-    ))
-    conn.commit()
-
+def insert_chunk_and_embedding_to_db(chunk, embedding, supabase):
+    data = {
+        "chunk_hash": chunk["chunk_hash"],
+        "pathway_id": chunk["pathway_id"],
+        "doc_chunk_index": chunk["doc_chunk_index"],
+        "chunk_text": chunk["chunk_text"],
+        "chunk_length": len(chunk["chunk_text"]),
+        "embedding": embedding.tolist() if hasattr(embedding, "tolist") else embedding
+    }
+    
+    # upsert will insert or update based on chunk_hash uniqueness
+    supabase.table("pathway_chunks").upsert(data).execute()
 
 # ---------------------------------------------------- NEW DOC ----------------------------------------------------
 
@@ -250,8 +231,8 @@ def main():
     print("="*60 + "\n")
     
     print("Creating connection to database...\n")
-    conn, cur = create_db_connection()
-    
+    supabase = create_supabase_client()  # Changed this line
+        
     md_dir = os.getenv("TRANSFORMED_FILES_DIR", "/app/data/transformed_files")
     print(f"Looking for files in: {md_dir}\n")
     
@@ -263,19 +244,21 @@ def main():
         try:
             if item["type"] == "document":
                 print(f"📄 Registering pathway: {item['metadata']['pathway_id']}")
-                insert_pathway_document(item["metadata"], cur, conn)
+                insert_pathway_document(item["metadata"], supabase)
                 doc_count += 1
             
             elif item["type"] == "chunk":
                 print(f"  └─ Chunk #{item['global_index']}...", end=" ")
                 emb = get_embedding(item["chunk_text"])
-                insert_chunk_and_embedding_to_db(item, emb, cur, conn)
-                chunk_count += 1  # ← CRITICAL: Increment counter
+                insert_chunk_and_embedding_to_db(item, emb, supabase)
+                chunk_count += 1
                 print("✓")
         
         except Exception as e:
             error_count += 1
-            print(f"❌ Error: {e}")
+            print(f"\n❌ Error processing item: {e}")
+            import traceback
+            traceback.print_exc()  # This will help you debug
             continue
     
     # Summary
@@ -290,20 +273,16 @@ def main():
     # Create HNSW index AFTER data is loaded
     if chunk_count > 0:
         print(f"Creating vector index on {chunk_count} chunks...")
-        try:
-            cur.execute("""
-                CREATE INDEX IF NOT EXISTS idx_pathway_chunks_embedding
-                ON pathway_chunks USING hnsw (embedding vector_cosine_ops);
-            """)
-            conn.commit()
-            print("✓ Vector index created successfully\n")
-        except Exception as e:
-            print(f"⚠ Warning: Could not create HNSW index: {e}")
-            print("You can create it manually later.\n")
+        print("⚠️  Run this SQL in Supabase SQL Editor:")
+        print("""
+        CREATE INDEX IF NOT EXISTS idx_pathway_chunks_embedding
+        ON pathway_chunks USING hnsw (embedding vector_cosine_ops);
+        """)
+        print("(You only need to do this once)")
     else:
-        print("⚠ No chunks to index.\n")
+        print("⚠️  No chunks to index.\n")
     
-    conn.close()
+    # No conn.close() needed
     print("Chunking and embedding complete.\n")
 
 
