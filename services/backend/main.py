@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -9,6 +12,10 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from jose import JWTError, jwt
 import httpx
+from logger import query_logger
+import time
+import uuid
+
 
 # Import existing RAG components
 import sys
@@ -80,16 +87,28 @@ class ChatRequest(BaseModel):
     model_name: Optional[str] = "gemini-2.5-flash"  # Specific Gemini model to use (2026 API)
     top_k: Optional[int] = 5
 
+# class ChatResponse(BaseModel):
+#     response: str
+#     citations: List[Dict[str, Any]]
+#     timestamp: str
+#     role: str
+
+class Citation(BaseModel):
+    chunk_id: str
+    chunk_text: str
+    chunk_length: int
+    source_file: str
+
 class ChatResponse(BaseModel):
     response: str
-    citations: List[Dict[str, Any]]
-    timestamp: datetime
+    citations: List[Citation]
+    timestamp: str
     role: str
 
 class ChatHistoryItem(BaseModel):
     query: str
     response: str
-    timestamp: datetime
+    timestamp: str
 
 # Health check
 @app.get("/health")
@@ -100,34 +119,63 @@ async def health_check():
 # Public chat endpoint
 @app.post("/chat/public", response_model=ChatResponse)
 async def chat_public(request: ChatRequest):
-    """
-    Public chat endpoint - no authentication required.
-    No memory/context stored.
-    """
+
+    session_id = str(uuid.uuid4())
+    start_time = time.time()
+    
     try:
+        print("="*60)
+        print("=== NEW QUERY RECEIVED ===")
+        print(f"Session ID: {session_id}")
+        print(f"Query: {request.query}")
+        print(f"Model: {request.model}")
+        print(f"Top K: {request.top_k}")
+        print("="*60)
+
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
-        # Get embeddings and perform RAG
+        print("\n[1/6] Generating embeddings...")
         query_emb = get_embeddings([request.query])[0]
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
+        print(f"✓ Embedding generated: dimension={len(query_emb_list)}\n")
         
         # Retrieve top-k chunks
+        print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
         cur.execute('''
-            SELECT chunk_id, chunk_text, chunk_length, doc_name as source_file
-            FROM items
-            ORDER BY embedding <-> %s::vector
-            LIMIT %s
+        SELECT 
+        chunk_id, 
+        chunk_text, 
+        chunk_length, 
+        doc_name as source_file,
+        (embedding <-> %s::vector) as distance
+        FROM items
+        ORDER BY distance
+        LIMIT %s
         ''', (query_emb_list, request.top_k))
         
         results = cur.fetchall()
-        citations = [dict(r) for r in results]
+        print(f"DEBUG: Retrieved {len(results)} results\n")
+
+        citations = []
+        for r in results:
+            citation = {
+                "chunk_id": int(r['chunk_id']),
+                "chunk_text": str(r['chunk_text']),
+                "chunk_length": int(r['chunk_length']) if r['chunk_length'] is not None else 0,
+                "source_file": str(r['source_file']) if r['source_file'] else "",
+                "similarity_score": float(r['distance'])  # ← Changed this line
+            }
+            citations.append(citation)
+
+        if citations:
+            print(f"\nTop chunk:")
+            print(f"  - Source: {citations[0]['source_file']}")
+            print(f"  - Similarity: {citations[0]['similarity_score']:.4f}")
         
+        print(f"\n[3/6] Sending to {request.model}...")
         # Generate response using LLM
-        if request.model == "ollama":
-            # Use ollama (local) - fallback option
-            response_text = rag_ollama(cur, request.query, top_k=request.top_k)
-        elif request.model == "gemini":
+        if request.model == "gemini":
             # Use Gemini API (default)
             response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
                                        model_name=request.model_name, api_provider="gemini")
@@ -136,23 +184,64 @@ async def chat_public(request: ChatRequest):
             response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
                                        model_name="gemini-2.5-flash", api_provider="gemini")
         
-        # Log public query (anonymized)
-        cur.execute('''
-            INSERT INTO chat_logs_public (query, response, timestamp)
-            VALUES (%s, %s, %s)
-        ''', (request.query[:100], response_text[:500], datetime.now()))
-        conn.commit()
+        print(f"\n[4/6] Response received:")
+        print(f"✓ Length: {len(response_text)} chars")
+        print(f"✓ Preview: {response_text[:150]}...")
+
+        response_time_ms = int((time.time() - start_time) * 1000)
+
+        print(f"\n[5/6] Logging to Supabase...")
+        query_logger.log_query(
+            session_id=session_id,
+            user_query=request.query,
+            query_embedding=query_emb_list,
+            bot_response=response_text,
+            retrieved_chunks=citations,
+            llm_provider=request.model,
+            llm_model=request.model_name if request.model == "gemini" else "llama2",
+            response_time_ms=response_time_ms,
+            pathway_id=None,  #TODO: FIGURE OUT PATHWAY ID TRACKING/TABLE
+            user_role="public"
+        )
         
         cur.close()
         conn.close()
+
+        print(f"\n[6/6] Creating response...")
         
-        return ChatResponse(
+        # different citations for end users, omitting the similarity score
+        client_citations = [
+            {
+                "chunk_id": str(c['chunk_id']),
+                "chunk_text": c['chunk_text'],
+                "chunk_length": c['chunk_length'],
+                "source_file": c['source_file']
+            }
+            for c in citations
+        ]
+        
+        response_obj = ChatResponse(
             response=response_text,
-            citations=citations,
-            timestamp=datetime.now(),
+            citations=client_citations,
+            timestamp=datetime.now().isoformat(),
             role="public"
         )
+
+        print(f"✓ Response time: {response_time_ms}ms")
+        print("="*60)
+        print("=== QUERY COMPLETE ===")
+        print("="*60)
+
+        return response_obj
+    
     except Exception as e:
+        print("\n" + "!"*60)
+        print("!!! ERROR OCCURRED !!!")
+        print(f"Query: {request.query}")
+        print(f"Error: {e}")
+        print("!"*60)
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 # Practitioner chat endpoint
