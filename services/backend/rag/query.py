@@ -45,13 +45,37 @@ def rag_api_llm(supabase: Client, query: str, top_k: int = 5, model_name: str = 
     
     if not results:
         print("No relevant chunks found.")
-        return "No relevant information found in the knowledge base."
+        return {
+            "answer": "No relevant information found in the knowledge base.",
+            "pathway_ids": [],
+            "sources": []
+        }
+    
+    pathway_ids = [r.get('pathway_id') for r in results if r.get('pathway_id')]
+    sources = [
+        {
+            "pathway_id": r.get('pathway_id'),
+            "similarity": r.get('similarity', 0),
+            "chunk_id": r.get('chunk_id')
+        }
+        for r in results
+    ]
 
-    # Build context from results
-    context = "\n\n".join([
-        f"[{i+1}] {r['pathway_id']}: {r['chunk_text']}" 
-        for i, r in enumerate(results)
-    ])
+    context_parts = []
+    for i, r in enumerate(results):
+        pathway_name = r.get('pathway_id', 'Unknown Source')
+        chunk_text = r.get('chunk_text', '')
+        similarity = r.get('similarity', 0)
+        
+        context_parts.append(
+            f"[{i+1}] Source: {pathway_name} (Similarity: {similarity:.3f})\n{chunk_text}"
+        )
+    
+    context = "\n\n".join(context_parts)
+    print("\n=== Retrieved Sources ===")
+    for i, r in enumerate(results):
+        print(f"[{i+1}] {r.get('pathway_id')} (similarity: {r.get('similarity', 0):.3f})")
+    print("=" * 50 + "\n")
     
     prompt = f"""
 You are a clinical assistant that STRICTLY follows institutional protocols.
@@ -75,20 +99,24 @@ Provide a definitive answer based ONLY on the context above. Present the informa
 Answer:
 """
     
-    if api_provider.lower() == "openai":
-        if not OPENAI_API_KEY:
-            raise ValueError("OPENAI_API_KEY environment variable not set")
-        openai.api_key = OPENAI_API_KEY
-        response = openai.ChatCompletion.create(
-            model=model_name,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0
-        )
-        answer = response.choices[0].message.content
-        print("\n=== OpenAI Answer ===\n")
-        print(answer)
-        return answer
-    elif api_provider.lower() == "gemini":
+    # if api_provider.lower() == "openai":
+    #     if not OPENAI_API_KEY:
+    #         raise ValueError("OPENAI_API_KEY environment variable not set")
+    #     openai.api_key = OPENAI_API_KEY
+    #     response = openai.ChatCompletion.create(
+    #         model=model_name,
+    #         messages=[{"role": "user", "content": prompt}],
+    #         temperature=0
+    #     )
+    #     answer = response.choices[0].message.content
+    #     print("\n=== OpenAI Answer ===\n")
+    #     print(answer)
+    #     return { 
+    #         "answer": answer,
+    #         "pathway_ids": pathway_ids,
+    #         "sources": sources
+    #     }
+    if api_provider.lower() == "gemini":
         if not GEMINI_API_KEY:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         
@@ -124,7 +152,11 @@ Answer:
         answer = response.text
         print("\n=== Gemini Answer ===\n")
         print(answer)
-        return answer
+        return {
+            "answer": answer,
+            "pathway_ids": pathway_ids,
+            "sources": sources
+        }
     else:
         raise ValueError(f"Unsupported API provider: {api_provider}. Use 'openai' or 'gemini'.")
 
@@ -139,4 +171,6 @@ if __name__ == "__main__":
     supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_ANON_KEY"))
     query = input("Enter your query: ")
     # Use Gemini by default (with gemini-2.5-flash for faster responses)
-    rag_api_llm(supabase, query, top_k=5, model_name="gemini-2.5-flash", api_provider="gemini")
+    result = rag_api_llm(supabase, query, top_k=5, model_name="gemini-2.5-flash", api_provider="gemini")
+    print("\n=== Pathway IDs Used ===")
+    print(result["pathway_ids"])

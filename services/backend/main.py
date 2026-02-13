@@ -149,23 +149,23 @@ async def chat_public(request: ChatRequest):
         
         print(f"\n[3/6] Sending to {request.model}...")
         # Generate response using LLM
-        if request.model == "gemini":
-            response_text = rag_api_llm(
-                supabase,  # Pass supabase client instead of cursor
-                request.query, 
-                top_k=request.top_k, 
-                model_name=request.model_name, 
-                api_provider="gemini"
-            )
-        else:
-            response_text = rag_api_llm(
-                supabase, 
-                request.query, 
-                top_k=request.top_k, 
-                model_name="gemini-2.5-flash", 
-                api_provider="gemini"
-            )
+        result = rag_api_llm(
+            supabase,
+            request.query, 
+            top_k=request.top_k, 
+            model_name=request.model_name, 
+            api_provider=request.model
+        )
         
+        if isinstance(result, dict):
+             response_text = result["answer"]
+             pathway_ids = result["pathway_ids"]
+             sources = result["sources"]
+        else:
+            response_text = result
+            pathway_ids = []
+            sources = []
+
         print(f"\n[4/6] Response received:")
         print(f"✓ Length: {len(response_text)} chars")
         print(f"✓ Preview: {response_text[:150]}...")
@@ -182,7 +182,7 @@ async def chat_public(request: ChatRequest):
             llm_provider=request.model,
             llm_model=request.model_name if request.model == "gemini" else "llama2",
             response_time_ms=response_time_ms,
-            pathway_id=None,
+            pathway_id=pathway_ids[0] if pathway_ids else None,
             user_role="public"
         )
         
