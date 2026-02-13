@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/kitaehwang/senior_project/Pathways_Prototype/tests/rag_analysis/run_rag_test.py", line 21, in <module>
+    from rag.query import rag_api_llm
+  File "/Users/kitaehwang/senior_project/Pathways_Prototype/services/backend/rag/query.py", line 6, in <module>
+    from google import genai
+ImportError: cannot import name 'genai' from 'google' (unknown location)

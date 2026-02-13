@@ -8,13 +8,11 @@ pydantic-settings
 httpx
 cryptography
 
-pgvector
 llama-cpp-python
 docling
 sentence-transformers
 langchain
 torch
-psycopg2-binary
 openai
 google-genai
 ollama

@@ -8,6 +8,8 @@ function PractitionerChat({ apiUrl, keycloak }) {
 	const [messages, setMessages] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [history, setHistory] = useState([]);
+	const [pathways, setPathways] = useState([]);
+	const [selectedPathway, setSelectedPathway] = useState("");
 
 	useEffect(() => {
 		// Load conversation history
@@ -15,6 +17,7 @@ function PractitionerChat({ apiUrl, keycloak }) {
 			const userId = keycloak.tokenParsed.sub;
 			loadHistory(userId);
 		}
+		loadPathways();
 	}, [keycloak]);
 
 	const loadHistory = async (userId) => {
@@ -27,6 +30,19 @@ function PractitionerChat({ apiUrl, keycloak }) {
 			setHistory(response.data);
 		} catch (error) {
 			console.error("Error loading history:", error);
+		}
+	};
+
+	const loadPathways = async () => {
+		try {
+			const response = await axios.get(`${apiUrl}/pathways`);
+			const pathwayOptions = response.data?.pathways || [];
+			setPathways(pathwayOptions);
+			if (pathwayOptions.length > 0) {
+				setSelectedPathway(pathwayOptions[0]);
+			}
+		} catch (error) {
+			console.error("Error loading pathways:", error);
 		}
 	};
 
@@ -48,6 +64,7 @@ function PractitionerChat({ apiUrl, keycloak }) {
 					// model: 'ollama',
 					model: "gemini-pro",
 					top_k: 5,
+					pathway_id: selectedPathway,
 				},
 				{
 					headers: {
@@ -85,6 +102,25 @@ function PractitionerChat({ apiUrl, keycloak }) {
 					will inform responses.
 				</p>
 
+				<div className="input-container" style={{ marginBottom: "16px" }}>
+					<select
+						className="query-input"
+						value={selectedPathway}
+						onChange={(e) => setSelectedPathway(e.target.value)}
+						disabled={loading || pathways.length === 0}
+					>
+						{pathways.length === 0 ? (
+							<option value="">No pathways available</option>
+						) : (
+							pathways.map((pathway) => (
+								<option key={pathway} value={pathway}>
+									{pathway}
+								</option>
+							))
+						)}
+					</select>
+				</div>
+
 				{history.length > 0 && (
 					<div className="history-section">
 						<h3>Recent History</h3>
@@ -111,7 +147,7 @@ function PractitionerChat({ apiUrl, keycloak }) {
 									{msg.citations.map((cite, cIdx) => (
 										<div key={cIdx} className="citation-item">
 											<strong>{cite.source_file}</strong> (Chunk{" "}
-											{cite.chunk_index})
+											{cite.chunk_id})
 										</div>
 									))}
 								</div>
@@ -137,7 +173,7 @@ function PractitionerChat({ apiUrl, keycloak }) {
 					<button
 						type="submit"
 						className="submit-button"
-						disabled={loading || !query.trim()}
+						disabled={loading || !query.trim() || !selectedPathway}
 					>
 						Send
 					</button>

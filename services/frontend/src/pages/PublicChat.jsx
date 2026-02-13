@@ -117,7 +117,7 @@ function PublicChat({ apiUrl }) {
                                         <div className="reference-title">📄 {cite.source_file}</div>
                                         {/* Assuming 'cite' has text/snippet content, otherwise remove this div */}
                                         <div className="reference-snippet">
-                                            Chunk ID: {cite.chunk_index}
+                                            Chunk ID: {cite.chunk_id}
                                         </div>
                                     </div>
                                 ))

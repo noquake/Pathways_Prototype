@@ -1,10 +1,8 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 from sentence_transformers import SentenceTransformer
-import psycopg2
 import openai
 import os
 from google import genai
-from google.genai import types
 import ollama
 from ollama import Client
 
@@ -15,49 +13,106 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # ----------------------
 # Models and DB
 # ----------------------
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model: Optional[SentenceTransformer] = None
 ollama_client = Client(host="http://localhost:11434")  # default port for local Ollama server
 
 def get_embeddings(chunk_texts: List[str]):
     """Return embeddings for a list of texts."""
+    global model
+    if model is None:
+        # Prefer offline/local cache to keep service startup independent of network.
+        model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
     return model.encode(chunk_texts)
+
+def retrieve_chunks(supabase, query_emb_list, top_k: int = 5, pathway_id: str = None):
+    """Retrieve top-k chunks from Supabase RPC function."""
+    configured_rpc = os.getenv("SUPABASE_MATCH_RPC", "match_pathway_chunks")
+    rpc_candidates = [configured_rpc, "match_pathway_chunks", "match_documents", "match_chunks"]
+    # Keep deterministic order while removing duplicates.
+    rpc_names = list(dict.fromkeys(rpc_candidates))
+
+    rpc_payload = {
+        "query_embedding": query_emb_list,
+        "match_count": top_k,
+    }
+    # If SQL function supports pathway filtering, pass it through.
+    if pathway_id:
+        rpc_payload["filter_pathway_id"] = pathway_id
+
+    last_error = None
+    for rpc_name in rpc_names:
+        try:
+            response = supabase.rpc(rpc_name, rpc_payload).execute()
+            return response.data or []
+        except Exception as err:
+            last_error = err
+            # Backward-compatible fallback when RPC doesn't accept filter argument.
+            if pathway_id and "filter_pathway_id" in rpc_payload:
+                try:
+                    payload_without_filter = dict(rpc_payload)
+                    payload_without_filter.pop("filter_pathway_id", None)
+                    response = supabase.rpc(rpc_name, payload_without_filter).execute()
+                    data = response.data or []
+                    return [row for row in data if row.get("pathway_id") == pathway_id]
+                except Exception as inner_err:
+                    last_error = inner_err
+                    continue
+            continue
+
+    raise RuntimeError(
+        f"Supabase retrieval RPC failed. Tried: {', '.join(rpc_names)}. Last error: {last_error}"
+    )
+
+def build_context(results):
+    """Build prompt context string from retrieval results."""
+    if results and isinstance(results[0], dict):
+        context_lines = []
+        for i, r in enumerate(results):
+            source = r.get("source_file") or r.get("pathway_id") or "unknown"
+            text = r.get("chunk_text", "")
+            context_lines.append(f"[{i+1}] {source}: {text}")
+        return "\n\n".join(context_lines)
+    context_lines = []
+    for i, r in enumerate(results):
+        # retrieve_chunks tuple shape: (chunk_id, chunk_text, chunk_length, source_file, distance)
+        if isinstance(r, (tuple, list)) and len(r) >= 4:
+            source = r[3]
+            text = r[1]
+        # backward compatibility for older tuple shape: (chunk_text, source_file)
+        elif isinstance(r, (tuple, list)) and len(r) >= 2:
+            source = r[1]
+            text = r[0]
+        else:
+            source = "unknown"
+            text = str(r)
+        context_lines.append(f"[{i+1}] {source}: {text}")
+    return "\n\n".join(context_lines)
 
 # ----------------------
 # Retrieval + RAG with API-based LLMs
 # ----------------------
-def rag_api_llm(cur, query: str, top_k: int = 5, model_name: str = "gpt-4", api_provider: str = "gemini"):
+def rag_api_llm(supabase, query: str, top_k: int = 5, model_name: str = "gpt-4", api_provider: str = "gemini", pathway_id: str = None, retrieved_results=None):
     """
     Retrieve top-k chunks and use an API-based LLM (OpenAI, Gemini, etc.) to answer the query.
     
     Args:
-        cur: Database cursor
+        supabase: Supabase client
         query: User query string
         top_k: Number of top chunks to retrieve
         model_name: Name of the model to use
         api_provider: API provider to use ("openai" or "gemini")
     """
-    # Compute query embedding
-    query_emb = get_embeddings([query])[0]
-    query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
+    results = retrieved_results
+    if results is None:
+        query_emb = get_embeddings([query])[0]
+        query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
+        results = retrieve_chunks(supabase, query_emb_list, top_k=top_k, pathway_id=pathway_id)
 
-    # Retrieve top-k chunks
-    cur.execute('''
-        SELECT chunk_text, doc_name as source_file
-        FROM items
-        ORDER BY embedding <-> %s::vector
-        LIMIT %s
-    ''', (query_emb_list, top_k))
-    
-    results = cur.fetchall()
     if not results:
         print("No relevant chunks found.")
-        return
+        return "No relevant chunks found in pathway documents."
 
-    # Handle both tuple and dict results from cursor
-    if results and isinstance(results[0], dict):
-        context = "\n\n".join([f"[{i+1}] {r['source_file']}: {r['chunk_text']}" for i, r in enumerate(results)])
-    else:
-        context = "\n\n".join([f"[{i+1}] {r[1]}: {r[0]}" for i, r in enumerate(results)])
+    context = build_context(results)
     
     prompt = f"""
 You are a clinical assistant that STRICTLY follows institutional protocols.
@@ -137,31 +192,21 @@ Answer:
 # ----------------------
 # Retrieval + RAG with local LLaMA
 # ----------------------
-def rag_ollama(cur, query: str, top_k: int = 5, model_name: str = "llama2"):
+def rag_ollama(supabase, query: str, top_k: int = 5, model_name: str = "llama2", pathway_id: str = None, retrieved_results=None):
     """
     Retrieve top-k chunks and use local LLaMA (Ollama) to answer the query.
     """
-    query_emb = get_embeddings([query])[0]
-    query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
+    results = retrieved_results
+    if results is None:
+        query_emb = get_embeddings([query])[0]
+        query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
+        results = retrieve_chunks(supabase, query_emb_list, top_k=top_k, pathway_id=pathway_id)
 
-    # Retrieve top-k chunks
-    cur.execute('''
-        SELECT chunk_text, doc_name as source_file
-        FROM items
-        ORDER BY embedding <-> %s::vector
-        LIMIT %s
-    ''', (query_emb_list, top_k))
-    
-    results = cur.fetchall()
     if not results:
         print("No relevant chunks found.")
-        return
+        return "No relevant chunks found in pathway documents."
 
-    # Handle both tuple and dict results from cursor
-    if results and isinstance(results[0], dict):
-        context = "\n\n".join([f"[{i+1}] {r['source_file']}: {r['chunk_text']}" for i, r in enumerate(results)])
-    else:
-        context = "\n\n".join([f"[{i+1}] {r[1]}: {r[0]}" for i, r in enumerate(results)])
+    context = build_context(results)
         
     prompt = f"""
 You are a clinical assistant that STRICTLY follows institutional protocols.
@@ -195,10 +240,17 @@ Answer:
 # Example usage
 # ----------------------
 if __name__ == "__main__":
-    conn = psycopg2.connect("dbname=pathways user=admin password=password host=localhost port=5432")
-    cur = conn.cursor()
+    from supabase import create_client
+    from dotenv import load_dotenv
+    load_dotenv()
+    supabase = create_client(
+        os.getenv("SUPABASE_URL"),
+        os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        or os.getenv("SUPABASE_ANON_KEY")
+        or os.getenv("SUPABASE_PUBLISHABLE_KEY"),
+    )
 
     query = input("Enter your query: ")
     # Use Gemini by default (with gemini-2.5-flash for faster responses)
-    rag_api_llm(cur, query, top_k=5, model_name="gemini-2.5-flash", api_provider="gemini")
-    # rag_ollama(cur, query, top_k=5)
+    rag_api_llm(supabase, query, top_k=5, model_name="gemini-2.5-flash", api_provider="gemini")
+    # rag_ollama(supabase, query, top_k=5)
