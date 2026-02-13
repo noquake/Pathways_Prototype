@@ -101,19 +101,12 @@ Keycloak is pre-configured with test users:
 ### Public Endpoints
 
 - `GET /health` - Health check
-- `GET /pathways` - List available pathway ids (`doc_name`)
 - `POST /chat/public` - Public chat (no auth required)
 
 ### Protected Endpoints
 
-- `POST /chat/practitioner` - Practitioner chat (requires JWT, requires `pathway_id`)
+- `POST /chat/practitioner` - Practitioner chat (requires JWT)
 - `GET /history/{user_id}` - Get chat history (requires JWT)
-
-### Chat Request Notes
-
-- `POST /chat/public` accepts optional `pathway_id`; if provided, retrieval is limited to that pathway.
-- `POST /chat/practitioner` requires `pathway_id`; retrieval is always pathway-scoped.
-- `pathway_id` maps directly to `items.doc_name` in the RAG database.
 
 ## Frontend Routes
 

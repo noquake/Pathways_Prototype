@@ -54,17 +54,10 @@ services:
       DATABASE_URL: postgresql://admin:password@pathways_db:5432/pathways
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: pathways
-      RUN_INGESTION: false
+      RUN_INGESTION: true
       # JWT_SECRET: ${JWT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
-      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:-}
-      SUPABASE_TABLE_PATHWAY_DOCUMENTS: ${SUPABASE_TABLE_PATHWAY_DOCUMENTS:-pathway_documents}
-      SUPABASE_TABLE_PATHWAY_QUERIES: ${SUPABASE_TABLE_PATHWAY_QUERIES:-pathway_queries}
-      SUPABASE_MATCH_RPC: ${SUPABASE_MATCH_RPC:-match_pathway_chunks}
 
       PYTHONUNBUFFERED: 1
 
@@ -77,7 +70,6 @@ services:
       - ./services/backend:/app
     ports:
       - "8000:8000"
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
     depends_on:
       - pathways_db
 
