@@ -12,7 +12,7 @@ from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTok
 from transformers import AutoTokenizer
 import os
 
-MAX_TOKENS = 128
+MAX_TOKENS = 512
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
