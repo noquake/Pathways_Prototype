@@ -15,6 +15,7 @@ import httpx
 from logger import query_logger
 import time
 import uuid
+from pathways_catalog import list_pathways, get_pathway_by_id
 
 
 # Import existing RAG components
@@ -27,7 +28,11 @@ app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://frontend:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://frontend:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -86,6 +91,14 @@ class ChatRequest(BaseModel):
     model: Optional[str] = "gemini"  # Changed default from "ollama" to "gemini"
     model_name: Optional[str] = "gemini-2.5-flash"  # Specific Gemini model to use (2026 API)
     top_k: Optional[int] = 5
+    pathway_id: Optional[str] = None
+
+
+class PathwayOption(BaseModel):
+    id: str
+    label: str
+    doc_name: str
+    preview_image_path: str
 
 # class ChatResponse(BaseModel):
 #     response: str
@@ -110,11 +123,27 @@ class ChatHistoryItem(BaseModel):
     response: str
     timestamp: str
 
+
+def resolve_pathway_doc_name(pathway_id: Optional[str]) -> Optional[str]:
+    if not pathway_id:
+        return None
+
+    pathway = get_pathway_by_id(pathway_id)
+    if not pathway:
+        raise HTTPException(status_code=400, detail=f"Unknown pathway_id: {pathway_id}")
+    return pathway["doc_name"]
+
 # Health check
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "backend-api"}
+
+
+@app.get("/pathways", response_model=List[PathwayOption])
+async def get_pathways():
+    """Return curated pathway options for the frontend dropdown."""
+    return [PathwayOption(**pathway) for pathway in list_pathways()]
 
 # Public chat endpoint
 @app.post("/chat/public", response_model=ChatResponse)
@@ -124,12 +153,16 @@ async def chat_public(request: ChatRequest):
     start_time = time.time()
     
     try:
+        selected_pathway_doc_name = resolve_pathway_doc_name(request.pathway_id)
+
         print("="*60)
         print("=== NEW QUERY RECEIVED ===")
         print(f"Session ID: {session_id}")
         print(f"Query: {request.query}")
         print(f"Model: {request.model}")
         print(f"Top K: {request.top_k}")
+        if selected_pathway_doc_name:
+            print(f"Pathway filter requested: {request.pathway_id} -> {selected_pathway_doc_name}")
         print("="*60)
 
         conn = get_db_connection()
@@ -142,17 +175,31 @@ async def chat_public(request: ChatRequest):
         
         # Retrieve top-k chunks
         print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
-        cur.execute('''
-        SELECT 
-        chunk_id, 
-        chunk_text, 
-        chunk_length, 
-        doc_name as source_file,
-        (embedding <-> %s::vector) as distance
-        FROM items
-        ORDER BY distance
-        LIMIT %s
-        ''', (query_emb_list, request.top_k))
+        if selected_pathway_doc_name:
+            cur.execute('''
+            SELECT 
+            chunk_id, 
+            chunk_text, 
+            chunk_length, 
+            doc_name as source_file,
+            (embedding <-> %s::vector) as distance
+            FROM items
+            WHERE doc_name = %s
+            ORDER BY distance
+            LIMIT %s
+            ''', (query_emb_list, selected_pathway_doc_name, request.top_k))
+        else:
+            cur.execute('''
+            SELECT 
+            chunk_id, 
+            chunk_text, 
+            chunk_length, 
+            doc_name as source_file,
+            (embedding <-> %s::vector) as distance
+            FROM items
+            ORDER BY distance
+            LIMIT %s
+            ''', (query_emb_list, request.top_k))
         
         results = cur.fetchall()
         print(f"DEBUG: Retrieved {len(results)} results\n")
@@ -178,11 +225,13 @@ async def chat_public(request: ChatRequest):
         if request.model == "gemini":
             # Use Gemini API (default)
             response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
-                                       model_name=request.model_name, api_provider="gemini")
+                                       model_name=request.model_name, api_provider="gemini",
+                                       doc_name_filter=selected_pathway_doc_name)
         else:
             # Default to Gemini if unknown model specified
             response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
-                                       model_name="gemini-2.5-flash", api_provider="gemini")
+                                       model_name="gemini-2.5-flash", api_provider="gemini",
+                                       doc_name_filter=selected_pathway_doc_name)
         
         print(f"\n[4/6] Response received:")
         print(f"✓ Length: {len(response_text)} chars")
@@ -200,7 +249,7 @@ async def chat_public(request: ChatRequest):
             llm_provider=request.model,
             llm_model=request.model_name if request.model == "gemini" else "llama2",
             response_time_ms=response_time_ms,
-            pathway_id=None,  #TODO: FIGURE OUT PATHWAY ID TRACKING/TABLE
+            pathway_id=request.pathway_id,
             user_role="public"
         )
         
@@ -257,11 +306,14 @@ async def chat_practitioner(
     if not user_info or user_info.get("role") != "practitioner":
         raise HTTPException(status_code=403, detail="Access denied. Practitioner role required.")
     
+    selected_pathway_doc_name = resolve_pathway_doc_name(request.pathway_id)
     user_id = user_info.get("user_id")
     
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
+        if selected_pathway_doc_name:
+            print(f"Pathway filter requested: {request.pathway_id} -> {selected_pathway_doc_name}")
         
         # Retrieve recent conversation history
         cur.execute('''
@@ -282,26 +334,38 @@ async def chat_practitioner(
         query_emb = get_embeddings([request.query])[0]
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
         
-        cur.execute('''
-            SELECT chunk_id, chunk_text, chunk_length, doc_name as source_file
-            FROM items
-            ORDER BY embedding <-> %s::vector
-            LIMIT %s
-        ''', (query_emb_list, request.top_k))
+        if selected_pathway_doc_name:
+            cur.execute('''
+                SELECT chunk_id, chunk_text, chunk_length, doc_name as source_file
+                FROM items
+                WHERE doc_name = %s
+                ORDER BY embedding <-> %s::vector
+                LIMIT %s
+            ''', (selected_pathway_doc_name, query_emb_list, request.top_k))
+        else:
+            cur.execute('''
+                SELECT chunk_id, chunk_text, chunk_length, doc_name as source_file
+                FROM items
+                ORDER BY embedding <-> %s::vector
+                LIMIT %s
+            ''', (query_emb_list, request.top_k))
         
         results = cur.fetchall()
         citations = [dict(r) for r in results]
         
         # Generate response with context using specified model
         if request.model == "ollama":
-            response_text = rag_ollama(cur, request.query, top_k=request.top_k)
+            response_text = rag_ollama(cur, request.query, top_k=request.top_k,
+                                       doc_name_filter=selected_pathway_doc_name)
         elif request.model == "gemini":
             response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
-                                       model_name=request.model_name, api_provider="gemini")
+                                       model_name=request.model_name, api_provider="gemini",
+                                       doc_name_filter=selected_pathway_doc_name)
         else:
             # Default to Gemini
             response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
-                                       model_name="gemini-2.5-flash", api_provider="gemini")
+                                       model_name="gemini-2.5-flash", api_provider="gemini",
+                                       doc_name_filter=selected_pathway_doc_name)
         
         # Store in practitioner memory
         cur.execute('''
@@ -355,4 +419,3 @@ async def get_history(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-

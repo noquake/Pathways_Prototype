@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 from sentence_transformers import SentenceTransformer
 import psycopg2
 import openai
@@ -25,7 +25,14 @@ def get_embeddings(chunk_texts: List[str]):
 # ----------------------
 # Retrieval + RAG with API-based LLMs
 # ----------------------
-def rag_api_llm(cur, query: str, top_k: int = 5, model_name: str = "gpt-4", api_provider: str = "gemini"):
+def rag_api_llm(
+    cur,
+    query: str,
+    top_k: int = 5,
+    model_name: str = "gpt-4",
+    api_provider: str = "gemini",
+    doc_name_filter: Optional[str] = None,
+):
     """
     Retrieve top-k chunks and use an API-based LLM (OpenAI, Gemini, etc.) to answer the query.
     
@@ -41,12 +48,21 @@ def rag_api_llm(cur, query: str, top_k: int = 5, model_name: str = "gpt-4", api_
     query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
 
     # Retrieve top-k chunks
-    cur.execute('''
-        SELECT chunk_text, doc_name as source_file
-        FROM items
-        ORDER BY embedding <-> %s::vector
-        LIMIT %s
-    ''', (query_emb_list, top_k))
+    if doc_name_filter:
+        cur.execute('''
+            SELECT chunk_text, doc_name as source_file
+            FROM items
+            WHERE doc_name = %s
+            ORDER BY embedding <-> %s::vector
+            LIMIT %s
+        ''', (doc_name_filter, query_emb_list, top_k))
+    else:
+        cur.execute('''
+            SELECT chunk_text, doc_name as source_file
+            FROM items
+            ORDER BY embedding <-> %s::vector
+            LIMIT %s
+        ''', (query_emb_list, top_k))
     
     results = cur.fetchall()
     if not results:
@@ -137,7 +153,13 @@ Answer:
 # ----------------------
 # Retrieval + RAG with local LLaMA
 # ----------------------
-def rag_ollama(cur, query: str, top_k: int = 5, model_name: str = "llama2"):
+def rag_ollama(
+    cur,
+    query: str,
+    top_k: int = 5,
+    model_name: str = "llama2",
+    doc_name_filter: Optional[str] = None,
+):
     """
     Retrieve top-k chunks and use local LLaMA (Ollama) to answer the query.
     """
@@ -145,12 +167,21 @@ def rag_ollama(cur, query: str, top_k: int = 5, model_name: str = "llama2"):
     query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
 
     # Retrieve top-k chunks
-    cur.execute('''
-        SELECT chunk_text, doc_name as source_file
-        FROM items
-        ORDER BY embedding <-> %s::vector
-        LIMIT %s
-    ''', (query_emb_list, top_k))
+    if doc_name_filter:
+        cur.execute('''
+            SELECT chunk_text, doc_name as source_file
+            FROM items
+            WHERE doc_name = %s
+            ORDER BY embedding <-> %s::vector
+            LIMIT %s
+        ''', (doc_name_filter, query_emb_list, top_k))
+    else:
+        cur.execute('''
+            SELECT chunk_text, doc_name as source_file
+            FROM items
+            ORDER BY embedding <-> %s::vector
+            LIMIT %s
+        ''', (query_emb_list, top_k))
     
     results = cur.fetchall()
     if not results:
