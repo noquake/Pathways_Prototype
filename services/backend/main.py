@@ -21,7 +21,7 @@ from pathways_catalog import list_pathways, get_pathway_by_id
 # Import existing RAG components
 import sys
 sys.path.append('/app')
-from rag.query import get_embeddings, rag_ollama, rag_api_llm
+from rag.query import get_embeddings, rag_api_llm
 
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 
@@ -88,7 +88,6 @@ def get_user_role(user_info: Optional[Dict[str, Any]] = Depends(verify_token)) -
 # Request/Response models
 class ChatRequest(BaseModel):
     query: str
-    model: Optional[str] = "gemini"  # Changed default from "ollama" to "gemini"
     model_name: Optional[str] = "gemini-2.5-flash"  # Specific Gemini model to use (2026 API)
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
@@ -159,7 +158,8 @@ async def chat_public(request: ChatRequest):
         print("=== NEW QUERY RECEIVED ===")
         print(f"Session ID: {session_id}")
         print(f"Query: {request.query}")
-        print(f"Model: {request.model}")
+        print("Provider: gemini")
+        print(f"Model: {request.model_name}")
         print(f"Top K: {request.top_k}")
         if selected_pathway_doc_name:
             print(f"Pathway filter requested: {request.pathway_id} -> {selected_pathway_doc_name}")
@@ -220,18 +220,17 @@ async def chat_public(request: ChatRequest):
             print(f"  - Source: {citations[0]['source_file']}")
             print(f"  - Similarity: {citations[0]['similarity_score']:.4f}")
         
-        print(f"\n[3/6] Sending to {request.model}...")
-        # Generate response using LLM
-        if request.model == "gemini":
-            # Use Gemini API (default)
-            response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
-                                       model_name=request.model_name, api_provider="gemini",
-                                       doc_name_filter=selected_pathway_doc_name)
-        else:
-            # Default to Gemini if unknown model specified
-            response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
-                                       model_name="gemini-2.5-flash", api_provider="gemini",
-                                       doc_name_filter=selected_pathway_doc_name)
+        print("\n[3/6] Sending to gemini...")
+        response_text = rag_api_llm(
+            cur,
+            request.query,
+            top_k=request.top_k,
+            model_name=request.model_name,
+            doc_name_filter=selected_pathway_doc_name,
+        )
+
+        if not isinstance(response_text, str) or not response_text.strip():
+            response_text = "I couldn't generate a response right now. Please try again."
         
         print(f"\n[4/6] Response received:")
         print(f"✓ Length: {len(response_text)} chars")
@@ -246,8 +245,8 @@ async def chat_public(request: ChatRequest):
             query_embedding=query_emb_list,
             bot_response=response_text,
             retrieved_chunks=citations,
-            llm_provider=request.model,
-            llm_model=request.model_name if request.model == "gemini" else "llama2",
+            llm_provider="gemini",
+            llm_model=request.model_name,
             response_time_ms=response_time_ms,
             pathway_id=request.pathway_id,
             user_role="public"
@@ -353,19 +352,16 @@ async def chat_practitioner(
         results = cur.fetchall()
         citations = [dict(r) for r in results]
         
-        # Generate response with context using specified model
-        if request.model == "ollama":
-            response_text = rag_ollama(cur, request.query, top_k=request.top_k,
-                                       doc_name_filter=selected_pathway_doc_name)
-        elif request.model == "gemini":
-            response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
-                                       model_name=request.model_name, api_provider="gemini",
-                                       doc_name_filter=selected_pathway_doc_name)
-        else:
-            # Default to Gemini
-            response_text = rag_api_llm(cur, request.query, top_k=request.top_k, 
-                                       model_name="gemini-2.5-flash", api_provider="gemini",
-                                       doc_name_filter=selected_pathway_doc_name)
+        # Generate response using Gemini API only
+        response_text = rag_api_llm(
+            cur,
+            request.query,
+            top_k=request.top_k,
+            model_name=request.model_name,
+            doc_name_filter=selected_pathway_doc_name,
+        )
+        if not isinstance(response_text, str) or not response_text.strip():
+            response_text = "I couldn't generate a response right now. Please try again."
         
         # Store in practitioner memory
         cur.execute('''

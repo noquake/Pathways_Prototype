@@ -9,7 +9,6 @@ httpx
 cryptography
 
 pgvector
-llama-cpp-python
 docling
 sentence-transformers
 langchain
@@ -17,7 +16,6 @@ torch
 psycopg2-binary
 openai
 google-genai
-ollama
 matplotlib # For plotting and visualization during test branches
 seaborn # For enhanced data visualization via matplotlib
 
