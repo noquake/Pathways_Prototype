@@ -1,0 +1,6 @@
+File: seattle_asthma.pdf
+Type: pdf
+Total chunks: 79
+Avg chunk length: 575.0 chars
+Min chunk length: 58 chars
+Max chunk length: 2054 chars

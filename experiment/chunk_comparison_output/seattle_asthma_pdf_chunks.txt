@@ -1,0 +1,720 @@
+================================================================================
+CHUNK 1 (length: 92 chars, ~13 tokens)
+================================================================================
+Inclusion Criteria
+- 1-18 y.o. with asthma exacerbation admitted to general medicine service
+
+================================================================================
+CHUNK 2 (length: 485 chars, ~66 tokens)
+================================================================================
+Exclusion Criteria
+- Patients with pneumonia, bronchiolitis, or croup as their primary diagnosis
+- Chronic lung disease (e.g. cystic fibrosis, restrictive lung disease, bronchopulmonary dysplasia)
+- Cardiac disease requiring baseline medication
+- Airway Issues (e.g. vocal cord paralysis, tracheomalacia, tracheostomy dependent)
+- Medically complex children
+- Immune disorders
+- Sickle cell anemia
+Stop and Review
+Version Changes
+Last Updated: May 2025 Next Expected Review: April 2028
+
+================================================================================
+CHUNK 3 (length: 64 chars, ~8 tokens)
+================================================================================
+Asthma Care
+Respiratory Score
+ED Management
+Inpatient Management
+
+================================================================================
+CHUNK 4 (length: 58 chars, ~7 tokens)
+================================================================================
+Appendix
+Approval & Citation
+Evidence Ratings
+Bibliography
+
+================================================================================
+CHUNK 5 (length: 92 chars, ~13 tokens)
+================================================================================
+Inclusion Criteria
+- 1-18 y.o. with asthma exacerbation admitted to general medicine service
+
+================================================================================
+CHUNK 6 (length: 397 chars, ~52 tokens)
+================================================================================
+Exclusion Criteria
+- Patients with pneumonia, bronchiolitis, or croup as their primary diagnosis
+- Chronic lung disease (e.g. cystic fibrosis, restrictive lung disease, bronchopulmonary dysplasia)
+- Cardiac disease requiring baseline medication
+- Airway Issues (e.g. vocal cord paralysis, tracheomalacia, tracheostomy dependent)
+- Medically complex children
+- Immune disorders
+- Sickle cell anemia
+
+================================================================================
+CHUNK 7 (length: 1502 chars, ~297 tokens)
+================================================================================
+Exclusion Criteria
+RR, 0 points = . RR, 1 point = . RR, 2 points = . RR, 3 points = . 0-8 weeks, 0 points = . 0-8 weeks, 1 point = ≤60. 0-8 weeks, 2 points = 61-69. 0-8 weeks, 3 points = ≥70. 2-11 months, 0 points = . 2-11 months, 1 point = ≤50. 2-11 months, 2 points = 51-59. 2-11 months, 3 points = ≥60. 12-23 months, 0 points = . 12-23 months, 1 point = ≤40. 12-23 months, 2 points = 41-44. 12-23 months, 3 points = ≥45. 2-3 years, 0 points = . 2-3 years, 1 point = ≤34. 2-3 years, 2 points = 35-39. 2-3 years, 3 points = ≥40. 4-5 years, 0 points = . 4-5 years, 1 point = ≤30. 4-5 years, 2 points = 31-35. 4-5 years, 3 points = ≥36. 6-12 years, 0 points = . 6-12 years, 1 point = ≤26. 6-12 years, 2 points = 27-30. 6-12 years, 3 points = ≥31. ≥ 13 years, 0 points = . ≥ 13 years, 1 point = ≤23. ≥ 13 years, 2 points = 24-27. ≥ 13 years, 3 points = ≥28. Retractions, 0 points = None. Retractions, 1 point = Subcostal or intercostal. Retractions, 2 points = 2 of the following: subcostal, intercostal, substernal OR nasal flaring (infant). Retractions, 3 points = 3 of the following: subscostal, intercostal, substernal, suprasternal, supraclavicular OR nasal flaring / head bobbing (infant). Dyspnea, 0 points = . Dyspnea, 1 point = . Dyspnea, 2 points = . Dyspnea, 3 points = . <2 years, 0 points = Normal feeding, vocalizations and activity. <2 years, 1 point = 1 of the following: difficulty feeding, decreased vocalization or agitated. <2 years, 2 points = 2 of the following: difficulty feeding,
+
+================================================================================
+CHUNK 8 (length: 1063 chars, ~174 tokens)
+================================================================================
+Exclusion Criteria
+decreased vocalization or agitated. <2 years, 3 points = Stops feeding, no vocalization, drowsyor confused. 2 to 4 years, 0 points = Normal feeding, vocalizations and play. 2 to 4 years, 1 point = 1 of the following: decreased appetite, increased coughing after play, hyperactivity. 2 to 4 years, 2 points = 2 of the following: decreased appetite, increased coughing after play, hyperactivity. 2 to 4 years, 3 points = Stops eating or drinking, stops playing OR drowsyand confused. >4 years, 0 points = Counts to ≥10 in one breath. >4 years, 1 point = Counts to 7-9 in one breath. >4 years, 2 points = Counts to 4-6 in one breath. >4 years, 3 points = Counts to ≤3 in one breath. Auscultation, 0 points = Normal breathing, no wheezing present. Auscultation, 1 point = End-expiratorywheeze only. Auscultation, 2 points = Expiratorywheeze only (greater than end- expiratorywheeze). Auscultation, 3 points = Inspiratoryand expiratorywheeze OR diminished breath sounds OR both
+Last Updated: May 2025
+Next Expected Review: April 2028
+Stop and Review
+
+================================================================================
+CHUNK 9 (length: 92 chars, ~13 tokens)
+================================================================================
+Inclusion Criteria
+- 1-18 y.o. with asthma exacerbation admitted to general medicine service
+
+================================================================================
+CHUNK 10 (length: 397 chars, ~52 tokens)
+================================================================================
+Exclusion Criteria
+- Patients with pneumonia, bronchiolitis, or croup as their primary diagnosis
+- Chronic lung disease (e.g. cystic fibrosis, restrictive lung disease, bronchopulmonary dysplasia)
+- Cardiac disease requiring baseline medication
+- Airway Issues (e.g. vocal cord paralysis, tracheomalacia, tracheostomy dependent)
+- Medically complex children
+- Immune disorders
+- Sickle cell anemia
+
+================================================================================
+CHUNK 11 (length: 243 chars, ~39 tokens)
+================================================================================
+Assess and Score at Initial Assessment
+- If patient has received pathway concordant care prior to ED arrival, continue pathway at the appropriate phase and hour
+Supplemental O2 should be administered to keep O2 saturation > 90% Supplemental O2
+
+================================================================================
+CHUNK 12 (length: 138 chars, ~27 tokens)
+================================================================================
+RS 7-9
+- Albuterol/ipratropium neb over 1hr (see note below)
+- Dexamethasone 0.6 mg/kg x1 (16 mg max)
+Assess and Score at end of 1 st hour
+
+================================================================================
+CHUNK 13 (length: 153 chars, ~33 tokens)
+================================================================================
+RS 5-8
+- Albuterol MDI 8 puffs at beginning of hour
+- Dexamethasone 0.6 mg/kg x1 (16 mg max) -- if not already given
+Assess and Score at end of 2 nd hour
+
+================================================================================
+CHUNK 14 (length: 295 chars, ~61 tokens)
+================================================================================
+Go to Go to
+- 3 rd Hour (ED) - Phase 1c · 3 rd Hour (ED) - Phase 1c
+- 4 th Hour (ED) - Phase 1d · 4 th Hour (ED) - Phase 1d
+- Urgent Care Transfer Criteria · Urgent Care Transfer Criteria
+- Discharge Criteria · Discharge Criteria
+- Discharge Instructions · Discharge Instructions
+Stop and Review
+
+================================================================================
+CHUNK 15 (length: 71 chars, ~15 tokens)
+================================================================================
+RS 1-6
+- Albuterol MDI 8 puffs
+- Dexamethasone 0.6 mg/kg x1 (16 mg max)
+
+================================================================================
+CHUNK 16 (length: 194 chars, ~42 tokens)
+================================================================================
+RS 1-4
+- If first hour RS 1-5, discharge
+- If first hour RS 6-9, observe for 1 hour
+- If first hour RS 10-12, observe for 2 hours
+- Dexamethasone 0.6 mg/kg x1 (16 mg max) -- if not already given
+
+================================================================================
+CHUNK 17 (length: 169 chars, ~32 tokens)
+================================================================================
+RS 10-12
+- Albuterol/ipratropium neb over 1hr (see note below)
+- Dexamethasone 0.6 mg/kg x1 (16 mg max)
+- Magnesium sulfate IV 50 mg/kg x1 (2,000 mg max) for age ≥2 y.o.
+
+================================================================================
+CHUNK 18 (length: 145 chars, ~26 tokens)
+================================================================================
+Nebulizer Dosing
+- Large volume nebulizer
+- Albuterol 20 mg
+- Ipratropium 1 mg
+- Vibrating mesh nebulizer
+- Albuterol 7.5 mg
+- Ipratropium 0.5 mg
+
+================================================================================
+CHUNK 19 (length: 240 chars, ~49 tokens)
+================================================================================
+RS 9-12
+- Albuterol neb
+- Dexamethasone 0.6 mg/kg x1 (16 mg max) -- if not already given
+- Ipratropium neb -- if not already given
+- Magnesium sulfate IV 50 mg/kg x1 (2,000 mg max) for age ≥2 y.o. -- if not already given
+- Place bed request
+
+================================================================================
+CHUNK 20 (length: 92 chars, ~13 tokens)
+================================================================================
+Inclusion Criteria
+- 1-18 y.o. with asthma exacerbation admitted to general medicine service
+
+================================================================================
+CHUNK 21 (length: 397 chars, ~52 tokens)
+================================================================================
+Exclusion Criteria
+- Patients with pneumonia, bronchiolitis, or croup as their primary diagnosis
+- Chronic lung disease (e.g. cystic fibrosis, restrictive lung disease, bronchopulmonary dysplasia)
+- Cardiac disease requiring baseline medication
+- Airway Issues (e.g. vocal cord paralysis, tracheomalacia, tracheostomy dependent)
+- Medically complex children
+- Immune disorders
+- Sickle cell anemia
+
+================================================================================
+CHUNK 22 (length: 370 chars, ~67 tokens)
+================================================================================
+Urgent Care Transfer Criteria
+- After first hour of nebulized albuterol, if score >8, send by ALS
+- At end of second hour:
+- If score >8, send by ALS
+- If score 5-8, shared decision making about discharge versus transfer by ALS
+- If signs of clinical deterioration or poor clinical response to therapy, send by ALS
+Last Updated: May 2025 Next Expected Review: April 2028
+
+================================================================================
+CHUNK 23 (length: 262 chars, ~48 tokens)
+================================================================================
+Discharge Criteria
+- RS 1-4 for minimum of 1 hour
+- (Patients with an initial RS of 10-12 should be observed for 2 hours prior to discharge)
+- Shared decision making in hour 3 for RS 5-8
+- Tolerating oral intake
+- Adequate family teaching
+- Follow-up established
+
+================================================================================
+CHUNK 24 (length: 453 chars, ~68 tokens)
+================================================================================
+Discharge Instructions
+- Continue to use albuterol MDI every 4 hours until seen by provider
+- For patients who have received dexamethasone, discharge with second dose to be given 24 hours after
+- Consider patient's disease severity and possible initiation or discussion of inhaled corticosteroids disease severity inhaled corticosteroids
+- Consider creating Asthma Action Plan
+- Follow up with provider within 24-48 hours (when possible)
+Stop and Review
+
+================================================================================
+CHUNK 25 (length: 92 chars, ~13 tokens)
+================================================================================
+Inclusion Criteria
+- 1-18 y.o. with asthma exacerbation admitted to general medicine service
+
+================================================================================
+CHUNK 26 (length: 397 chars, ~52 tokens)
+================================================================================
+Exclusion Criteria
+- Patients with pneumonia, bronchiolitis, or croup as their primary diagnosis
+- Chronic lung disease (e.g. cystic fibrosis, restrictive lung disease, bronchopulmonary dysplasia)
+- Cardiac disease requiring baseline medication
+- Airway Issues (e.g. vocal cord paralysis, tracheomalacia, tracheostomy dependent)
+- Medically complex children
+- Immune disorders
+- Sickle cell anemia
+
+================================================================================
+CHUNK 27 (length: 194 chars, ~35 tokens)
+================================================================================
+PHASE II: INPATIENT
+- Albuterol nebulization
+- Large volume nebulizer, albuterol 20 mg
+- Vibrating mesh nebulizer, albuterol 5 mg
+- Assessment q 1 hr
+- Advance after 1 hr of treatment for RS 1-8
+
+================================================================================
+CHUNK 28 (length: 117 chars, ~22 tokens)
+================================================================================
+PHASE III: INPATIENT
+- Albuterol MDI 8 puffs q 2 hours
+- Assessment q 2 hours
+- Begin discharge teaching and planning
+
+================================================================================
+CHUNK 29 (length: 72 chars, ~14 tokens)
+================================================================================
+PHASE IV: INPATIENT
+Albuterol MDI 8 puffs q 4 hours
+Assessment q 4 hours
+
+================================================================================
+CHUNK 30 (length: 75 chars, ~16 tokens)
+================================================================================
+PHASE V: INPATIENT
+•
+Albuterol MDI 4 puffs q 4 hours
+- Assessment q 4 hours
+
+================================================================================
+CHUNK 31 (length: 245 chars, ~42 tokens)
+================================================================================
+Discharge Criteria
+- In Phase V with RS 1-4
+- Observe for minimum of 2 hours after initial treatment in Phase V
+- Tolerating oral intake
+- No supplemental oxygen
+- Completion of asthma education and asthma management plan
+- Follow-up established
+
+================================================================================
+CHUNK 32 (length: 304 chars, ~43 tokens)
+================================================================================
+Discharge Instructions
+- Discharge With Asthma Management Plan
+- 'Living with Asthma' book
+- Consider patient's disease severity and possible initiation or discussion of inhaled corticosteroids disease severity inhaled corticosteroids
+- Follow-up with PCP in 24-48 hours (when possible)
+Stop and Review
+!
+
+================================================================================
+CHUNK 33 (length: 152 chars, ~18 tokens)
+================================================================================
+Signs of Clinical Deterioration: Signs of Clinical Deterioration: Signs of Clinical Deterioration:
+drowsiness, confusion, silent chest exam, hypercapnia
+
+================================================================================
+CHUNK 34 (length: 258 chars, ~48 tokens)
+================================================================================
+PHASE Progression (Phases III-V)
+- Phase Progression (i.e. 'spacing a patient') is based on the patient's RS pre -albuterol
+- RS 1-4 : Advance after one treatment at this phase
+- RS 5-8 : Continue therapy at this phase
+- RS 9-12 : Step back to previous phase
+
+================================================================================
+CHUNK 35 (length: 185 chars, ~36 tokens)
+================================================================================
+RN to notify MD
+- For all phase transitions
+- Failure to advance on pathway after 3 hours of albuterol nebs or after 12 hours in all other phases
+- Persistent O2 requirement in Phase IV
+
+================================================================================
+CHUNK 36 (length: 432 chars, ~66 tokens)
+================================================================================
+Inpatient Steroid Treatment
+- Transition to prednisone or prednisolone 2 mg/kg/day (60 mg/day max) for a total course of 5-7 days depending on severity of exacerbation
+- Alternatively, may consider second dose of dexamethasone instead of prednisone or prednisolone for mild exacerbations or for patients under 5 years old without previously established diagnosis of asthma
+Last Updated: May 2025 Next Expected Review: April 2028
+•
+•
+
+================================================================================
+CHUNK 37 (length: 122 chars, ~24 tokens)
+================================================================================
+Call RRT for
+- Signs of clinical deterioration
+- RS 11-12
+- 4+ hours of q 1 hr nebulizer treatments after arrival to floor
+
+================================================================================
+CHUNK 38 (length: 126 chars, ~25 tokens)
+================================================================================
+ICU Transfer
+- Dashboard until RS <9
+- History of ICU admission
+- RS 11-12 with q1h nebs x 3
+- Signs of clinical deterioration
+
+================================================================================
+CHUNK 39 (length: 113 chars, ~22 tokens)
+================================================================================
+Phase Change by Respiratory Score is the standard of care for patients on the Asthma Pathway
+- Scoring by RN & RT
+
+================================================================================
+CHUNK 40 (length: 96 chars, ~13 tokens)
+================================================================================
+Consider Phase Change by Physician Assessment and Order
+Patients with unique clinical conditions
+
+================================================================================
+CHUNK 41 (length: 103 chars, ~20 tokens)
+================================================================================
+that complicate their asthma treatment
+- Scoring by RN, RT & MD
+- Provider to assess pt every 2-3 hours
+
+================================================================================
+CHUNK 42 (length: 175 chars, ~27 tokens)
+================================================================================
+Conditions in which this may be appropriate
+- Patient transferred from ICU
+- Complex asthma history (e.g. hx intubation for asthma)
+- Medical comorbidity (e.g. morbid obesity)
+
+================================================================================
+CHUNK 43 (length: 277 chars, ~40 tokens)
+================================================================================
+If Physician Assessment needed for phase changes
+- Uncheck 'RN/RT wean' albuterol protocol (phase change by respiratory score)
+- Check 'Provider wean' albuterol protocol (phase change by physician)
+- If appropriate, 'RN/RT albuterol protocol' may be ordered as patient improves
+
+================================================================================
+CHUNK 44 (length: 486 chars, ~70 tokens)
+================================================================================
+Supplemental Oxygen Use in Asthma Exacerbations
+When does a patient require oxygen?
+- Patients with acute asthma should receive supplemental oxygen to maintain oxygen saturation greater than 90%
+- Supplemental oxygen is administered with all nebulization therapy
+- Monitoring oxygen saturation is recommended for patients with acute asthma exacerbations
+- Once a patient has reached phase IV, oxygen saturation monitoring is no longer necessary unless the patient has persistent hypoxia
+
+================================================================================
+CHUNK 45 (length: 776 chars, ~133 tokens)
+================================================================================
+Oxygen saturation as a diagnostic tool
+- Oxygen saturation is correlated with severity of illness in asthma
+- However, it is not useful as the sole indicator for need for admission
+- An oxygen saturation of <92% after 1 hour of treatment is a better predictor of need for hospitalization than initial oxygen saturation
+- Persistent hypoxia in the presence of an adequate response to therapy can be indicative of another contributing condition such as pneumonia
+- When using a pulse oximeter, be aware that skin pigmentation is one of multiple factors that can affect the accuracy of a reading (Shi 2022; FDA). Shi 2022 FDA
+- Dark skin pigment has been shown to correlate with falsely higher pulse oximetry values. (Shi 2022; FDA). Shi 2022 FDA
+Return to ED
+Return to Inpatient
+
+================================================================================
+CHUNK 46 (length: 614 chars, ~100 tokens)
+================================================================================
+Signs of Clinical Deterioration
+The following are red flags that a patient may have impending respiratory failure:
+- Inadequate response to therapy :  Characterized by a patient who receives optimal therapy and does not improve clinically
+- Failure to progress along the pathway :  Defined as 12 hours in any phase
+- Drowsiness :  Highly associated with acute respiratory acidosis
+- Silent chest exam :  Absence of breath sounds in a patient with respiratory distress
+- Hypercapnia :  Values cited for hypercapnia in an asthmatic range from a pCO2 of >40-45
+- Confusion :  Altered mental status
+Return to Inpatient
+
+================================================================================
+CHUNK 47 (length: 1545 chars, ~160 tokens)
+================================================================================
+Disease Severity Table
+Level of severity (Columns 2-5) is determined by events listed in Column 1for both impairment (frequency and intensity of symptoms and functional limitations) and risk(of exacerbations).Assessimpairmentbypatient'sorcaregiver'srecallofeventsduringtheprevious2-4weeks;assessriskoverthelastyear.
+* Abbreviations: EIB, exercise induced bronchospam; FEV, forced expiratory volume in I second; FVC, forced vital capacity; ICs, inhaled corticosteroid; SABA, short acting beta, agonist.
+NormalFEV,/FVC by age: 8-19 years,85%;20-39 years,80%;40-59 years,75%;60-80years,70%.
+Data are insufficient to link frequencies of exacerbations with different levels of asthma severity. Generally,more frequent and intense exacerbations(e.g.,requiring urgent care, hospital orintensive care admission, and/ororal corticosteroids) indicate greaterunderlying diseaseseverity.For treatment purposes,patientswith≥2 exacerbations maybe considered tohave persistent asthma,even in the absence of impairment levelsconsistent with persistent asthma.
+Expert Panel Report 3: Guidelines for the Diagnosis and Management of Asthma Quick Reference Guide https://www.nhlbi.nih.gov/files/docs/guidelines/asthma_qrg.pdf https://www.nhlbi.nih.gov/files/docs/guidelines/asthma_qrg.pdf
+This guide summarizes recommendations developed by the National Asthma Education and Prevention Program's expert panel after conducting a systematic review of the scientific literature on asthma care. See www.nhlbi.nih.gov/guidelines/asthma for the full report and references.
+
+================================================================================
+CHUNK 48 (length: 1246 chars, ~107 tokens)
+================================================================================
+NHLBI PUBLICATIONS AND RESOURCES
+https://www.nhlbi.nih.gov/health-topics/all-publications-and-resources/clinician-guide-2020-focusedupdates-asthma-management-guidelines https://www.nhlbi.nih.gov/health-topics/all-publications-and-resources/clinician-guide-2020-focusedupdates-asthma-management-guidelines https://www.nhlbi.nih.gov/health-topics/all-publications-and-resources/clinician-guide-2020-focusedupdates-asthma-management-guidelines
+2020 Focused Updates to the Asthma Management Guidelines: Clinician's Guide https://www.nhlbi.nih.gov/sites/default/files/publications/Asthma Clinicians Guide 508_02-03-21.pdf https://www.nhlbi.nih.gov/sites/default/files/publications/Asthma Clinicians Guide 508_02-03-21.pdf
+Stepwise Approach for Management of Asthma
+Pages 11-12:  ages 0 to 4 years
+Pages 13-14:  ages 5 to 11 years
+Pages 15-16:  ages 12+ years
+This Clinician's Guide summarizes the 2020 Focused Updates to the Asthma Management Guidelines: A Report from the National Asthma Education and Prevention Program Coordinating Committee Expert Panel Working Group to help clinicians integrate the new recommendations into clinical care. *Note: The ages 0-4 stepwise approach table was updated in February 2021.
+Return to ED
+Return to Inpatient
+
+================================================================================
+CHUNK 49 (length: 516 chars, ~70 tokens)
+================================================================================
+Evidence Synthesis: Guidelines
+Inhaled corticosteroids probably prevent hospitalizations (Guideline: NHLBI 2007, +3 Keans 2020). No advantages were found for IV or IM administration (LOE: Guieline NHLBI 2007, +2 Kirkland 2018). Dexamethasone is as effective as prednisone/prednisolone but better tolerated; studies were not able to establish the best dosage, formulation, or route of administration; a majority of patients preferred 1-2 dosese of oral or IM dexamethasone (LOE: Guideline, Cincinnati Childrens 2018).
+
+================================================================================
+CHUNK 50 (length: 122 chars, ~15 tokens)
+================================================================================
+Evidence Synthesis: Systematic Reviews
+Table: Effect of systemic or inhaled corticosteroids for acute asthma exacerbations
+
+================================================================================
+CHUNK 51 (length: 1934 chars, ~227 tokens)
+================================================================================
+Evidence Synthesis: Systematic Reviews
+Corticosteroids, Comparison = Corticosteroids. Corticosteroids, Population = Corticosteroids. Corticosteroids, Outcome.Length of hospital stay = Corticosteroids. Corticosteroids, Outcome.Hospital admission = Corticosteroids. Corticosteroids, Outcome.Escalatio n of care = Corticosteroids. Corticosteroids, Outcome.Readmissi on = Corticosteroids. Corticosteroids, Outcome.Adverse events = Corticosteroids. Corticosteroids, Magnitude of Effect, Number needed to treat (NNT) (95% CI) = Corticosteroids. Inhaled corticosteroids and systemic corticosteroids, Comparison = Systemic corticosteroids alone. Inhaled corticosteroids and systemic corticosteroids, Population = Children and adults. Inhaled corticosteroids and systemic corticosteroids, Outcome.Length of hospital stay = . Inhaled corticosteroids and systemic corticosteroids, Outcome.Hospital admission = Favors intervention +2. Inhaled corticosteroids and systemic corticosteroids, Outcome.Escalatio n of care = . Inhaled corticosteroids and systemic corticosteroids, Outcome.Readmissi on = . Inhaled corticosteroids and systemic corticosteroids, Outcome.Adverse events = Nausea and vomiting (N/V): No difference +2. Inhaled corticosteroids and systemic corticosteroids, Magnitude of Effect, Number needed to treat (NNT) (95% CI) = Adding inhaled corticosteroids to systemic corticosteroids may decrease hospital admission, NNTB 16 (10 to 78) for a 30% control group rate, and may have little to no difference in N/V (Kearns 2020).. Inhaled corticosteroids alone, Comparison = Systemic corticosteroids alone. Inhaled corticosteroids alone, Population = Children and adults. Inhaled corticosteroids alone, Outcome.Length of hospital stay = . Inhaled corticosteroids alone, Outcome.Hospital admission = Favors intervention +2. Inhaled corticosteroids alone, Outcome.Escalatio n of care = . Inhaled corticosteroids alone, Outcome.Readmissi on
+
+================================================================================
+CHUNK 52 (length: 454 chars, ~69 tokens)
+================================================================================
+Evidence Synthesis: Systematic Reviews
+= . Inhaled corticosteroids alone, Outcome.Adverse events = N/V: No difference +2 Tremor: No difference +2. Inhaled corticosteroids alone, Magnitude of Effect, Number needed to treat (NNT) (95% CI) = Inhaled corticosteroids may decrease hospital admission compared to systemic corticosteroids, NNTB 13 (8 to 132) for a control group rate of 25%, and may make little to no difference in N/V and tremor (Kearns 2020).
+
+================================================================================
+CHUNK 53 (length: 1796 chars, ~285 tokens)
+================================================================================
+Evidence Synthesis Statements
+Prednisolone, Placebo = Dexamethason e. Prednisolone, Children and adults = Children. Prednisolone, Favors intervention +3 = No difference +2. Prednisolone,  = No difference +2. Prednisolone, N/V: No difference +2 = Vomiting: No difference +2. Prednisolone, Using inhaled corticosteroids alone instead of placebo probably decreases hospital admission, NNTB 10 (8 to 20) and may make little to no difference in N/V (Kearns 2020). = Using prednisolone instead of dexamethasone may make little to no difference in hospital admission or readmission. Dexamethasone is an effective antiemetic in other settings; the lack of a significant reduction in vomiting compared to prednisolone (OR 3.05, 0.88 to 10.55) may be due to small sample size (Normansell 2016).. Prednisolone 5 day course, Placebo = Prednisolone 3 day course. Prednisolone 5 day course, Children and adults = Children. Prednisolone 5 day course, Favors intervention +3 = . Prednisolone 5 day course,  = No difference +2. Prednisolone 5 day course, N/V: No difference +2 = All: No difference +3. Prednisolone 5 day course, Using inhaled corticosteroids alone instead of placebo probably decreases hospital admission, NNTB 10 (8 to 20) and may make little to no difference in N/V (Kearns 2020). = Extending prednisolone therapy from 3 to 5 days may make little to no difference in readmission rates and probably does not impact adverse events (Normansell 2016).. Dexamethasone dose in ED followed by repeat dose in 2 days, Placebo = Dexamethason e single dose of in ED. Dexamethasone dose in ED followed by repeat dose in 2 days, Children and adults = Children. Dexamethasone dose in ED followed by repeat dose in 2 days, Favors intervention +3 = . Dexamethasone dose in ED followed by repeat dose in 2 days,
+
+================================================================================
+CHUNK 54 (length: 1686 chars, ~271 tokens)
+================================================================================
+Evidence Synthesis Statements
+= (To hospital, 7 days) No difference +1. Dexamethasone dose in ED followed by repeat dose in 2 days, N/V: No difference +2 = . Dexamethasone dose in ED followed by repeat dose in 2 days, Using inhaled corticosteroids alone instead of placebo probably decreases hospital admission, NNTB 10 (8 to 20) and may make little to no difference in N/V (Kearns 2020). = We are uncertain whether repeating dexamethasone for 2 days after the single dose in ED decreases hospital readmissions (Normansell 2016).. Prednisolone Higher dose (2 mg/kg), Placebo = Prednisolone Lower dose (0.5 mg/kg or 1 mg/kg). Prednisolone Higher dose (2 mg/kg), Children and adults = Children. Prednisolone Higher dose (2 mg/kg), Favors intervention +3 = . Prednisolone Higher dose (2 mg/kg),  = (to hospital, 14 days) No difference +2. Prednisolone Higher dose (2 mg/kg), N/V: No difference +2 = . Prednisolone Higher dose (2 mg/kg), Using inhaled corticosteroids alone instead of placebo probably decreases hospital admission, NNTB 10 (8 to 20) and may make little to no difference in N/V (Kearns 2020). = We are uncertain whether a higher dose of prednisolone reduces admissions compared with a low dose (Normansell 2016).
+Single IM dose of corticosteroid, 1 = Short course oral corticosteroid. Single IM dose of corticosteroid, 2 = Children and/or adults. Single IM dose of corticosteroid, 3 = (relapse to additional care 5-28 days) No difference +2. Single IM dose of corticosteroid, 4 = All: No difference +2. Single IM dose of corticosteroid, 5 = Administering corticosteroids IM instead of oral may make little to no difference in readmissions or adverse effects (Kirkland 2018).
+
+================================================================================
+CHUNK 55 (length: 964 chars, ~154 tokens)
+================================================================================
+Evidence Synthesis Statements
+The preferred study arm is highlighted in green. If both study arms are white, there is no difference. If a cell in an outcome column is blank then there is no outcome reported for that intervention and control comparison.
+The CSW Asthma Pathway team (nursing, pharmacy, ED, inpatient, and pulmonary) reviewed the results of the literature review of systematic reviews which suggested that inhaled corticosteroids (ICS) or ICS plus systemic corticosteroids (SCS) were equivalent or superior to SCS alone. The team investigated the possibility of replacing SCS for low score patients and adding ICS to SCS for more severe exacerbations. The team reviewed the primary literature that formed the basis of the meta-analysis and investigated the logistics of adding ICS to the pathway. After these reviews, expert consensus to add ICS to the pathway could not be reached and a decision was made to leave the pathway as it currently stands.
+
+================================================================================
+CHUNK 56 (length: 784 chars, ~119 tokens)
+================================================================================
+Magnesium
+Evidence Synthesis: Guidelines
+Effect of IV or inhaled magnesium sulphate (MgSO4) for acute asthma exacerbations.
+Nebulized MgSO4 results in little to no effect on control of acute mild to moderate asthma in children (+2 Knightly).
+For children with severe asthma symptoms (SpO2 <92%) not responding to nebulized beta2-agonist within the first hour, adding 150 mg MgSO4 to each nebulized short acting beta2-agonist likely reduces asthma symptoms (+2 Powell 2013) (LOE: Guideline, SIGN158 British 2019 ) Intravenous MgSO4 (40 mg/kg/day) likely reduces symptoms and is a safe treatment for acute asthma in children not responding to first-line treatment. Side effect of hypotension with a single dose of IV MgSO4 is rare (+2 Singhi 2014) (LOE: Guideline, SIGN158 British 2019)
+
+================================================================================
+CHUNK 57 (length: 1003 chars, ~168 tokens)
+================================================================================
+Evidence Synthesis: Systematic Reviews
+IV Magnesium Sulfate (MgSO 4 ), Comparison = Placebo. IV Magnesium Sulfate (MgSO 4 ), Population = Children. IV Magnesium Sulfate (MgSO 4 ), Outcome and Certainty.Length of hospital stay = Favors intervention +2. IV Magnesium Sulfate (MgSO 4 ), Outcome and Certainty.Hospital admission = Favors intervention +2. IV Magnesium Sulfate (MgSO 4 ), Outcome and Certainty.Escalation of care = . IV Magnesium Sulfate (MgSO 4 ), Outcome and Certainty.Readmission = (Return to ED 48h) No difference +2. IV Magnesium Sulfate (MgSO 4 ), Outcome and Certainty.Adverse events (all) = . IV Magnesium Sulfate (MgSO 4 ), Magnitude of Effect, Number needed to treat (NNT) (95% CI) = Assuming a control group event rate of 50%, administering IV MgSO4 may decrease hospital admission NNTB 4 (3 to 13) for a control group rate of 77%. MgSO4 may make little to no difference in returns to ED within 48 hours and may slightly decrease LOS, MD -5.3 hrs (-9 to - 1) hours (Griffths 2016).
+
+================================================================================
+CHUNK 58 (length: 2054 chars, ~362 tokens)
+================================================================================
+Evidence Synthesis Statements
+Inhaled MgSO 4, 1 = Short acting beta agonist. Inhaled MgSO 4, 2 = Adults and Children. Inhaled MgSO 4, 3 = No difference +1. Inhaled MgSO 4, 4 = . Inhaled MgSO 4, 5 = . Inhaled MgSO 4, 6 = Serious and mild: No difference +3. Inhaled MgSO 4, 7 = We are very uncertain whether inhaled MgSO4 increases or decreases hospital admission when compared to short acting beta agonists; there is little to no difference in serious and mild adverse events (Knightly 2017).. Inhaled MgSO 4 and short acting beta agonist and ipatroprium, 1 = Short acting beta agonist and ipratropium. Inhaled MgSO 4 and short acting beta agonist and ipatroprium, 2 = Adults and children. Inhaled MgSO 4 and short acting beta agonist and ipatroprium, 3 = No difference +4. Inhaled MgSO 4 and short acting beta agonist and ipatroprium, 4 = No difference +3. Inhaled MgSO 4 and short acting beta agonist and ipatroprium, 5 = (Hospital 30 days) No difference +2. Inhaled MgSO 4 and short acting beta agonist and ipatroprium, 6 = All and serious: No difference +3, +3. Inhaled MgSO 4 and short acting beta agonist and ipatroprium, 7 = Adding inhaled MgSO4 to short-acting beta agonists and ipratropium results in little to no difference in hospital admission, probably causes no difference in escalation of care or adverse events, and may make little to no difference in readmission. (Knightly 2017).. Inhaled MgSO 4 and short acting beta agonist, 1 = Short acting beta agonist. Inhaled MgSO 4 and short acting beta agonist, 2 = Adults and children. Inhaled MgSO 4 and short acting beta agonist, 3 = No difference +3. Inhaled MgSO 4 and short acting beta agonist, 4 = . Inhaled MgSO 4 and short acting beta agonist, 5 = . Inhaled MgSO 4 and short acting beta agonist, 6 = All and serious: No difference +3, +4. Inhaled MgSO 4 and short acting beta agonist, 7 = Adding inhaled MgSO4 to a short acting beta agonists probably results in little to no difference in hospital admission and all adverse events and little to no difference in serious events (Knightly
+
+================================================================================
+CHUNK 59 (length: 259 chars, ~43 tokens)
+================================================================================
+Evidence Synthesis Statements
+2017).
+The preferred study arm is highlighted in green. If both study arms are white, there is no difference. If a cell in an outcome column is blank then there is no outcome reported for that intervention and control comparison.
+
+================================================================================
+CHUNK 60 (length: 207 chars, ~30 tokens)
+================================================================================
+Evidence Synthesis: Guidelines
+Insufficient evidence to support or refute the role of antibiotics in acute asthma. The majority of asthma attacks are triggered by viral infection (LOE: Guideline, SIGN 2019),
+
+================================================================================
+CHUNK 61 (length: 1838 chars, ~244 tokens)
+================================================================================
+Evidence Synthesis: Systematic Reviews
+Intervention,  = Comparison. Intervention,  = Population. Intervention, Outcome and Certainty = Length of hospital stay. Intervention, Outcome and Certainty = Hospital admission. Intervention, Outcome and Certainty = Escalation of care. Intervention, Outcome and Certainty = Readmission. Intervention, Outcome and Certainty = Adverse events. Intervention,  = Magnitude of Effect, Number needed to treat (NNT) (95% CI). Antibiotics,  = Antibiotics. Antibiotics,  = Antibiotics. Antibiotics, Outcome and Certainty = Antibiotics. Antibiotics, Outcome and Certainty = Antibiotics. Antibiotics, Outcome and Certainty = Antibiotics. Antibiotics, Outcome and Certainty = Antibiotics. Antibiotics, Outcome and Certainty = Antibiotics. Antibiotics,  = Antibiotics. Azithromycin, telithromycin or ampicillin,  = Placebo. Azithromycin, telithromycin or ampicillin,  = Children and/or adults. Azithromycin, telithromycin or ampicillin, Outcome and Certainty = No difference +1. Azithromycin, telithromycin or ampicillin, Outcome and Certainty = . Azithromycin, telithromycin or ampicillin, Outcome and Certainty = . Azithromycin, telithromycin or ampicillin, Outcome and Certainty = . Azithromycin, telithromycin or ampicillin, Outcome and Certainty = All: no difference +2. Azithromycin, telithromycin or ampicillin,  = We are uncertain whether azithromycin, telithromycin or ampicillin increases or decreases length of hospital stay when compared to placebo. There may be little to no difference in adverse events (Normansell 2018).
+The preferred study arm is highlighted in green. If both study arms are white, there is no difference. If a cell in an outcome column is blank then there is no outcome reported for that intervention and control comparison.
+Effect of theophylline for acute asthma exacerbations
+
+================================================================================
+CHUNK 62 (length: 1868 chars, ~274 tokens)
+================================================================================
+Evidence Synthesis: Systematic Reviews
+Theophylline with or without ethylene diamine, Comparison.Other = Placebo. Theophylline with or without ethylene diamine, Population.Other = Children and adults. Theophylline with or without ethylene diamine, Outcome and Certainty.Length of hospital stay.Other = Favors intervention +2. Theophylline with or without ethylene diamine, Outcome and Certainty.Hospital admission.Other = No difference +1. Theophylline with or without ethylene diamine, Outcome and Certainty.Escalation of care.Other = . Theophylline with or without ethylene diamine, Outcome and Certainty.Readmission.Other = . Theophylline with or without ethylene diamine, Outcome and Certainty.Adverse events (all).Other = All: Favors control. Theophylline with or without ethylene diamine, Magnitude of Effect (95% CI).Other = Compared to placebo, theophylline may make little to no difference in hospital LOS [MD -0.23 days (95% CI: -0.37 to -0.08)], have uncertain effect on hospital admission, and may increase all adverse events, NNTH 7 (5 to 11) for a control group rate of 13% (Mahemuti 2018).. Bipap for 2 hours, Comparison.Other = Standard of care. Bipap for 2 hours, Population.Other = Children. Bipap for 2 hours, Outcome and Certainty.Length of hospital stay.Other = . Bipap for 2 hours, Outcome and Certainty.Hospital admission.Other = . Bipap for 2 hours, Outcome and Certainty.Escalation of care.Other = . Bipap for 2 hours, Outcome and Certainty.Readmission.Other = . Bipap for 2 hours, Outcome and Certainty.Adverse events (all).Other = All: not estimable, no deaths. Bipap for 2 hours, Magnitude of Effect (95% CI).Other = 
+The preferred study arm is highlighted in green. If both study arms are white, there is no difference. If a cell in an outcome column is blank then there is no outcome reported for that intervention and control comparison.
+
+================================================================================
+CHUNK 63 (length: 1491 chars, ~216 tokens)
+================================================================================
+Summary of Version Changes
+- Version 1.0 (9/14/2011): Go live.
+- Version 2.0 (9/15/2011): Patients progressing from Phase II to Phase III are now advanced for a respiratory score of 1-8.
+- Version 2.1 (10/19/2011): Added reminder to algorithm that IV Magnesium Sulfate is restricted to patients ≥ 6 years of age.
+- Version 3.0 (12/4/2012): Added information regarding appropriate use of pathway. Magnesium Sulfate should be given to all qualified patients in the Emergency Department.
+- Version 4.0 (10/13/2014): 'Poor Clinical Response' added. Clinical deterioration altered to promote RRT or code blue as response. Peak flow suggestion removed.
+- Version 5.0 (1/29/2015): Poor clinical response page changed: specific medication recommendations removed and re-huddle time changed to 4 hours.
+- Version 6.0 (7/15/2015): Periodic review go-live. See executive summary for significant changes.
+- Version 6.1 (7/22/2015): Methylprednisolone IV and Magnesium Sulfate IV updated on medication slide/tab.
+- Version 6.2 (12/11/2015): Generic language clarification for ED phase.
+- Version 7.0 (4/12/2018): Exclusion criteria changed to 'Cardiac disease requiring baseline medication'.
+- Version 8.0 (11/19/2018): Magnesium given to patients with RS 10-12 in first hour. Shared decision making for disposition in hour 3 for patients with RS 5-8.
+- Version 9.0 (10/2/2019): Revised pathway and algorithm, specifically page 18, to align with redesigning of organizational asthma educational material.
+
+================================================================================
+CHUNK 64 (length: 1192 chars, ~167 tokens)
+================================================================================
+Summary of Version Changes
+- Version 10.0 (4/24/2023): Periodic review go-live with new formatting style. Clarified age ranges for respiratory score table, ED initial assessment, ED timing for albuterol MDI and dexamethasone, urgent care transfer criteria, and inpatient phase progression. Updated ED 1st hour RS groups, nebulizer dosing for albuterol and ipratropium, discharge instructions, inpatient steroid treatment, and criteria for RRT and RISK watch. Removed ED 3rd hour ICU consult, ED 4th hour floor team huddle, and most educational pages. Aligned verbiage to correspond with Epic. Medication dosages reviewed and approved by Pharmacy and Therapeutics Committee on 4/18/2023.
+- Version 10.1 (7/10/2023): Added max dose for prednisone and prednisolone.
+- Version 11.0 (11/3/2023): Equity pauses were incorporated into the ED Management Phase with supporting content. Additional references added to bibliography.
+- Version 12.0 (1/18/2024): Updated to include albuterol viral mesh nebulizer on inpatient; amended rationale for calling RRT.
+- Version 12.1 (7/8/2024): Removal of 'continuous' from albuterol language.
+- Version 12.2 (5/12/2025): Updated 'Supplemental Oxygen Use' page.
+
+================================================================================
+CHUNK 65 (length: 532 chars, ~75 tokens)
+================================================================================
+CSW Asthma Pathway Team:
+Hospital Medicine, Owner
+Lynda Ken, MD
+Emergency Medicine, Owner
+Russell Migita, MD
+Emergency Medicine, Team Member
+Brian Burns, DNP, ARNP-CS, CPEN
+Pharmacy, Stakeholder
+Tracy Chen, PharmD, BCPS
+Respiratory Care, Team Member
+Robert DiBlasi, RRT-NPS, FAARC
+Urgent Care, Team Member
+Eva Juel-Medina, ARNP, MSN
+Medical Unit, Team Member
+Missy Lein, MSN, ARNP-CS, PCNS-BC
+Critical Care, Stakeholder
+Elizabeth Masse, RN
+Pulmonology, Team Member
+Stephen Reeves, MD, PhD
+Critical Care, Stakeholder
+Joan Roberts, MD
+
+================================================================================
+CHUNK 66 (length: 473 chars, ~63 tokens)
+================================================================================
+Clinical Effectiveness Team:
+Consultant
+Jeff Foti, MD
+Project Manager
+Ivan Meyer, PMP
+EHR Informatician
+Carlos Villavicencio, MD, MS/MI
+EHR Analyst
+Hong Wu
+Librarian
+Sue Groshong, MLIS
+Literature Reviewer
+Janelle Constantino, RN
+Literature Reviewer
+Janie Hallstrand, MD
+Literature Reviewer
+Jennifer Hrachovec, PharmD, MPH
+Literature Reviewer
+Darren Migita, MD
+Literature Reviewer
+Eileen Reichert, MN ARNP
+Literature Reviewer
+Matthew Test, MD
+Program Coordinator
+Ann Yi, MPA
+
+================================================================================
+CHUNK 67 (length: 128 chars, ~17 tokens)
+================================================================================
+Quality and Clinical Effectiveness Leadership:
+Medical Director
+Darren Migita, MD
+Operations Director
+Jaleh Shafii, MS, RN, CPHQ
+
+================================================================================
+CHUNK 68 (length: 322 chars, ~42 tokens)
+================================================================================
+Recommended Citation: Recommended Citation:
+Ken, L., Burns, B., Chen, T., DiBlasi, R., Juel-Medina, E., Lein, M., Masse, E., Migita, R., Reeves, S., Roberts, J., & Migita, D. (2025, May 12). Asthma pathway . Seattle Children's, Center for Quality and Patient Safety. https://www.seattlechildrens.org/pdf/asthma-pathway.pdf
+
+================================================================================
+CHUNK 69 (length: 1306 chars, ~190 tokens)
+================================================================================
+Evidence Ratings
+This pathway was developed through local consensus based on published evidence and expert opinion as part of Clinical Standard Work at Seattle Children's.  Pathway teams include representatives from Medical, Subspecialty, and/or Surgical Services, Nursing, Pharmacy, Clinical Effectiveness, and other services as appropriate. This pathway was developed through local consensus based on published evidence and expert opinion as part of Clinical Standard Work at Seattle Children's.  Pathway teams include representatives from Medical, Subspecialty, and/or Surgical Services, Nursing, Pharmacy, Clinical Effectiveness, and other services as appropriate.
+When possible, we used the GRADE method of rating evidence quality. Evidence is first assessed as to whether it is from randomized trial or cohort studies.  The rating is then adjusted in the following manner (from: Guyatt G et al. J Clin Epidemiol. 2011;4:383-94, Hultcrantz M et al. J Clin Epidemiol. 2017;87:4-13.): When possible, we used the GRADE method of rating evidence quality. Evidence is first assessed as to whether it is from randomized trial or cohort studies.  The rating is then adjusted in the following manner (from: Guyatt G et al. J Clin Epidemiol. 2011;4:383-94, Hultcrantz M et al. J Clin Epidemiol. 2017;87:4-13.):
+
+================================================================================
+CHUNK 70 (length: 495 chars, ~80 tokens)
+================================================================================
+Quality ratings are downgraded if studies: Quality ratings are downgraded if studies:
+- Have serious limitations · Have serious limitations
+- Have inconsistent results · Have inconsistent results
+- If evidence does not directly address clinical questions · If evidence does not directly address clinical questions
+- If estimates are imprecise OR · If estimates are imprecise OR
+- If it is felt that there is substantial publication bias · If it is felt that there is substantial publication bias
+
+================================================================================
+CHUNK 71 (length: 449 chars, ~82 tokens)
+================================================================================
+Quality ratings are upgraded if it is felt that: Quality ratings are upgraded if it is felt that:
+- The effect size is large · The effect size is large
+- If studies are designed in a way that confounding would likely underreport the magnitude of the effect OR · If studies are designed in a way that confounding would likely underreport the magnitude of the effect OR
+- If a dose-response gradient is evident · If a dose-response gradient is evident
+
+================================================================================
+CHUNK 72 (length: 1187 chars, ~184 tokens)
+================================================================================
+Certainty of Evidence Certainty of Evidence
+High: The authors have a lot of confidence that the true effect is similar to the estimated effect High: The authors have a lot of confidence that the true effect is similar to the estimated effect
+Moderate: The authors believe that the true effect is probably close to the estimated effect Moderate: The authors believe that the true effect is probably close to the estimated effect
+Low: The true effect might be markedly different from the estimated effect Low: The true effect might be markedly different from the estimated effect
+Very low: The true effect is probably markedly different from the estimated effect Very low: The true effect is probably markedly different from the estimated effect
+Guideline: Recommendation is from a published guideline that used methodology deemed acceptable by the team Guideline: Recommendation is from a published guideline that used methodology deemed acceptable by the team
+Expert Opinion: Based on available evidence that does not meet GRADE criteria (for example, case-control studies) Expert Opinion: Based on available evidence that does not meet GRADE criteria (for example, case-control studies)
+
+================================================================================
+CHUNK 73 (length: 854 chars, ~119 tokens)
+================================================================================
+Literature Search Methods
+For this update, we revised the search strategies in line with current Library practices. Literature searches were conducted in June 2020 to target synthesized literature on acute asthma exacerbations for 2015 to current and limited to English and humans. The search was executed in Ovid Medline, Embase, Cochrane Database of Systematic Reviews (CDSR) and Turning Research into Practice (TRIP) databases.
+Screening and data extraction were completed using DistillerSR (Evidence Partners, Ottawa, Canada). Two reviewers independently screened abstracts and included guidelines and systematic reviews that addressed optimal treatment in an acute inpatient or emergency department setting. One reviewer screened full text and extracted data and a second reviewer quality checked the results. Differences were resolved by consensus.
+
+================================================================================
+CHUNK 74 (length: 713 chars, ~109 tokens)
+================================================================================
+Literature Search Results
+The searches of the four abovementioned databases retrieved 1546 records. Our searches of other resources identified 1 additional record that appeared to meet the inclusion criteria. Once duplicates had been removed, we had a total of 1217 records. We excluded 1155 records based on titles and abstracts. We obtained the full text of the remaining 62 records and excluded 49. We combined these studies with those previously identified for prior versions of this pathway, and for this update we have included a total of 13 studies. The flow diagram summarizes the study selection process. Citations obtained outside the structured search parameters are listed under Additional References.
+
+================================================================================
+CHUNK 75 (length: 1526 chars, ~188 tokens)
+================================================================================
+Included Studies
+- Management of Acute Exacerbation of Asthma Presenting to the Emergency Department or Urgent Care. (2018). Cincinnati Children's Hospital Medical Center.
+- British guideline on the management of asthma. (2019). SIGN.
+- Griffiths, B., & Kew, K. M. (2016). Intravenous magnesium sulfate for treating children with acute asthma in the emergency department. Cochrane Database of Systematic Reviews, 4, CD011050. doi:https://dx.doi.org/10.1002/14651858.CD011050.pub2
+- Health, U. S. D. o., Human, S., National Institutes of Health, N. H., Lung, & Blood, I. (2020). 2020 Focused Updates to the Asthma Management Guidelines. (NIH Publication No. 20-HL-8140). U.S. Department of Health and Human Services, National Institutes of Health, National Heart, Lung and Blood Institute Retrieved from https://www.nhlbi.nih.gov/health-topics/all-publicationsand-resources/2020-focused-updates-asthma-management-guidelines.
+- Kearns, N., Maijers, I., Harper, J., Beasley, R., & Weatherall, M. (2020). Inhaled Corticosteroids in Acute Asthma: A Systemic Review and Meta-Analysis. The Journal of Allergy & Clinical Immunology in Practice, 8(2), 605-617.e606. doi:https://dx.doi.org/10.1016/j.jaip.2019.08.051
+- Kirkland, S. W., Cross, E., Campbell, S., Villa-Roel, C., & Rowe, B. H. (2018). Intramuscular versus oral corticosteroids to reduce relapses following discharge from the emergency department for acute asthma. Cochrane Database of Systematic Reviews, 6, CD012629. doi:https://dx.doi.org/ 10.1002/14651858.CD012629.pub2
+
+================================================================================
+CHUNK 76 (length: 1158 chars, ~150 tokens)
+================================================================================
+Included Studies
+- Kirkland, S. W., Vandermeer, B., Campbell, S., Villa-Roel, C., Newton, A., Ducharme, F. M., & Rowe, B. H. (2019). Evaluating the effectiveness of systemic corticosteroids to mitigate relapse in children assessed and treated for acute asthma: A network meta-analysis. Journal of Asthma, 56(5), 522-533. doi:https://dx.doi.org/10.1080/02770903.2018.1467444
+- Knightly, R., Milan, S. J., Hughes, R., Knopp-Sihota, J. A., Rowe, B. H., Normansell, R., & Powell, C. (2017). Inhaled magnesium sulfate in the treatment of acute asthma. Cochrane Database of Systematic Reviews, 11, CD003898. doi:https://dx.doi.org/10.1002/14651858.CD003898.pub6
+- Korang, S. K., Feinberg, J., Wetterslev, J., & Jakobsen, J. C. (2016). Non-invasive positive pressure ventilation for acute asthma in children. Cochrane Database of Systematic Reviews, 2016(9). doi:10.1002/14651858.CD012067.pub2
+- Mahemuti, G., Zhang, H., Li, J., Tieliwaerdi, N., & Ren, L. (2018). Efficacy and side effects of intravenous theophylline in acute asthma: a systematic review and meta-analysis. Drug design, development & therapy, 12, 99-120. doi:https://dx.doi.org/10.2147/DDDT.S156509
+
+================================================================================
+CHUNK 77 (length: 837 chars, ~100 tokens)
+================================================================================
+Included Studies
+- National Asthma, E., Prevention, P., Third Expert Panel on the, D., & Management of, A. (2007). Expert Panel Report 3: Guidelines for the Diagnosis and Management of Asthma. (07-4051). Bethesda (MD): National Heart, Lung, and Blood Institute (US) Retrieved from https:// www.nhlbi.nih.gov/sites/default/files/media/docs/EPR-3_Asthma_Full_Report_2007.pdf.
+- Normansell, R., Kew, K. M., & Mansour, G. (2016). Different oral corticosteroid regimens for acute asthma. Cochrane Database of Systematic Reviews(5), CD011801. doi:https://dx.doi.org/ 10.1002/14651858.CD011801.pub2
+- Normansell, R., Sayer, B., Waterson, S., Dennett, E. J., Del Forno, M., & Dunleavy, A. (2018). Antibiotics for exacerbations of asthma. Cochrane Database of Systematic Reviews, 6, CD002741. doi:https://dx.doi.org/10.1002/14651858.CD002741.pub2
+
+================================================================================
+CHUNK 78 (length: 623 chars, ~72 tokens)
+================================================================================
+Additional References
+- FDA. (2022, November 7). Pulse oximeter accuracy and limitations. U.S. Food and Drug Administration. https://www.fda.gov/medical-devices/safety-communications/pulse-oximeteraccuracy-and-limitations-fda-safety-communication
+- Shi, C., Goodall, M., Dumville, J., Hill, J., Norman, G., Hamer, O., Clegg, A., Watkins, C. L., Georgiou, G., Hodkinson, A., Lightbody, C. E., Dark, P., &amp; Cullum, N. (2022). The accuracy of pulse oximetry in measuring oxygen saturation by levels of skin pigmentation: A systematic review and meta-analysis. BMC Medicine, 20(1). https://doi.org/10.1186/s12916-022-02452-8
+
+================================================================================
+CHUNK 79 (length: 988 chars, ~154 tokens)
+================================================================================
+Medical Disclaimer
+Medicine is an ever-changing science. As new research and clinical experience broaden our knowledge, changes in treatment and drug therapy are required.
+The authors have checked with sources believed to be reliable in their efforts to provide information that is complete and generally in accord with the standards accepted at the time of publication.
+However, in view of the possibility of human error or changes in medical sciences, neither the authors nor Seattle Children's Healthcare System nor any other party who has been involved in the preparation or publication of this work warrants that the information contained herein is in every respect accurate or complete, and they are not responsible for any errors or omissions or for the results obtained from the use of such information.
+Readers should confirm the information contained herein with other sources and are encouraged to consult with their health care provider before making any health care decision.
+

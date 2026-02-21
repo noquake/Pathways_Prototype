@@ -1,0 +1,339 @@
+================================================================================
+CHUNK 1 (length: 799 chars, ~63 tokens)
+================================================================================
+CLINICAL PATHWAY: Inpatient Asthma
+Inclusion Criteria:≥1yrsold;inadequateresponsetoEDasthma treatment(seeEDAsthmaPathway);patientswhoweregivenepinephrineinthe ambulanceorat an outlyinghospital;patientswithhistory ofpriorICU admissionswhopresent morethanoncetotheEmergencyDepartment during anexacerbation ExcludeCriteria:<1yrold;primarydiagnosisofbronchiolitisorpneumonia(seeBronchiolitisClinicalPathway,CommunityAcquiredPneumonia Clinical Pathway); active cardiac disease areNOTroutinelyindicated for the treatmentof asthma:
+- Ipratropium bromide should not be administered after 24 hours of hospitalization
+- Chest x-rays(features typically associated with positive chest x-ray findings include fever,nofamily history of asthma, and localized lung findings on physical exam)
+- Oral SystemicSteroid:
+
+================================================================================
+CHUNK 2 (length: 608 chars, ~45 tokens)
+================================================================================
+AdmittoMedical/Surgical Unit
+- Oxygen:Titrateperorder
+- PrednisoneorPrednisolone1mg/kg/doseq12hr
+- ■
+- ORgiveadditional dose of Dexamethasone 0.6 mg/kg(max16mg) PO/IM prior todischarge
+- Start 24hrafterdexamethasone.Totalsteroidcourse:5days ■
+- Detemmineinitial MPIS
+- IfpoorPO,placePIVandadministerIVFwithpotassium
+Useasthma-specificH&Ptodocumentasthmaseverityandcontrol(AppendixA)
+- IfsymptomaticorconcemforCoVID-19 infection,sendcOVID-19 testingperCOVID19EDandInpatientdinicalPathway
+- Antibiotics (unless diagnosed with a bacterial infection)
+- Consider orderingmedicationsforbedsidedelivery at admission
+
+================================================================================
+CHUNK 3 (length: 294 chars, ~34 tokens)
+================================================================================
+Initiate Phase 1:
+- Albuterolviacontinuousneb:
+- 。
+- o
+- InitiateAlbuterol WeanProtocol*
+- o prior to going to q2hr
+- Ifnottoleratingoralsteroid:Methylprednisolone1mg/kg/dose IVq6hr(max30mg/dose)
+- Place PIV,if not already done
+- CRmonitorwithcontinuouspulseoximetry
+- Initiate asthma education
+
+================================================================================
+CHUNK 4 (length: 252 chars, ~40 tokens)
+================================================================================
+Admission recomme nded patients, regardless of their current MPIS score:
+- Patients with a history of prior ICU admissionswho present more than onceto the ED exacerbation
+- Patients who were given epinephrine in the ambulance or at an outlying hospital
+
+================================================================================
+CHUNK 5 (length: 74 chars, ~13 tokens)
+================================================================================
+Admission Location:
+- Current MPIS ≤12: MS floors
+- Current MPIS ≥13: PICU
+
+================================================================================
+CHUNK 6 (length: 245 chars, ~39 tokens)
+================================================================================
+Management:
+- Steroids should be started reg ardless of current MPIS
+- Bronchodilator recomme ndations
+- Vital signs q4hr, MPIS q2hr
+- Vital signs q4hr, MPIS q2hr
+- Discontinue oxygen when RAsat≥90%
+- Intermittent pulse oximetry if nohypoxemia
+.
+
+================================================================================
+CHUNK 7 (length: 305 chars, ~36 tokens)
+================================================================================
+*ALBUTEROLWEANPROTOCOL:
+- RespiratoryTherapists(RTs)wean AlbuterolaccordingtothisMPIS drivenprotocol
+- RTs inform MD/APRN/PA of ALL ?
+- Wean when two consecutive scores arein appropriate range
+- Any escalation in care requires an exambyMD/APRN/PAatbedside
+- MD/APRN/PA can authorize variance from protocol
+
+================================================================================
+CHUNK 8 (length: 1260 chars, ~208 tokens)
+================================================================================
+*ALBUTEROLWEANPROTOCOL:
+>95%, Q, Saturation (RA).Score = 0. >95%, Accessory Muscle Use. = None. >95%, Accessory Muscle Use.Score = 0. >95%, LE Ratio. = 2:1. >95%, LE Ratio.Score = 0. >95%, Wheezing. = None: Good aeration. >95%, Wheezing.Score = 0. >95%, Heart Rate. = <120. >95%, Heart Rate. = <100. >95%, Heart Rate. = 0. >95%, Respiratory Rate.<3 yr old>3 yr old Score<6 yr old >6 yr oldScore = <30. >95%, Respiratory Rate. = <20. >95%, Respiratory Rate. = 0. 93-95%, Q, Saturation (RA).Score = 1. 93-95%, Accessory Muscle Use. = Mild. 93-95%, Accessory Muscle Use.Score = 1. 93-95%, LE Ratio. = 1:1. 93-95%, LE Ratio.Score = 1. 93-95%, Wheezing. = End expiratory. 93-95%, Wheezing.Score = 1. 93-95%, Heart Rate. = 121-140. 93-95%, Heart Rate. = 101-120. 93-95%, Heart Rate. = 1. 93-95%, Respiratory Rate.<3 yr old>3 yr old Score<6 yr old >6 yr oldScore = 31-45. 93-95%, Respiratory Rate. = 21-35. 93-95%, Respiratory Rate. = 1. 90-92%, Q, Saturation (RA).Score = 2. 90-92%, Accessory Muscle Use. = Moderate. 90-92%, Accessory Muscle Use.Score = 2. 90-92%, LE Ratio. = 1:2. 90-92%, LE Ratio.Score = 2. 90-92%, Wheezing. = Insp/Exp: Good aeration. 90-92%, Wheezing.Score = 2. 90-92%, Heart Rate. = 141-160. 90-92%, Heart Rate. = 121-140. 90-92%, Heart Rate. =
+
+================================================================================
+CHUNK 9 (length: 726 chars, ~122 tokens)
+================================================================================
+*ALBUTEROLWEANPROTOCOL:
+2. 90-92%, Respiratory Rate.<3 yr old>3 yr old Score<6 yr old >6 yr oldScore = 46-60. 90-92%, Respiratory Rate. = 36-50. 90-92%, Respiratory Rate. = 2. %06>, Q, Saturation (RA).Score = 3. %06>, Accessory Muscle Use. = Severe. %06>, Accessory Muscle Use.Score = 3. %06>, LE Ratio. = 1:3. %06>, LE Ratio.Score = . %06>, Wheezing. = Insp/Exp: Decreased aeration. %06>, Wheezing.Score = 3. %06>, Heart Rate. = >160. %06>, Heart Rate. = >140. %06>, Heart Rate. = 3. %06>, Respiratory Rate.<3 yr old>3 yr old Score<6 yr old >6 yr oldScore = >60. %06>, Respiratory Rate. = >50. %06>, Respiratory Rate. = 3
+NEXT PAGE
+CONTACTS: CHRISTINA GIUDICE, APRN | ALEX HOGAN, MD | ANAND SEKARAN, MD
+LAST UPDATED: 08.22.23
+
+================================================================================
+CHUNK 10 (length: 375 chars, ~46 tokens)
+================================================================================
+Initiate Phase 2:
+- AlbuterolMDlw/spacer8puffsq2hr
+- o perfom proper MDI technique
+- InitiateAlbuterolWeanProtocol*
+- ? Inhaled Corticosteroids(AppendixA,AppendixB)
+- Initiateasthmaeducationandcompletehometreatmentplan
+- ·
+THIS PATHWAY SERVES AS A GUIDE AND DOES NOT REPLACE CLINICAL JUDGMENT.
+THIS PATHWAY SERVES AS A GUIDE AND DOES NOT REPLACE CLINICAL JUDGMENT.
+Children's
+
+================================================================================
+CHUNK 11 (length: 730 chars, ~104 tokens)
+================================================================================
+AT-A-GLANCE GUIDE
+This At-A-Glance Guide describes a treatment management approach based on recommendations from the 2020 Focused Updates to the Asthma Management Guidelines: A Report from the National Asthma Education and Prevention Program Coordinating Committee Expert Panel Working Group . 1  Step diagrams from the 2007 Expert Panel Report 3: Guidelines for the Diagnosis and Management of Asthma (EPR-3) were updated with the new recommendations. The diagrams are intended to help clinicians integrate the new recommendations into clinical care, and are meant to assist, and not replace, clinical judgment or decision-making for individual patient management, with input from individuals with asthma about their preferences.
+
+================================================================================
+CHUNK 12 (length: 2110 chars, ~332 tokens)
+================================================================================
+AGES 0-4 YEARS: STEPWISE APPROACH FOR MANAGEMENT OF ASTHMA
+Preferred, Intermittent Asthma.STEP 1 = PRN SABA and At the start of RTI: Add short course daily ICS . Preferred, Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 2 = Daily low-dose ICS and PRN SABA. Preferred, Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 3 = Daily medium- dose ICS and PRN SABA. Preferred, Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 4 = Daily medium- dose ICS-LABA and PRN SABA. Preferred, Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 5 = Daily high-dose ICS-LABA and PRN SABA. Preferred, Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 6 = Daily high-dose ICS-LABA + oral systemic corticosteroid and PRN SABA. Alternative, Intermittent Asthma.STEP 1 = . Alternative, Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 2 = Daily montelukast* or Cromolyn,* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 3 = . Alternative, Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 4 = Daily medium- dose ICS + montelukast* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 5 = Daily high-dose ICS + montelukast* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 6 = Daily high-dose ICS + montelukast*+ oral systemic corticosteroid and PRN SABA. , Intermittent Asthma.STEP 1 = . , Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 2 = . , Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 3 = For children age 4 years only, see Step 3 Step 4 on Management of Persistent in Individuals Ages 5-11 Years diagram.. , Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 4 = For children age 4 years only, see Step 3 Step 4 on Management of Persistent in Individuals Ages 5-11 Years diagram.. , Management of Persistent Asthma in Individuals Ages 0-4 Years.STEP 5 = and Asthma. , Management of Persistent Asthma in Individuals
+
+================================================================================
+CHUNK 13 (length: 93 chars, ~16 tokens)
+================================================================================
+AGES 0-4 YEARS: STEPWISE APPROACH FOR MANAGEMENT OF ASTHMA
+Ages 0-4 Years.STEP 6 = and Asthma
+
+================================================================================
+CHUNK 14 (length: 1614 chars, ~233 tokens)
+================================================================================
+Assess Control
+- First check adherence, inhaler technique, environmental factors,  and comorbid conditions.
+- Step up if needed; reassess in 4-6 weeks
+- Step down if possible (if asthma is well controlled for at least 3 consecutive months)
+Consult with asthma specialist if Step 3 or higher is required. Consider consultation at Step 2.
+Control assessment is a key element of asthma care. This involves both impairment and risk. Use of objective measures, self-reported control, and health care utilization are complementary and should be employed on an ongoing basis, depending on the individual's clinical situation.
+Abbreviations: ICS, inhaled corticosteroid; LABA, long-acting beta 2 -agonist; SABA, inhaled short-acting beta 2 -agonist; RTI, respiratory tract infection; PRN, as needed
+-  Updated based on the 2020 guidelines.
+* Cromolyn and montelukast were not considered for this update and/or have limited availability for use in the United States. The FDA issued a Boxed Warning for montelukast in March 2020.
+1 The full-length report, 2020 Focused Updates to the Asthma Management Guidelines: A Report from the National Asthma Education and Prevention Program Coordinating Committee Expert Panel Working Group , can be accessed at nhlbi.nih.gov/asthmaguidelines .
+U.S.DepartmentofHealthandHumanServices NationalInstitutesofHealth
+NationalHeart,Lung,andBlood Institute
+RETURN TO THE BEGINNING
+CONTACTS: CHRISTINA GIUDICE, APRN | ALEX HOGAN, MD | ANAND SEKARAN, MD
+LAST UPDATED: 08.22.23
+NIH Publication No. 20-HL-8142 December 2020
+THIS PATHWAY SERVES AS A GUIDE AND DOES NOT REPLACE CLINICAL JUDGMENT.
+
+================================================================================
+CHUNK 15 (length: 56 chars, ~8 tokens)
+================================================================================
+2020 FOCUSED UPDATES TO THE
+Asthma Management Guidelines
+
+================================================================================
+CHUNK 16 (length: 1783 chars, ~253 tokens)
+================================================================================
+NOTES FOR INDIVIDUALS AGES 0-4 YEARS DIAGRAM
+Quick-relief medications, 1 = • Use SABA as needed for symptoms. The intensity of treatment depends on severity of symptoms: up to 3 treatments at 20-minute intervals as needed. • Caution: Increasing use of SABA or use >2 days a week for symptom relief (not prevention of EIB) generally indicates inadequate control and may require a step up in treatment. • Consider short course of oral systemic corticosteroid if exacerbation is severe or individual has history of previous severe exacerbations.. Each step: Assess environmental factors, provide patient education, and manage comorbidities , 1 = • In individuals with sensitization (or symptoms) related to exposure to pests‡: conditionally recommend integrated pest management as a single or multicomponent allergen-specific mitigation intervention.  • In individuals with sensitization (or symptoms) related to exposure to identified indoor allergens, conditionally recommend a multi-component allergen-specific mitigation strategy.  • In individuals with sensitization (or symptoms) related to exposure to dust mites, conditionally recommend impermeable pillow/mattress covers only as part of a multicomponent allergen-specific mitigation intervention, but not as a single component intervention. . Notes, 1 = • If clear benefit is not observed within 4-6 weeks and the medication technique and adherence are satisfactory, the clinician should consider adjusting therapy or alternative diagnoses.. Abbreviations, 1 = EIB, exercise-induced bronchoconstriction; SABA, inhaled short-acting beta 2 -agonist.  Updated based on the 2020 guidelines. ‡ Refers to mice and cockroaches, which were specifically examined in the Agency for Healthcare Research and Quality systematic review.
+
+================================================================================
+CHUNK 17 (length: 1142 chars, ~187 tokens)
+================================================================================
+WHAT'S NEW (AGES 0-4 YEARS)
+- Step 1: In children ages 0-4 years with recurrent wheezing, a short (7-10 day) course of daily ICS with as-needed SABA for quick-relief therapy is recommended starting at the onset of a respiratory tract infection.
+- 9 Recurrent wheezing is defined as at least three episodes of wheezing triggered by apparent infection in their lifetime, or two episodes in the past year, and no symptoms between infections.
+- 9 One regimen, used in two reviewed studies, is budesonide inhalation suspension, 1 mg twice daily for 7 days at the first sign of respiratory tract infection-associated symptoms.
+- 9 The main benefit during respiratory tract infections is a reduction in exacerbations requiring systemic corticosteroids.
+- 9 Caregivers can initiate intermittent ICS treatment at home without a visit to a health care provider when they have clear instructions.
+- 9 This treatment could affect growth. Carefully monitor growth in children who use this treatment.
+- Steps 3 and 4: For children age 4 years only with persistent asthma, see Steps 3 and 4 on Management of Persistent Asthma in Individuals Ages 5-11 Years.
+
+================================================================================
+CHUNK 18 (length: 295 chars, ~44 tokens)
+================================================================================
+· Each step:
+- 9 Consider the severity of an individual's asthma, the small potential benefit, and the extent of previous symptoms and exacerbations when recommending allergen mitigation interventions.
+LAST UPDATED: 08.22.23
+THIS PATHWAY SERVES AS A GUIDE AND DOES NOT REPLACE CLINICAL JUDGMENT.
+
+================================================================================
+CHUNK 19 (length: 114 chars, ~15 tokens)
+================================================================================
+Appendix B: NHLBI Asthma Classification
+2020 FOCUSED UPDATES TO THE Asthma Management Guidelines
+AT-A-GLANCE GUIDE
+
+================================================================================
+CHUNK 20 (length: 1916 chars, ~289 tokens)
+================================================================================
+AGES 5-11 YEARS: STEPWISE APPROACH FOR MANAGEMENT OF ASTHMA
+Preferred, Intermittent Asthma.STEP 1 = PRN SABA. Preferred, Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 2 = Daily low-dose ICS and PRN SABA. Preferred, Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 3 = Daily and PRN combination low-dose ICS-formoterol . Preferred, Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 4 = Daily and PRN combination medium-dose ICS-formoterol . Preferred, Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 5 = Daily high-dose ICS-LABA and PRN SABA. Preferred, Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 6 = Daily high-dose ICS-LABA + oral systemic corticosteroid and PRN SABA. Alternative, Intermittent Asthma.STEP 1 = . Alternative, Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 2 = Daily LTRA,* or Cromolyn,* or Nedocromil,* or Theophylline,* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 3 = Daily medium- dose ICS and PRN SABA or Daily low-dose ICS-LABA, or daily low-dose ICS + LTRA,* or daily low-dose ICS +Theophylline,* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 4 = Daily medium- dose ICS-LABA and PRN SABA or Daily medium- dose ICS + LTRA* or daily medium- dose ICS + Theophylline,* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 5 = Daily high-dose ICS + LTRA* or daily high-dose ICS + Theophylline,* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 6 = Daily high-dose ICS + LTRA* + oral systemic corticosteroid or daily high-dose ICS + Theophylline* + oral systemic corticosteroid, and PRN SABA. , Intermittent Asthma.STEP 1 = . , Management of Persistent Asthma in Individuals Ages 5-11
+
+================================================================================
+CHUNK 21 (length: 995 chars, ~153 tokens)
+================================================================================
+AGES 5-11 YEARS: STEPWISE APPROACH FOR MANAGEMENT OF ASTHMA
+Years.STEP 2 = Steps 2-4: Conditionally recommend the use of subcutaneous immunotherapy as an adjunct treatment to standard pharmacotherapy in individuals ≥ 5 years of age whose asthma is controlled at the. , Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 3 = Steps 2-4: Conditionally recommend the use of subcutaneous immunotherapy as an adjunct treatment to standard pharmacotherapy in individuals ≥ 5 years of age whose asthma is controlled at the. , Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 4 = Steps 2-4: Conditionally recommend the use of subcutaneous immunotherapy as an adjunct treatment to standard pharmacotherapy in individuals ≥ 5 years of age whose asthma is controlled at the. , Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 5 = Consider Omalizumab** . , Management of Persistent Asthma in Individuals Ages 5-11 Years.STEP 6 = Consider Omalizumab** 
+
+================================================================================
+CHUNK 22 (length: 1463 chars, ~223 tokens)
+================================================================================
+Assess Control
+- First check adherence, inhaler technique, environmental factors,  and comorbid conditions.
+- Step up if needed; reassess in 2-6 weeks
+- Step down if possible (if asthma is well controlled for at least 3 consecutive months)
+Consult with asthma specialist if Step 4 or higher is required. Consider consultation at Step 3.
+Control assessment is a key element of asthma care. This involves both impairment and risk. Use of objective measures, self-reported control, and health care utilization are complementary and should be employed on an ongoing basis, depending on the individual's clinical situation.
+Abbreviations: ICS, inhaled corticosteroid; LABA, long-acting beta 2 -agonist; LTRA, leukotriene receptor antagonist;
+SABA, inhaled short-acting beta 2 -agonist
+-  Updated based on the 2020 guidelines.
+* Cromolyn, Nedocromil, LTRAs including montelukast, and Theophylline were not considered in this update and/or have limited availability for use in the United States, and/or have an increased risk of adverse consequences and need for monitoring that make their use less desirable. The FDA issued a Boxed Warning for montelukast in March 2020.
+- ** Omalizumab is the only asthma biologic currently FDA-approved for this age range.
+CONTACTS: CHRISTINA GIUDICE, APRN | ALEX HOGAN, MD | ANAND SEKARAN, MD
+LAST UPDATED: 08.22.23
+THIS PATHWAY SERVES AS A GUIDE AND DOES NOT REPLACE CLINICAL JUDGMENT.
+NIH Publication No. 20-HL-8142 December 2020
+
+================================================================================
+CHUNK 23 (length: 74 chars, ~10 tokens)
+================================================================================
+2020 FOCUSED UPDATES TO THE
+Asthma Management Guidelines
+AT-A-GLANCE GUIDE
+
+================================================================================
+CHUNK 24 (length: 2244 chars, ~331 tokens)
+================================================================================
+NOTES FOR INDIVIDUALS AGES 5-11 YEARS DIAGRAM
+Quick-relief medications, 1 = • Use SABA as needed for symptoms. The intensity of treatment depends on severity of symptoms: up to 3 treatments at 20-minute intervals as needed. • In Steps 3 and 4, the preferred option includes the use of ICS-formoterol 1 to 2 puffs as needed up to a maximum total daily maintenance and rescue dose of 8 puffs (36 mcg).  • Caution: Increasing use of SABA or use >2 days a week for symptom relief (not prevention of EIB) generally indicates inadequate control and may require a step up in treatment.. Each step: Assess environmental factors, provide patient education, and manage comorbidities , 1 = • In individuals with sensitization (or symptoms) related to exposure to pests‡: conditionally recommend integrated pest management as a single or multicomponent allergen-specific mitigation intervention.  • In individuals with sensitization (or symptoms) related to exposure to identified indoor allergens, conditionally recommend a multi-component allergen-specific mitigation strategy.  • In individuals with sensitization (or symptoms) related to exposure to dust mites, conditionally recommend impermeable pillow/mattress covers only as part of a multicomponent allergen-specific mitigation intervention, but not as a single component intervention. . Notes, 1 = • The terms ICS-LABA and ICS-formoterol indicate combination therapy with both an ICS and a LABA, usually and preferably in a single inhaler. • Where formoterol is specified in the steps, it is because the evidence is based on studies specific to formoterol. • In individuals ages 5-11 years with persistent allergic asthma in which there is uncertainty in choosing, monitoring, or adjusting anti-inflammatory therapies based on history, clinical findings, and spirometry, FeNO measurement is conditionally recommended as part of an ongoing asthma monitoring and management strategy that includes frequent assessment.. Abbreviations, 1 = EIB (exercise-induced bronchoconstriction); FeNO (fractional exhaled nitric oxide); ICS (inhaled corticosteroid); LABA (long-acting beta 2 -agonist); SABA (inhaled short-acting beta 2 -agonist).  Updated based on the 2020 guidelines. ‡ Refers to mice and
+
+================================================================================
+CHUNK 25 (length: 160 chars, ~22 tokens)
+================================================================================
+NOTES FOR INDIVIDUALS AGES 5-11 YEARS DIAGRAM
+cockroaches, which were specifically examined in the Agency for Healthcare Research and Quality systematic review.
+
+================================================================================
+CHUNK 26 (length: 1986 chars, ~306 tokens)
+================================================================================
+WHAT'S NEW (AGES 5-11 YEARS)
+- For individuals with mild to moderate persistent asthma who are taking daily ICS treatment (likely adherent with prescribed daily ICS) as a controller, increasing the regular daily ICS dose for short periods is not recommended when symptoms increase or peak flow decreases.
+- Steps 2-4: Subcutaneous immunotherapy (SCIT) is recommended as an adjunct treatment for individuals who have demonstrated allergic sensitization and evidence of worsening asthma symptoms after exposure to the relevant antigen or antigens.
+9
+Do not initiate, increase, or administer maintenance SCIT doses while individuals have asthma symptoms.
+- 9 Do not administer SCIT in individuals with severe asthma.
+- Steps 3 and 4: For individuals with moderate to severe persistent asthma already taking low- or mediumdose ICS, the preferred treatment is a single inhaler with ICS-formoterol (referred to as single maintenance and reliever therapy, or 'SMART') used both daily and as needed.
+- 9 Individuals with a severe exacerbation in the prior year are particularly good candidates for SMART to reduce exacerbations.
+- 9 Do not use ICS-formoterol as reliever therapy in individuals taking ICS-salmeterol as maintenance therapy.
+- 9 Individuals whose asthma is uncontrolled on maintenance ICS-LABA with SABA as quick-relief therapy should receive the preferred SMART if possible before moving to a higher step of therapy.
+- 9 In children ages 4-11 years, there may be a lower risk of growth suppression among those taking SMART versus daily higher-dose ICS treatment.
+- Steps 5 and 6: Consider Omalizumab, the only FDA-approved asthma biologic for this age group.
+- Each step:
+- 9 Consider the severity of an individual's asthma, the small potential benefit, and the extent of previous symptoms and exacerbations when recommending allergen mitigation interventions.
+RETURN TO THE BEGINNING
+LAST UPDATED: 08.22.23
+THIS PATHWAY SERVES AS A GUIDE AND DOES NOT REPLACE CLINICAL JUDGMENT.
+
+================================================================================
+CHUNK 27 (length: 114 chars, ~15 tokens)
+================================================================================
+Appendix B: NHLBI Asthma Classification
+2020 FOCUSED UPDATES TO THE Asthma Management Guidelines
+AT-A-GLANCE GUIDE
+
+================================================================================
+CHUNK 28 (length: 1911 chars, ~302 tokens)
+================================================================================
+AGES 12+ YEARS: STEPWISE APPROACH FOR MANAGEMENT OF ASTHMA
+Preferred, Intermittent Asthma.STEP 1 = PRN SABA. Preferred, Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 2 = Daily low-dose ICS and PRN SABA or PRN concomitant ICS and SABA . Preferred, Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 3 = Daily and PRN combination low-dose ICS- formoterol . Preferred, Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 4 = Daily and PRN combination medium-dose ICS-formoterol . Preferred, Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 5 = Daily medium-high dose ICS-LABA + LAMA and PRN SABA . Preferred, Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 6  = Daily high-dose ICS-LABA + oral systemic corticosteroids + PRN SABA. Alternative, Intermittent Asthma.STEP 1 = . Alternative, Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 2 = Daily LTRA* and PRN SABA or Cromolyn,* or Nedocromil,* or Zileuton,* or Theophylline,* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 3 = Daily medium- dose ICS and PRN SABA or Daily low-dose ICS-LABA, or daily low-dose ICS + LAMA,  or daily low-dose ICS + LTRA,* and PRN SABA or Daily low-dose ICS + Theophylline* or Zileuton,* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 4 = Daily medium- dose ICS-LABA or daily medium-dose ICS + LAMA, and PRN SABA  or Daily medium- dose ICS + LTRA,* or daily medium- dose ICS + Theophylline,* or daily medium-dose ICS + Zileuton,* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 5 = Daily medium-high dose ICS-LABA or daily high-dose ICS + LTRA,* and PRN SABA. Alternative, Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 6  = . , Intermittent Asthma.STEP 1 =
+
+================================================================================
+CHUNK 29 (length: 1180 chars, ~176 tokens)
+================================================================================
+AGES 12+ YEARS: STEPWISE APPROACH FOR MANAGEMENT OF ASTHMA
+. , Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 2 = Steps 2-4: Conditionally recommend the use of subcutaneous immunotherapy as an adjunct treatment to standard pharmacotherapy in individuals ≥ 5 years of age whose asthma is controlled at the. , Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 3 = Steps 2-4: Conditionally recommend the use of subcutaneous immunotherapy as an adjunct treatment to standard pharmacotherapy in individuals ≥ 5 years of age whose asthma is controlled at the. , Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 4 = Steps 2-4: Conditionally recommend the use of subcutaneous immunotherapy as an adjunct treatment to standard pharmacotherapy in individuals ≥ 5 years of age whose asthma is controlled at the. , Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 5 = Consider adding Asthma Biologics (e.g., anti-IgE, anti-IL5, anti-IL5R, anti-IL4/IL13)**. , Management of Persistent Asthma in Individuals Ages 12+ Years.STEP 6  = Consider adding Asthma Biologics (e.g., anti-IgE, anti-IL5, anti-IL5R, anti-IL4/IL13)**
+
+================================================================================
+CHUNK 30 (length: 1853 chars, ~285 tokens)
+================================================================================
+Assess Control
+- First check adherence, inhaler technique, environmental factors,  and comorbid conditions.
+- Step up if needed; reassess in 2-6 weeks
+- Step down if possible (if asthma is well controlled for at least 3 consecutive months)
+Consult with asthma specialist if Step 4 or higher is required. Consider consultation at Step 3.
+Control assessment is a key element of asthma care. This involves both impairment and risk. Use of objective measures, self-reported control, and health care utilization are complementary and should be employed on an ongoing basis, depending on the individual's clinical situation.
+Abbreviations: ICS, inhaled corticosteroid; LABA, long-acting beta 2 -agonist; LAMA, long-acting muscarinic antagonist; LTRA, leukotriene receptor antagonist; SABA, inhaled short-acting beta 2 -agonist
+-  Updated based on the 2020 guidelines.
+* Cromolyn, Nedocromil, LTRAs including Zileuton and montelukast, and Theophylline were not considered for this update, and/or have limited availability for use in the United States, and/or have an increased risk of adverse consequences and need for monitoring that make their use less desirable. The FDA issued a Boxed Warning for montelukast in March 2020.
+- ** The AHRQ systematic reviews that informed this report did not include studies that examined the role of asthma biologics (e.g. anti-IgE, anti-IL5, anti-IL5R, anti-IL4/IL13). Thus, this report does not contain specific recommendations for the use of biologics in asthma
+- in Steps 5 and 6.
+-  Data on the use of LAMA therapy in individuals with severe persistent asthma (Step 6) were not included in the AHRQ systematic review and thus no recommendation is made.
+LAST UPDATED: 08.22.23
+NIH Publication No. 20-HL-8142
+December 2020
+RETURN TO THE BEGINNING
+THIS PATHWAY SERVES AS A GUIDE AND DOES NOT REPLACE CLINICAL JUDGMENT.
+
+================================================================================
+CHUNK 31 (length: 114 chars, ~15 tokens)
+================================================================================
+Appendix B: NHLBI Asthma Classification
+2020 FOCUSED UPDATES TO THE Asthma Management Guidelines
+AT-A-GLANCE GUIDE
+
+================================================================================
+CHUNK 32 (length: 2296 chars, ~338 tokens)
+================================================================================
+NOTES FOR INDIVIDUALS AGES 12+ YEARS DIAGRAM
+Quick-relief medications, 1 = • Use SABA as needed for symptoms. The intensity of treatment depends on the severity of symptoms: up to 3 treatments at 20-minute intervals as needed. • In steps 3 and 4, the preferred option includes the use of ICS-formoterol 1 to 2 puffs as needed up to a maximum total daily maintenance and rescue dose of 12 puffs (54 mcg).  • Caution: Increasing use of SABA or use >2 days a week for symptom relief (not prevention of EIB) generally indicates inadequate control and may require a step up in treatment.. Each step: Assess environmental factors, provide patient education, and manage comorbidities , 1 = • In individuals with sensitization (or symptoms) related to exposure to pests‡: conditionally recommend integrated pest management as a single or multicomponent allergen-specific mitigation intervention.  • In individuals with sensitization (or symptoms) related to exposure to identified indoor allergens, conditionally recommend a multi-component allergen-specific mitigation strategy.  • In individuals with sensitization (or symptoms) related to exposure to dust mites, conditionally recommend impermeable pillow/mattress covers only as part of a multicomponent allergen-specific mitigation intervention, but not as a single component intervention. . Notes, 1 = • The terms ICS-LABA and ICS-formoterol indicate combination therapy with both an ICS and a LABA, usually and preferably in a single inhaler. • Where formoterol is specified in the steps, it is because the evidence is based on studies specific to formoterol. • In individuals ages 12 years and older with persistent allergic asthma in which there is uncertainty in choosing, monitoring, or adjusting anti-inflammatory therapies based on history, clinical findings, and spirometry, FeNO measurement is conditionally recommended as part of an ongoing asthma monitoring and management strategy that includes frequent assessment. • Bronchial thermoplasty was evaluated in Step 6. The outcome was a conditional recommendation against the therapy.. Abbreviations, 1 = EIB, exercise-induced bronchoconstriction; FeNO, fractional exhaled nitric oxide; ICS, inhaled corticosteroid; LABA, long-acting beta 2 -agonist; SABA, inhaled short-acting beta 2
+
+================================================================================
+CHUNK 33 (length: 230 chars, ~35 tokens)
+================================================================================
+NOTES FOR INDIVIDUALS AGES 12+ YEARS DIAGRAM
+-agonist.  Updated based on the 2020 guidelines. ‡ Refers to mice and cockroaches, which were specifically examined in the Agency for Healthcare Research and Quality systematic review.
+
+================================================================================
+CHUNK 34 (length: 2210 chars, ~347 tokens)
+================================================================================
+WHAT'S NEW (AGES 12+ YEARS)
+- For individuals with mild to moderate persistent asthma who are taking daily ICS treatment (likely adherent with prescribed daily ICS) as a controller, increasing the regular daily ICS dose for short periods is not recommended when symptoms increase or peak flow decreases.
+- Step 2: For individuals with mild persistent asthma, either of the following two treatments are recommended as part of Step 2 therapy: 1) a daily low-dose ICS and as-needed SABA for quick-relief therapy, or 2) intermittent as-needed SABA and ICS used one after the other for worsening asthma.
+- 9 One approach to intermittent therapy is two to four puffs of albuterol followed by 80-250 mcg of beclomethasone equivalent every 4 hours as needed for asthma symptoms.
+- 9 Intermittent therapy can be initiated at home with regular provider follow-up to ensure that the intermittent regimen is still appropriate.
+- 9 Individuals with either low or high perception of symptoms may not be good candidates for as-needed ICS therapy. Daily low-dose ICS with as-needed SABA may be preferred.
+- Steps 2-4: Subcutaneous immunotherapy (SCIT) is recommended as an adjunct treatment for individuals who have demonstrated allergic sensitization and evidence of worsening asthma symptoms after exposure to the relevant antigen or antigens.
+- 9 Do not initiate, increase, or administer maintenance SCIT doses while individuals have asthma symptoms.
+- 9 Do not administer SCIT in individuals with severe asthma.
+- Steps 3 and 4: For individuals with moderate to severe persistent asthma already taking low- or mediumdose ICS, the preferred treatment is a single inhaler with ICS-formoterol (referred to as single maintenance and reliever therapy, or 'SMART') used both daily and as needed.
+- 9 Individuals with a severe exacerbation in the prior year are particularly good candidates for SMART to reduce exacerbations.
+- 9 Do not use ICS-formoterol as reliever therapy in individuals taking ICS-salmeterol as maintenance therapy.
+- 9 Individuals whose asthma is uncontrolled on maintenance ICS-LABA with SABA as quick-relief therapy should receive the preferred SMART if possible before moving to a higher step of therapy.
+
+================================================================================
+CHUNK 35 (length: 380 chars, ~59 tokens)
+================================================================================
+· Each step:
+- 9 Consider the severity of an individual's asthma, the small benefit, and the extent of previous symptoms and exacerbations when recommending allergen mitigation interventions.
+RETURN TO THE BEGINNING
+CONTACTS: CHRISTINA GIUDICE, APRN | ALEX HOGAN, MD | ANAND SEKARAN, MD
+LAST UPDATED: 08.22.23
+THIS PATHWAY SERVES AS A GUIDE AND DOES NOT REPLACE CLINICAL JUDGMENT.
+
