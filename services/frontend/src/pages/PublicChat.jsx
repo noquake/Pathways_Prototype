@@ -1,36 +1,70 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
-import "./Chat.css";
+import "./PublicChat.css";
 
 function PublicChat({ apiUrl }) {
 	const [query, setQuery] = useState("");
 	const [messages, setMessages] = useState([]);
 	const [loading, setLoading] = useState(false);
+	const [pathways, setPathways] = useState([]);
+	const [selectedPathwayId, setSelectedPathwayId] = useState("");
+	const [pathwayLoadError, setPathwayLoadError] = useState("");
+	const [previewLoadError, setPreviewLoadError] = useState(false);
+	const transcriptRef = useRef(null);
 
-	const [showSidebar, setShowSidebar] = useState(true);
+	useEffect(() => {
+		const loadPathways = async () => {
+			try {
+				const response = await axios.get(`${apiUrl}/pathways`);
+				const pathwayOptions = response.data || [];
+				setPathways(pathwayOptions);
+				if (pathwayOptions.length > 0) {
+					setSelectedPathwayId(pathwayOptions[0].id);
+				}
+			} catch (error) {
+				console.error("Error loading pathways:", error);
+				setPathwayLoadError("Could not load pathway list.");
+			}
+		};
+		loadPathways();
+	}, [apiUrl]);
 
-	const allCitations = messages
-        .flatMap(msg => msg.citations || [])
-        // Optional: Filter out duplicates if needed
-        .filter((v, i, a) => a.findIndex(t => t.source_file === v.source_file) === i);
+	useEffect(() => {
+		setPreviewLoadError(false);
+	}, [selectedPathwayId]);
 
+	useEffect(() => {
+		if (transcriptRef.current) {
+			transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+		}
+	}, [messages, loading]);
+
+	const selectedPathway = useMemo(
+		() => pathways.find((pathway) => pathway.id === selectedPathwayId),
+		[pathways, selectedPathwayId],
+	);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		if (!query.trim() || loading) return;
+		const trimmedQuery = query.trim();
+		if (!trimmedQuery || loading) return;
 
-		const userMessage = { role: "user", content: query, citations: [] };
-		setMessages((prev) => [userMessage, ...prev]);
+		const userMessage = {
+			role: "user",
+			content: trimmedQuery,
+			citations: [],
+		};
+		setMessages((prev) => [...prev, userMessage]);
 		setLoading(true);
 		setQuery("");
 
 		try {
 			const response = await axios.post(`${apiUrl}/chat/public`, {
-				query: query,
-				// model: 'ollama',
-				model: "gemini-pro",
+				query: trimmedQuery,
+				model: "gemini",
 				top_k: 5,
+				pathway_id: selectedPathwayId || null,
 			});
 
 			const assistantMessage = {
@@ -39,95 +73,129 @@ function PublicChat({ apiUrl }) {
 				citations: response.data.citations || [],
 				timestamp: response.data.timestamp,
 			};
-			setMessages((prev) => [assistantMessage, ...prev]);
+			setMessages((prev) => [...prev, assistantMessage]);
 		} catch (error) {
 			console.error("Error:", error);
-			const errorMessage = {
-				role: "assistant",
-				content: "Sorry, I encountered an error. Please try again.",
-				citations: [],
-			};
-			setMessages((prev) => [errorMessage, ...prev]);
+			setMessages((prev) => [
+				...prev,
+				{
+					role: "assistant",
+					content: "Sorry, I encountered an error. Please try again.",
+					citations: [],
+				},
+			]);
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	return (
-        <div className="chat-page">
-            {/* WRAPPER FOR SIDE-BY-SIDE LAYOUT */}
-            <div className="chat-layout">
-                
-                {/* --- LEFT SIDE: CHAT --- */}
-                <div className="chat-main">
-                    <div className="chat-header" style={{padding: '20px', borderBottom: '1px solid #eee'}}>
-                        <h2 style={{margin:0}}>Public Clinical Chat</h2>
-                        <p className="disclaimer" style={{margin:'10px 0 0 0'}}>
-                            Responses based on clinical pathways. Not medical advice.
-                        </p>
-                    </div>
+		<div className="public-chat-page">
+			<div className="public-chat-layout">
+				<section className="public-chat-main">
+					<h1 className="public-chat-title">Pathways</h1>
 
-                    {/* Input Area (Pinned to Top) */}
-                    <form onSubmit={handleSubmit} className="input-container" style={{padding: '20px'}}>
-                        <input
-                            type="text"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Ask a question about clinical pathways..."
-                            className="query-input"
-                            disabled={loading}
-                        />
-                        <button type="submit" className="submit-button" disabled={loading || !query.trim()}>
-                            Send
-                        </button>
-                    </form>
+					<label className="pathway-select-label" htmlFor="pathway-select">
+						Selected Pathway
+					</label>
+					<select
+						id="pathway-select"
+						className="pathway-select"
+						value={selectedPathwayId}
+						onChange={(e) => setSelectedPathwayId(e.target.value)}
+						disabled={pathways.length === 0}
+					>
+						{pathways.length === 0 ? (
+							<option value="">
+								{pathwayLoadError || "Loading pathways..."}
+							</option>
+						) : (
+							pathways.map((pathway) => (
+								<option key={pathway.id} value={pathway.id}>
+									{pathway.label}
+								</option>
+							))
+						)}
+					</select>
 
-                    {/* Messages Area (Scrollable) */}
-                    <div className="chat-container">
-                        <div className="chat-messages">
-                            {messages.map((msg, idx) => (
-                                <div key={idx} className={`message ${msg.role}`}>
-                                    <div className="message-header">
-                                        {msg.role === "user" ? "You" : "Assistant"}
-                                    </div>
-                                    <div className="message-content">
-                                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                                    </div>
-                                </div>
-                            ))}
-                            {loading && <div className="message assistant">Thinking...</div>}
-                        </div>
-                    </div>
-                </div>
+					<form onSubmit={handleSubmit} className="question-form">
+						<input
+							type="text"
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							placeholder="Hello, How can I help you today?"
+							className="question-input"
+							disabled={loading}
+						/>
+						<button
+							type="submit"
+							className="question-submit"
+							disabled={loading || !query.trim()}
+							aria-label="Send"
+						>
+							{loading ? "..." : ">"}
+						</button>
+					</form>
 
-                {/* --- RIGHT SIDE: REFERENCES SIDEBAR --- */}
-                {showSidebar && (
-                    <div className="reference-sidebar">
-                        <div className="sidebar-header">
-                            Referenced Documents ({allCitations.length})
-                        </div>
-                        <div className="sidebar-content">
-                            {allCitations.length === 0 ? (
-                                <p style={{color: '#999', fontStyle: 'italic'}}>
-                                    Sources will appear here as you chat.
-                                </p>
-                            ) : (
-                                allCitations.map((cite, idx) => (
-                                    <div key={idx} className="reference-card">
-                                        <div className="reference-title">📄 {cite.source_file}</div>
-                                        {/* Assuming 'cite' has text/snippet content, otherwise remove this div */}
-                                        <div className="reference-snippet">
-                                            Chunk ID: {cite.chunk_index}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+					<div className="chat-transcript" ref={transcriptRef}>
+						{messages.length === 0 && (
+							<div className="chat-card assistant">
+								<div className="chat-icon assistant">★</div>
+								<div className="chat-content">
+									<p>
+										Select a pathway and ask a question. Responses are limited to
+										the selected pathway.
+									</p>
+								</div>
+							</div>
+						)}
+
+						{messages.map((msg, idx) => (
+							<div key={idx} className={`chat-card ${msg.role}`}>
+								<div className={`chat-icon ${msg.role}`}>
+									{msg.role === "user" ? "◎" : "★"}
+								</div>
+								<div className="chat-content">
+									<ReactMarkdown>{msg.content}</ReactMarkdown>
+								</div>
+							</div>
+						))}
+
+						{loading && (
+							<div className="chat-card assistant">
+								<div className="chat-icon assistant">★</div>
+								<div className="chat-content">
+									<p>Thinking...</p>
+								</div>
+							</div>
+						)}
+					</div>
+				</section>
+
+				<aside className="pathway-panel">
+					<div className="pathway-panel-title">
+						{selectedPathway
+							? `${selectedPathway.label} Pathway`
+							: "Pathway Preview"}
+					</div>
+					<div className="pathway-preview-shell">
+						{selectedPathway && !previewLoadError ? (
+							<img
+								src={selectedPathway.preview_image_path}
+								alt={`${selectedPathway.label} pathway`}
+								className="pathway-preview-image"
+								onError={() => setPreviewLoadError(true)}
+							/>
+						) : (
+							<div className="pathway-preview-empty">
+								<p>Pathway preview not available yet.</p>
+							</div>
+						)}
+					</div>
+				</aside>
+			</div>
+		</div>
+	);
 }
 
 export default PublicChat;

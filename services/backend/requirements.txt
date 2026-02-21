@@ -8,14 +8,13 @@ pydantic-settings
 httpx
 cryptography
 
-llama-cpp-python
+pgvector
 docling
 sentence-transformers
 langchain
 torch
 openai
 google-genai
-ollama
 matplotlib # For plotting and visualization during test branches
 seaborn # For enhanced data visualization via matplotlib
 
