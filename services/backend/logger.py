@@ -4,12 +4,18 @@ from datetime import datetime
 import uuid
 from supabase import create_client, Client
 
+PATHWAY_QUERIES_TABLE = os.getenv("SUPABASE_TABLE_PATHWAY_QUERIES", "pathway_queries")
+
 class QueryLogger:
     """Log queries and metadata to Supabase for analytics."""
     
     def __init__(self):
         supabase_url = os.getenv("SUPABASE_URL")
-        supabase_key = os.getenv("SUPABASE_ANON_KEY")
+        supabase_key = (
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+            or os.getenv("SUPABASE_ANON_KEY")
+            or os.getenv("SUPABASE_PUBLISHABLE_KEY")
+        )
         
         if not supabase_url or not supabase_key:
             print("WARNING: Supabase credentials not found. Logging disabled.")
@@ -69,7 +75,7 @@ class QueryLogger:
         }
         
         try:
-            result = self.client.table('pathway_queries').insert(log_entry).execute()
+            result = self.client.table(PATHWAY_QUERIES_TABLE).insert(log_entry).execute()
             query_id = result.data[0]['query_id'] if result.data else None
             print(f"✓ Logged to Supabase: query_id={query_id}")
             return query_id

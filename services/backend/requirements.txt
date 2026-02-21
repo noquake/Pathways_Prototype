@@ -13,7 +13,6 @@ docling
 sentence-transformers
 langchain
 torch
-psycopg2-binary
 openai
 google-genai
 matplotlib # For plotting and visualization during test branches
