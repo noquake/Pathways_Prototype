@@ -1,6 +1,0 @@
-File: connecticut_asthma.pdf
-Type: pdf
-Total chunks: 35
-Avg chunk length: 914.3 chars
-Min chunk length: 56 chars
-Max chunk length: 2296 chars

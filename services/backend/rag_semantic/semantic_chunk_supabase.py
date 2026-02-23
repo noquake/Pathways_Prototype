@@ -193,8 +193,8 @@ def create_tables():
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
     
-    -- pathway_chunks table
-    CREATE TABLE IF NOT EXISTS pathway_chunks (
+    -- semantic_pathway_chunks table
+    CREATE TABLE IF NOT EXISTS semantic_pathway_chunks (
         chunk_id BIGSERIAL PRIMARY KEY,
         chunk_hash TEXT UNIQUE NOT NULL,
         pathway_id VARCHAR(100) NOT NULL REFERENCES pathway_documents(pathway_id),
@@ -206,11 +206,11 @@ def create_tables():
     );
     
     -- Basic indexes
-    CREATE INDEX IF NOT EXISTS idx_pathway_chunks_pathway_id
-    ON pathway_chunks (pathway_id);
+    CREATE INDEX IF NOT EXISTS idx_semantic_pathway_chunks_pathway_id
+    ON semantic_pathway_chunks (pathway_id);
     
-    CREATE INDEX IF NOT EXISTS idx_pathway_chunks_hash
-    ON pathway_chunks (chunk_hash);
+    CREATE INDEX IF NOT EXISTS idx_semantic_pathway_chunks_hash
+    ON semantic_pathway_chunks (chunk_hash);
     """
     
     print("Copy and run this SQL in Supabase SQL Editor:")
@@ -232,7 +232,7 @@ def insert_pathway_document(metadata: dict, supabase):
         "doc_file_path": metadata.get("doc_file_path"),
         "doc_last_modified": metadata["doc_last_modified"].isoformat()
     }
-    supabase.table("semantic_pathway_documents").upsert(data).execute()
+    supabase.table("pathway_documents").upsert(data).execute()
 
 def insert_chunk_and_embedding_to_db(chunk, embedding, supabase):
     data = {
@@ -370,8 +370,8 @@ def main():
         print(f"Creating vector index on {chunk_count} chunks...")
         print("⚠️  Run this SQL in Supabase SQL Editor:")
         print("""
-        CREATE INDEX IF NOT EXISTS idx_pathway_chunks_embedding
-        ON pathway_chunks USING hnsw (embedding vector_cosine_ops);
+        CREATE INDEX IF NOT EXISTS idx_semantic_pathway_chunks_embedding
+        ON semantic_pathway_chunks USING hnsw (embedding vector_cosine_ops);
         """)
         print("(You only need to do this once)")
     else:
