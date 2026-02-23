@@ -1,5 +1,6 @@
 from pathlib import Path
 import hashlib
+import math
 from sentence_transformers import SentenceTransformer # type: ignore
 from docling.chunking import HybridChunker
 from docling.document_converter import DocumentConverter
@@ -24,8 +25,11 @@ tokenizer = HuggingFaceTokenizer(
 )
 
 chunker = HybridChunker(
-    tokenizer=tokenizer,
-    merge_peers=True,
+    tokenizer = tokenizer,
+    merge_peers = True,
+    overlap_tokens = math.ceil(MAX_TOKENS * 0.2), # Overlap by 20 percent
+    respect_section_boundaries = True,
+    max_table_cell_tokens = 384,  # preserve table rows
 )
 
 def hash_chunk_text(text: str) -> str:
@@ -40,45 +44,102 @@ def resolve_markdown_files(md_dir: Path):
     unique_files = sorted(set(matches), key=lambda p: str(p))
     return unique_files
 
+def extract_chunk_metadata(raw_chunk, doc_metadata):
+    """
+    Extract rich structural metadata from Docling chunk.
+    
+    Returns metadata about where this chunk came from in the document.
+    """
+    metadata = {
+        "pathway_id": doc_metadata["pathway_id"],
+        "doc_name": doc_metadata["doc_name"],
+    }
+    
+    # 1. Page information (from provenance)
+    if hasattr(raw_chunk, 'prov') and raw_chunk.prov:
+        # Docling stores page numbers in prov
+        pages = [p.page_no for p in raw_chunk.prov if hasattr(p, 'page_no')]
+        metadata["page_numbers"] = list(set(pages)) if pages else []
+        metadata["primary_page"] = pages[0] if pages else None
+    
+    # 2. Section/heading information
+    if hasattr(raw_chunk, 'meta') and raw_chunk.meta:
+        # Try to extract section heading
+        if 'heading' in raw_chunk.meta:
+            metadata["section_title"] = raw_chunk.meta['heading']
+        if 'headings' in raw_chunk.meta:
+            # Sometimes multiple hierarchical headings
+            metadata["section_hierarchy"] = raw_chunk.meta['headings']
+    
+    # 3. Content type (table, paragraph, list, etc.)
+    if hasattr(raw_chunk, 'self_ref') and hasattr(raw_chunk.self_ref, 'content_type'):
+        metadata["chunk_type"] = raw_chunk.self_ref.content_type
+    else:
+        metadata["chunk_type"] = "text"  # Default
+    
+    # 4. Parent section (for finding related chunks)
+    if hasattr(raw_chunk, 'path'):
+        # Path shows document hierarchy like: /body/section[2]/paragraph[1]
+        metadata["document_path"] = str(raw_chunk.path)
+        # Extract parent section ID from path
+        metadata["parent_section_id"] = extract_parent_section_from_path(raw_chunk.path)
+    
+    return metadata
+
+def extract_parent_section_from_path(path_str):
+    """
+    Extract parent section identifier from document path.
+    Example: '/body/section[2]/paragraph[1]' → 'section-2'
+    """
+    if not path_str:
+        return None
+    
+    # Find the section in the path
+    match = re.search(r'/section\[(\d+)\]', str(path_str))
+    if match:
+        return f"section-{match.group(1)}"
+    
+    # Fallback: use the entire path as ID
+    return hashlib.md5(str(path_str).encode()).hexdigest()[:8]
+
 # Retrieve docling-ized md files, generate chunks and append them to an all_chunks list
 def generate_chunks(md_dir: str, chunker: HybridChunker):
     md_dir = Path(md_dir)
-    if not md_dir.exists() or not md_dir.is_dir():
-        raise FileNotFoundError(
-            f"TRANSFORMED_FILES_DIR does not exist or is not a directory: {md_dir}"
-        )
-
     md_files = resolve_markdown_files(md_dir)
-    
-    print(f"Found {len(md_files)} transformed files under: {md_dir}")
-    if md_files:
-        preview = ", ".join(str(p.name) for p in md_files[:5])
-        print(f"Sample files: {preview}")
-    else:
-        raise FileNotFoundError(
-            f"No transformed files found in {md_dir}. "
-            "Expected files matching '*.md'."
-        )
-    
     global_idx = 0
     for file in md_files:
-        # Extract document metadata
         doc_metadata = extract_pathway_metadata(file.stem, file)
         doc_metadata["doc_file_path"] = str(file)
         
-        # Yield document metadata first (to be inserted before chunks)
         yield {
             "type": "document",
             "metadata": doc_metadata
         }
         
-        # Then process chunks
         doc = DocumentConverter().convert(source=file).document
         doc_chunk_idx = 0
+        
+        # Track current section for sequence numbering
+        current_section = None
+        section_chunk_count = 0
         
         for raw_chunk in chunker.chunk(dl_doc=doc):
             global_idx += 1
             doc_chunk_idx += 1
+            
+            # Extract metadata BEFORE contextualizing
+            chunk_metadata = extract_chunk_metadata(raw_chunk, doc_metadata)
+            
+            # Track sequence within section
+            if chunk_metadata.get("parent_section_id") != current_section:
+                current_section = chunk_metadata.get("parent_section_id")
+                section_chunk_count = 1
+            else:
+                section_chunk_count += 1
+            
+            chunk_metadata["sequence_in_section"] = section_chunk_count
+            
+            # Now contextualize
             contextualized_chunk = chunker.contextualize(raw_chunk)
             chunk_text = contextualized_chunk
             chunk_hash = hash_chunk_text(chunk_text)
@@ -86,10 +147,11 @@ def generate_chunks(md_dir: str, chunker: HybridChunker):
             yield {
                 "type": "chunk",
                 "global_index": global_idx,
-                "pathway_id": doc_metadata["pathway_id"],  # Use extracted pathway_id
+                "pathway_id": doc_metadata["pathway_id"],
                 "doc_chunk_index": doc_chunk_idx,
                 "chunk_hash": chunk_hash,
-                "chunk_text": chunk_text
+                "chunk_text": chunk_text,
+                "metadata": chunk_metadata  # ← ADD THIS
             }
 
 def create_supabase_client():
@@ -170,7 +232,7 @@ def insert_pathway_document(metadata: dict, supabase):
         "doc_file_path": metadata.get("doc_file_path"),
         "doc_last_modified": metadata["doc_last_modified"].isoformat()
     }
-    supabase.table("pathway_documents").upsert(data).execute()
+    supabase.table("semantic_pathway_documents").upsert(data).execute()
 
 def insert_chunk_and_embedding_to_db(chunk, embedding, supabase):
     data = {
@@ -179,11 +241,11 @@ def insert_chunk_and_embedding_to_db(chunk, embedding, supabase):
         "doc_chunk_index": chunk["doc_chunk_index"],
         "chunk_text": chunk["chunk_text"],
         "chunk_length": len(chunk["chunk_text"]),
-        "embedding": embedding.tolist() if hasattr(embedding, "tolist") else embedding
+        "embedding": embedding.tolist() if hasattr(embedding, "tolist") else embedding,
+        "metadata": chunk.get("metadata", {})  # ← ADD THIS
     }
     
-    # upsert will insert or update based on chunk_hash uniqueness
-    supabase.table("pathway_chunks").upsert(data).execute()
+    supabase.table("semantic_pathway_chunks").upsert(data).execute()
 
 # ---------------------------------------------------- NEW DOC ----------------------------------------------------
 
