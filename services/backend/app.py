@@ -4,12 +4,11 @@ import os
 import subprocess
 import sys
 
-from rag.scrape_docs import main as scrape_docs
-from rag.transform_data import main as transform_data
-from services.backend.rag.docling_chunk_supabase import main as docling_chunk_to_supabase
+# from rag.scrape_docs import main as scrape_docs
+# from rag.transform_data import main as transform_data
+# from rag.docling_chunk_supabase import main as docling_chunk_to_supabase
 
 from rag_semantic.semantic_chunk_supabase import main as semantic_chunk_supabase
-from rag_semantic.semantic_query import main as semantic_query
 
 def spin_up_docker():
     # subprocess.run(["docker", "compose", "up", "-d", ])
