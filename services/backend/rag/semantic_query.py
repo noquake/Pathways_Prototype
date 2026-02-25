@@ -4,7 +4,7 @@ import openai
 import os
 from google import genai
 
-from embeddings import get_embeddings
+from rag.embeddings import get_embeddings
 
 # API Keys from environment variables
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -13,10 +13,6 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # ----------------------
 # Models and DB
 # ----------------------
-model: Optional[SentenceTransformer] = None
-
-
-
 def retrieve_chunks(supabase, query_emb_list, top_k: int = 5, pathway_id: str = None):
     """Retrieve top-k chunks from Supabase RPC function."""
     configured_rpc = os.getenv("SUPABASE_MATCH_RPC", "match_semantic_pathway_chunks")

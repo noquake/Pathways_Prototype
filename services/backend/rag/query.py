@@ -5,7 +5,7 @@ import os
 from google import genai
 from ollama import Client
 
-from embeddings import get_embeddings
+from rag.embeddings import get_embeddings
 
 # API Keys from environment variables
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -14,7 +14,6 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # ----------------------
 # Models and DB
 # ----------------------
-model: Optional[SentenceTransformer] = None
 ollama_client = Client(host="http://localhost:11434")  # default port for local Ollama server
 
 def retrieve_chunks(supabase, query_emb_list, top_k: int = 5, pathway_id: str = None):
