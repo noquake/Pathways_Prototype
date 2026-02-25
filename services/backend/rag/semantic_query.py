@@ -3,8 +3,8 @@ from sentence_transformers import SentenceTransformer
 import openai
 import os
 from google import genai
-import ollama
-from ollama import Client
+
+from embeddings import get_embeddings
 
 # API Keys from environment variables
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -14,20 +14,13 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Models and DB
 # ----------------------
 model: Optional[SentenceTransformer] = None
-ollama_client = Client(host="http://localhost:11434")  # default port for local Ollama server
 
-def get_embeddings(chunk_texts: List[str]):
-    """Return embeddings for a list of texts."""
-    global model
-    if model is None:
-        # Prefer offline/local cache to keep service startup independent of network.
-        model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
-    return model.encode(chunk_texts)
+
 
 def retrieve_chunks(supabase, query_emb_list, top_k: int = 5, pathway_id: str = None):
     """Retrieve top-k chunks from Supabase RPC function."""
     configured_rpc = os.getenv("SUPABASE_MATCH_RPC", "match_semantic_pathway_chunks")
-    rpc_candidates = [configured_rpc, "match_semantic_pathway_chunks", "match_documents", "match_chunks"]
+    rpc_candidates = [configured_rpc, "match_semantic_pathway_chunks"]
     # Keep deterministic order while removing duplicates.
     rpc_names = list(dict.fromkeys(rpc_candidates))
 
@@ -60,7 +53,7 @@ def retrieve_chunks(supabase, query_emb_list, top_k: int = 5, pathway_id: str = 
             continue
 
     raise RuntimeError(
-        f"Supabase retrieval RPC failed. Tried: {', '.join(rpc_names)}. Last error: {last_error}"
+        f"Supabase retrieval RPC failed for SEMANTIC chunks. Tried: {', '.join(rpc_names)}. Last error: {last_error}"
     )
 
 def build_context(results):

@@ -1,6 +1,8 @@
 from dotenv import load_dotenv
+from httpx import request
 load_dotenv()
-
+import sys
+sys.path.append('/app')
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List, Dict, Any
@@ -13,14 +15,14 @@ from logger import query_logger
 import time
 import uuid
 
-
 # Import existing RAG components
-import sys
-sys.path.append('/app')
-# from rag.query import get_embeddings, rag_ollama, rag_api_llm
-# from rag.query import retrieve_chunks
-from rag_semantic.semantic_query import get_embeddings, rag_ollama, rag_api_llm
-from rag_semantic.semantic_query import retrieve_chunks
+from rag.embeddings import get_embeddings
+
+from rag.query import retrieve_chunks as retrieve_original_chunks
+from rag.query import rag_api_llm as original_rag_api_llm
+
+from rag.semantic_query import retrieve_chunks as retrieve_semantic_chunks
+from rag.semantic_query import rag_api_llm as semantic_rag_api_llm
 
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 
@@ -78,6 +80,7 @@ class ChatRequest(BaseModel):
     model_name: Optional[str] = "gemini-2.5-flash"  # Specific Gemini model to use (2026 API)
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
+    use_semantic: Optional[bool] = False
 
 class PractitionerChatRequest(ChatRequest):
     pathway_id: str
@@ -136,6 +139,16 @@ async def chat_public(request: ChatRequest):
     start_time = time.time()
     
     try:
+        # retrieval functions based on flag for comparison
+        if request.use_semantic:
+            retrieve_chunks = retrieve_semantic_chunks
+            rag_api = semantic_rag_api_llm
+            chunking_method = "SEMANTIC"
+        else:
+            retrieve_chunks = retrieve_original_chunks
+            rag_api = original_rag_api_llm
+            chunking_method = "ORIGINAL"
+
         print("="*60)
         print("=== NEW QUERY RECEIVED ===")
         print(f"Session ID: {session_id}")
@@ -177,13 +190,13 @@ async def chat_public(request: ChatRequest):
         # Generate response using LLM
         if request.model == "gemini":
             # Use Gemini API (default)
-            response_text = rag_api_llm(db_handle, request.query, top_k=request.top_k, 
+            response_text = rag_api(db_handle, request.query, top_k=request.top_k, 
                                        model_name=request.model_name, api_provider="gemini",
                                        pathway_id=request.pathway_id,
                                        retrieved_results=results)
         else:
             # Default to Gemini if unknown model specified
-            response_text = rag_api_llm(db_handle, request.query, top_k=request.top_k, 
+            response_text = rag_api(db_handle, request.query, top_k=request.top_k, 
                                        model_name="gemini-2.5-flash", api_provider="gemini",
                                        pathway_id=request.pathway_id,
                                        retrieved_results=results)

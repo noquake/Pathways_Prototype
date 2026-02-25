@@ -12,6 +12,8 @@ from datetime import datetime
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
+from embeddings import get_embeddings
+
 load_dotenv()
 
 MAX_TOKENS = 384
@@ -218,9 +220,6 @@ def create_tables():
     print(sql)
     print("="*60)
 
-def get_embedding(contextualized_chunk):
-    return model.encode(contextualized_chunk)
-
 def insert_pathway_document(metadata: dict, supabase):
     """Insert or update pathway document metadata."""
     data = {
@@ -344,7 +343,7 @@ def main():
             
             elif item["type"] == "chunk":
                 print(f"  └─ Chunk #{item['global_index']}...", end=" ")
-                emb = get_embedding(item["chunk_text"])
+                emb = get_embeddings([item["chunk_text"]])[0]
                 insert_chunk_and_embedding_to_db(item, emb, supabase)
                 chunk_count += 1
                 print("✓")
