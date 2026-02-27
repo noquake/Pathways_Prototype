@@ -16,7 +16,7 @@ from embeddings import get_embeddings
 
 load_dotenv()
 
-MAX_TOKENS = 384
+MAX_TOKENS = 768
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
@@ -325,7 +325,7 @@ def main():
     print("="*60 + "\n")
     
     print("Creating connection to database...\n")
-    supabase = create_supabase_client()  # Changed this line
+    # supabase = create_supabase_client()  # Changed this line
         
     md_dir = os.getenv("TRANSFORMED_FILES_DIR", "/app/data/transformed_files")
     print(f"Looking for files in: {md_dir}\n")
