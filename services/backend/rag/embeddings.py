@@ -1,15 +1,32 @@
 from typing import List, Dict, Optional
 from sentence_transformers import SentenceTransformer
+from .models import EMBEDDING_MODELS
 
-model: Optional[SentenceTransformer] = None
+_model_cache = {}
 
-def get_embeddings(chunk_texts: List[str]):
-    """Return embeddings for a list of texts."""
-    global model
-    if model is None:
-        # Prefer offline/local cache to keep service startup independent of network.
-        model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
-        # model = SentenceTransformer("all-mpnet-base-v2")
-        # model = SentenceTransformer("microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext")
-        # model = SentenceTransformer("ncbi/MedCPT-Query-Encoder")
-    return model.encode(chunk_texts)
+def get_embeddings(texts: List[str], model_key: str = "minilm"):
+    """
+    Get embeddings for texts using specified model.
+    
+    Args:
+        texts: List of strings to embed
+        model_key: Key from EMBEDDING_MODELS (minilm, pubmedbert, mpnet, medcpt)
+    
+    Returns:
+        numpy array of embeddings
+    """
+    global _model_cache
+    
+    if model_key not in EMBEDDING_MODELS:
+        raise ValueError(f"Unknown model: {model_key}. Choose from: {list(EMBEDDING_MODELS.keys())}")
+    
+    config = EMBEDDING_MODELS[model_key]
+    model_name = config["model_name"]
+    
+    # Cache models to avoid reloading
+    if model_key not in _model_cache:
+        print(f"Loading {model_name}...")
+        _model_cache[model_key] = SentenceTransformer(model_name)
+    
+    model = _model_cache[model_key]
+    return model.encode(texts)

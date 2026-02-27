@@ -259,93 +259,93 @@ async def chat_public(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Practitioner chat endpoint
-@app.post("/chat/practitioner", response_model=ChatResponse)
-async def chat_practitioner(
-    request: PractitionerChatRequest,
-    user_info: Dict[str, Any] = Depends(verify_token)
-):
-    """
-    Practitioner chat endpoint - requires authentication.
-    Includes memory/context from previous interactions.
-    """
-    if not user_info or user_info.get("role") != "practitioner":
-        raise HTTPException(status_code=403, detail="Access denied. Practitioner role required.")
+# @app.post("/chat/practitioner", response_model=ChatResponse)
+# async def chat_practitioner(
+#     request: PractitionerChatRequest,
+#     user_info: Dict[str, Any] = Depends(verify_token)
+# ):
+#     """
+#     Practitioner chat endpoint - requires authentication.
+#     Includes memory/context from previous interactions.
+#     """
+#     if not user_info or user_info.get("role") != "practitioner":
+#         raise HTTPException(status_code=403, detail="Access denied. Practitioner role required.")
     
-    user_id = user_info.get("user_id")
-    session_id = str(uuid.uuid4())
-    start_time = time.time()
+#     user_id = user_info.get("user_id")
+#     session_id = str(uuid.uuid4())
+#     start_time = time.time()
     
-    try:
-        db_handle = get_supabase_client()
-        history_response = (
-            db_handle.table(PATHWAY_QUERIES_TABLE)
-            .select("user_query, bot_response, created_at")
-            .eq("user_id", user_id)
-            .eq("user_role", "practitioner")
-            .order("created_at", desc=True)
-            .limit(5)
-            .execute()
-        )
-        history = history_response.data or []
+#     try:
+#         db_handle = get_supabase_client()
+#         history_response = (
+#             db_handle.table(PATHWAY_QUERIES_TABLE)
+#             .select("user_query, bot_response, created_at")
+#             .eq("user_id", user_id)
+#             .eq("user_role", "practitioner")
+#             .order("created_at", desc=True)
+#             .limit(5)
+#             .execute()
+#         )
+#         history = history_response.data or []
         
-        # Build context from history
-        context_history = "\n\nPrevious conversation:\n"
-        for h in reversed(history):
-            response_preview = (h.get('bot_response') or "")[:200]
-            context_history += f"Q: {h.get('user_query', '')}\nA: {response_preview}...\n\n"
+#         # Build context from history
+#         context_history = "\n\nPrevious conversation:\n"
+#         for h in reversed(history):
+#             response_preview = (h.get('bot_response') or "")[:200]
+#             context_history += f"Q: {h.get('user_query', '')}\nA: {response_preview}...\n\n"
         
-        # Perform RAG
-        query_emb = get_embeddings([request.query])[0]
-        query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
+#         # Perform RAG
+#         query_emb = get_embeddings([request.query])[0]
+#         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
         
-        results = retrieve_chunks(db_handle, query_emb_list, top_k=request.top_k, pathway_id=request.pathway_id)
-        citations = [
-            {
-                "chunk_id": str(r.get("chunk_id", "")),
-                "chunk_text": str(r.get("chunk_text", "")),
-                "chunk_length": int(r.get("chunk_length") or 0),
-                "source_file": str(r.get("source_file") or r.get("pathway_id") or "")
-            }
-            for r in results
-        ]
+#         results = retrieve_chunks(db_handle, query_emb_list, top_k=request.top_k, pathway_id=request.pathway_id)
+#         citations = [
+#             {
+#                 "chunk_id": str(r.get("chunk_id", "")),
+#                 "chunk_text": str(r.get("chunk_text", "")),
+#                 "chunk_length": int(r.get("chunk_length") or 0),
+#                 "source_file": str(r.get("source_file") or r.get("pathway_id") or "")
+#             }
+#             for r in results
+#         ]
         
-        # Generate response with context using specified model
-        if request.model == "ollama":
-            response_text = rag_ollama(db_handle, request.query, top_k=request.top_k,
-                                       pathway_id=request.pathway_id, retrieved_results=results)
-        elif request.model == "gemini":
-            response_text = rag_api_llm(db_handle, request.query, top_k=request.top_k, 
-                                       model_name=request.model_name, api_provider="gemini",
-                                       pathway_id=request.pathway_id, retrieved_results=results)
-        else:
-            # Default to Gemini
-            response_text = rag_api_llm(db_handle, request.query, top_k=request.top_k, 
-                                       model_name="gemini-2.5-flash", api_provider="gemini",
-                                       pathway_id=request.pathway_id, retrieved_results=results)
+#         # Generate response with context using specified model
+#         if request.model == "ollama":
+#             response_text = rag_ollama(db_handle, request.query, top_k=request.top_k,
+#                                        pathway_id=request.pathway_id, retrieved_results=results)
+#         elif request.model == "gemini":
+#             response_text = rag_api_llm(db_handle, request.query, top_k=request.top_k, 
+#                                        model_name=request.model_name, api_provider="gemini",
+#                                        pathway_id=request.pathway_id, retrieved_results=results)
+#         else:
+#             # Default to Gemini
+#             response_text = rag_api_llm(db_handle, request.query, top_k=request.top_k, 
+#                                        model_name="gemini-2.5-flash", api_provider="gemini",
+#                                        pathway_id=request.pathway_id, retrieved_results=results)
 
-        response_time_ms = int((time.time() - start_time) * 1000)
-        query_logger.log_query(
-            session_id=session_id,
-            user_query=request.query,
-            query_embedding=query_emb_list,
-            bot_response=response_text,
-            retrieved_chunks=citations,
-            llm_provider=request.model,
-            llm_model=request.model_name if request.model == "gemini" else "llama2",
-            response_time_ms=response_time_ms,
-            pathway_id=request.pathway_id,
-            user_id=user_id,
-            user_role="practitioner"
-        )
+#         response_time_ms = int((time.time() - start_time) * 1000)
+#         query_logger.log_query(
+#             session_id=session_id,
+#             user_query=request.query,
+#             query_embedding=query_emb_list,
+#             bot_response=response_text,
+#             retrieved_chunks=citations,
+#             llm_provider=request.model,
+#             llm_model=request.model_name if request.model == "gemini" else "llama2",
+#             response_time_ms=response_time_ms,
+#             pathway_id=request.pathway_id,
+#             user_id=user_id,
+#             user_role="practitioner"
+#         )
         
-        return ChatResponse(
-            response=response_text,
-            citations=citations,
-            timestamp=datetime.now().isoformat(),
-            role="practitioner"
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#         return ChatResponse(
+#             response=response_text,
+#             citations=citations,
+#             timestamp=datetime.now().isoformat(),
+#             role="practitioner"
+#         )
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 # Get practitioner history
 @app.get("/history/{user_id}", response_model=List[ChatHistoryItem])
