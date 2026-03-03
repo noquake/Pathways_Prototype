@@ -1,11 +1,10 @@
-# rag/models.py
 from typing import Dict, Any
 
 EMBEDDING_MODELS: Dict[str, Dict[str, Any]] = {
     "minilm": {
         "model_name": "all-MiniLM-L6-v2",
         "dimension": 384,
-        "table": "pathway_chunks_minilm",
+        "table": "pathway_chunks_linilm",
         "rpc_function": "match_chunks_minilm",
         "description": "Fast, lightweight (baseline)"
     },
@@ -24,7 +23,8 @@ EMBEDDING_MODELS: Dict[str, Dict[str, Any]] = {
         "description": "General purpose, better than MiniLM"
     },
     "medcpt": {
-        "model_name": "ncbi/MedCPT-Query-Encoder",
+        "model_name": "ncbi/MedCPT-Article-Encoder",
+        "query_model_name": "ncbi/MedCPT-Query-Encoder",  # ← dual encoder
         "dimension": 1024,
         "table": "pathway_chunks_medcpt",
         "rpc_function": "match_chunks_medcpt",

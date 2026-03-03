@@ -57,18 +57,18 @@ def extract_pathway_metadata(doc_name: str, file_path: Path) -> dict:
     }
 
 # Category mapping (manual - you'll need to maintain this)
-PATHWAY_CATEGORIES = {
-    "anaphylaxis": "emergency",
-    "dka": "endocrine",
-    "sepsis": "infectious-disease",
-    "status-epilepticus": "neurology",
-    "animal-bite": "infectious-disease",
-    # TODO: ADD MORE / REFINE BASED ON TOPICS
-}
+# PATHWAY_CATEGORIES = {
+#     "anaphylaxis": "emergency",
+#     "dka": "endocrine",
+#     "sepsis": "infectious-disease",
+#     "status-epilepticus": "neurology",
+#     "animal-bite": "infectious-disease",
+#     # TODO: ADD MORE / REFINE BASED ON TOPICS
+# }
 
-def get_pathway_category(pathway_id: str) -> str:
-    """Get category from lookup table or return 'uncategorized'."""
-    return PATHWAY_CATEGORIES.get(pathway_id, "uncategorized")
+# def get_pathway_category(pathway_id: str) -> str:
+#     """Get category from lookup table or return 'uncategorized'."""
+#     return PATHWAY_CATEGORIES.get(pathway_id, "uncategorized")
 
 def create_supabase_client():
     SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -118,7 +118,7 @@ def generate_chunks_with_model(model_key: str = DEFAULT_MODEL):
 
     supabase = create_supabase_client()
     
-    md_dir = Path(os.getenv("TRANSFORMED_FILES_DIR", "app/data/transformed_files"))
+    md_dir = Path(os.getenv("TRANSFORMED_FILES_DIR", "data/transformed_files"))
     md_files = list(md_dir.glob("*.md"))
 
     print(f"Found {len(md_files)} markdown files\n")
@@ -140,7 +140,7 @@ def generate_chunks_with_model(model_key: str = DEFAULT_MODEL):
                 "doc_name": doc_metadata["doc_name"],
                 "doc_display_name": doc_metadata["doc_display_name"],
                 "doc_version": doc_metadata["doc_version"],
-                "doc_category": get_pathway_category(doc_metadata["pathway_id"]),
+                # "doc_category": get_pathway_category(doc_metadata["pathway_id"]),
                 "doc_file_path": doc_metadata.get("doc_file_path"),
                 "doc_last_modified": doc_metadata["doc_last_modified"].isoformat()
             }).execute()
@@ -159,7 +159,7 @@ def generate_chunks_with_model(model_key: str = DEFAULT_MODEL):
                 embedding = get_embeddings([chunk_text], model_key=model_key)[0]
                 
                 # Insert chunk
-                supabase.table("pathways_chunks_mpnet").upsert({
+                supabase.table(table_name).upsert({
                     "chunk_hash": chunk_hash,
                     "pathway_id": doc_metadata["pathway_id"],
                     "doc_chunk_index": doc_chunk_idx,
