@@ -8,7 +8,8 @@ import sys
 # from rag.transform_data import main as transform_data
 # from rag.docling_chunk_supabase import main as docling_chunk_to_supabase
 
-from rag.semantic_chunk_supabase import main as semantic_chunk_supabase
+# from rag.semantic_chunk_supabase import main as semantic_chunk_supabase
+from rag.chunking import main as chunking
 
 def spin_up_docker():
     # subprocess.run(["docker", "compose", "up", "-d", ])
@@ -34,9 +35,9 @@ def main():
     # print("Data transformation complete.\n")
 
     # chunk and embed the transformed data for use in retrieval-augmented generation
-    print("Starting semantic chunking and embedding...\n")
-    # semantic_chunk_supabase()
-    print("Semantic chunking and embedding complete.\n")
+    print("Starting chunking and embedding...\n")
+    chunking()
+    print("Chunking and embedding complete.\n")
 
 
 

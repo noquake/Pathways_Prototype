@@ -3,49 +3,50 @@ networks:
     name: pathways_network
 
 volumes:
+  huggingface_cache:
   # keycloak_db_data:
-  pathways_db_data:
+  # pathways_db_data:
 
 services:
-  pathways_db: # refactor to pathways_db at some point
-    image: pgvector/pgvector:pg18-trixie
-    container_name: pathways_db
-    environment:
-      POSTGRES_DB: pathways
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
-    volumes:
-      - pathways_db_data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # pathways_db: # refactor to pathways_db at some point
+  #   image: pgvector/pgvector:pg18-trixie
+  #   container_name: pathways_db
+  #   environment:
+  #     POSTGRES_DB: pathways
+  #     POSTGRES_USER: admin
+  #     POSTGRES_PASSWORD: password
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pathways_db_data:/var/lib/postgresql
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U admin"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pathways_pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: password
-      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 10
-      PGADMIN_CONFIG_FILE_LOG_LEVEL: 10
-    ports:
-      - "7001:80"
-    volumes:
-      - ./config/servers.json:/pgadmin4/servers.json:ro
-    depends_on:
-      - pathways_db
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/misc/ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: pathways_pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@example.com
+  #     PGADMIN_DEFAULT_PASSWORD: password
+  #     PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 10
+  #     PGADMIN_CONFIG_FILE_LOG_LEVEL: 10
+  #   ports:
+  #     - "7001:80"
+  #   volumes:
+  #     - ./config/servers.json:/pgadmin4/servers.json:ro
+  #   depends_on:
+  #     - pathways_db
+  #   healthcheck:
+  #     test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/misc/ping"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 30s
   backend:
-    image: pathways-backend:0.5.1
+    image: pathways-backend:0.5.3
     build:
       context: ./services/backend
       dockerfile: Dockerfile
@@ -60,11 +61,10 @@ services:
       # JWT_SECRET: ${JWT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-
       PYTHONUNBUFFERED: 1
-
       HF_TOKEN: ""
       HUGGING_FACE_HUB_TOKEN: ""
+      HF_HOME: /root/.cache/huggingface
 
     volumes:
       - ./data:/app/data
@@ -72,8 +72,8 @@ services:
       - ./services/backend:/app
     ports:
       - "8000:8000"
-    depends_on:
-      - pathways_db
+    # depends_on:
+    #   - pathways_db
 
   # keycloak_db:
   #   image: postgres:16

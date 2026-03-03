@@ -159,7 +159,7 @@ def generate_chunks_with_model(model_key: str = DEFAULT_MODEL):
                 embedding = get_embeddings([chunk_text], model_key=model_key)[0]
                 
                 # Insert chunk
-                supabase.table(table_name).upsert({
+                supabase.table("pathways_chunks_mpnet").upsert({
                     "chunk_hash": chunk_hash,
                     "pathway_id": doc_metadata["pathway_id"],
                     "doc_chunk_index": doc_chunk_idx,

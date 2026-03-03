@@ -4,17 +4,7 @@ from .models import EMBEDDING_MODELS
 
 _model_cache = {}
 
-def get_embeddings(texts: List[str], model_key: str = "minilm"):
-    """
-    Get embeddings for texts using specified model.
-    
-    Args:
-        texts: List of strings to embed
-        model_key: Key from EMBEDDING_MODELS (minilm, pubmedbert, mpnet, medcpt)
-    
-    Returns:
-        numpy array of embeddings
-    """
+def get_embeddings(texts: List[str], model_key: str = "mpnet"):
     global _model_cache
     
     if model_key not in EMBEDDING_MODELS:
