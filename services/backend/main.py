@@ -21,8 +21,9 @@ from rag.embeddings import get_embeddings
 from rag.query import retrieve_chunks as retrieve_original_chunks
 from rag.query import rag_api_llm as original_rag_api_llm
 
-from rag.semantic_query import retrieve_chunks as retrieve_semantic_chunks
-from rag.semantic_query import rag_api_llm as semantic_rag_api_llm
+from rag.query import retrieve_chunks as retrieve_original_chunks
+from rag.query import rag_api_llm as original_rag_api_llm
+from rag.retrieval import retrieve_chunks as retrieve_chunks_by_model
 
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 
@@ -80,7 +81,7 @@ class ChatRequest(BaseModel):
     model_name: Optional[str] = "gemini-2.5-flash"  # Specific Gemini model to use (2026 API)
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
-    use_semantic: Optional[bool] = False
+    embedding_model: Optional[str] = "minilm"  # ← add this
 
 class PractitionerChatRequest(ChatRequest):
     pathway_id: str
@@ -139,15 +140,6 @@ async def chat_public(request: ChatRequest):
     start_time = time.time()
     
     try:
-        # retrieval functions based on flag for comparison
-        if request.use_semantic:
-            retrieve_chunks = retrieve_semantic_chunks
-            rag_api = semantic_rag_api_llm
-            chunking_method = "SEMANTIC"
-        else:
-            retrieve_chunks = retrieve_original_chunks
-            rag_api = original_rag_api_llm
-            chunking_method = "ORIGINAL"
 
         print("="*60)
         print("=== NEW QUERY RECEIVED ===")
@@ -161,13 +153,13 @@ async def chat_public(request: ChatRequest):
         db_handle = get_supabase_client()
         
         print("\n[1/6] Generating embeddings...")
-        query_emb = get_embeddings([request.query])[0]
+        query_emb = get_embeddings([request.query], model_key=request.embedding_model, is_query=True)[0]
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
         print(f"✓ Embedding generated: dimension={len(query_emb_list)}\n")
         
         # Retrieve top-k chunks
         print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
-        results = retrieve_chunks(db_handle, query_emb_list, top_k=request.top_k, pathway_id=request.pathway_id)
+        results = retrieve_chunks_by_model(db_handle, request.query, top_k=request.top_k, pathway_id=request.pathway_id, model_key=request.embedding_model)
         print(f"DEBUG: Retrieved {len(results)} results\n")
 
         citations = []
@@ -190,13 +182,13 @@ async def chat_public(request: ChatRequest):
         # Generate response using LLM
         if request.model == "gemini":
             # Use Gemini API (default)
-            response_text = rag_api(db_handle, request.query, top_k=request.top_k, 
+            response_text = original_rag_api_llm(db_handle, request.query, top_k=request.top_k, 
                                        model_name=request.model_name, api_provider="gemini",
                                        pathway_id=request.pathway_id,
                                        retrieved_results=results)
         else:
             # Default to Gemini if unknown model specified
-            response_text = rag_api(db_handle, request.query, top_k=request.top_k, 
+            response_text = original_rag_api_llm(db_handle, request.query, top_k=request.top_k, 
                                        model_name="gemini-2.5-flash", api_provider="gemini",
                                        pathway_id=request.pathway_id,
                                        retrieved_results=results)
