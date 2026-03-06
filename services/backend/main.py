@@ -1,12 +1,13 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, Response
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 import os
 from datetime import datetime
+import httpx
 from supabase import create_client
 from jose import JWTError, jwt
 from logger import query_logger
@@ -93,6 +94,7 @@ class PathwayOption(BaseModel):
     label: str
     doc_name: str
     preview_image_path: str
+    pdf_url: str
 
 
 class Citation(BaseModel):
@@ -136,6 +138,61 @@ async def health_check():
 async def get_pathways():
     """Return curated pathway options for the frontend dropdown."""
     return [PathwayOption(**pathway) for pathway in list_pathways()]
+
+
+@app.get("/pathways/{pathway_id}/pdf")
+async def get_pathway_pdf(
+    pathway_id: str,
+    range_header: Optional[str] = Header(None, alias="Range"),
+    if_range: Optional[str] = Header(None, alias="If-Range"),
+):
+    pathway = get_pathway_by_id(pathway_id)
+    if not pathway:
+        raise HTTPException(status_code=404, detail=f"Unknown pathway_id: {pathway_id}")
+
+    upstream_headers = {}
+    if range_header:
+        upstream_headers["Range"] = range_header
+    if if_range:
+        upstream_headers["If-Range"] = if_range
+
+    try:
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=httpx.Timeout(20.0, connect=10.0),
+        ) as client:
+            upstream_response = await client.get(pathway["pdf_url"], headers=upstream_headers)
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Timed out fetching pathway PDF.")
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Could not fetch pathway PDF.")
+
+    if upstream_response.status_code not in (200, 206):
+        raise HTTPException(status_code=502, detail="Upstream pathway PDF request failed.")
+
+    content_type = upstream_response.headers.get("content-type", "").lower()
+    if not content_type.startswith("application/pdf"):
+        raise HTTPException(status_code=502, detail="Upstream pathway content was not a PDF.")
+
+    response_headers = {"Content-Disposition": "inline"}
+    for header_name in (
+        "Accept-Ranges",
+        "Content-Length",
+        "Content-Range",
+        "Cache-Control",
+        "ETag",
+        "Last-Modified",
+    ):
+        header_value = upstream_response.headers.get(header_name)
+        if header_value:
+            response_headers[header_name] = header_value
+
+    return Response(
+        content=upstream_response.content,
+        status_code=upstream_response.status_code,
+        media_type="application/pdf",
+        headers=response_headers,
+    )
 
 
 # Public chat endpoint

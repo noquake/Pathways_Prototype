@@ -154,6 +154,13 @@
 	flex-direction: column;
 }
 
+.pathway-panel-header {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
 .pathway-panel-title {
 	background: #d2d4d9;
 	color: #2f3135;
@@ -163,12 +170,24 @@
 	text-align: center;
 	padding: 10px;
 	border-radius: 9px;
-	margin-bottom: 12px;
+}
+
+.pathway-panel-link {
+	align-self: flex-end;
+	color: #4f5258;
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.pathway-panel-link:hover {
+	text-decoration: underline;
 }
 
 .pathway-preview-shell {
 	flex: 1;
 	min-height: 0;
+	position: relative;
 	border-radius: 9px;
 	background: #fff;
 	border: 1px solid #dadddf;
@@ -178,16 +197,60 @@
 	overflow: hidden;
 }
 
-.pathway-preview-image {
+.pathway-preview-frame {
 	width: 100%;
 	height: 100%;
-	object-fit: contain;
+	border: 0;
 	background: #fff;
 }
 
+.pathway-preview-status,
 .pathway-preview-empty {
 	padding: 20px;
 	color: #7a7d83;
 	font-size: 14px;
 	text-align: center;
+}
+
+.pathway-preview-status {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.82);
+}
+
+@media (max-width: 1100px) {
+	.public-chat-page {
+		height: auto;
+		min-height: calc(100vh - 40px);
+	}
+
+	.public-chat-layout {
+		grid-template-columns: 1fr;
+		height: auto;
+	}
+
+	.pathway-panel {
+		min-height: 560px;
+	}
+}
+
+@media (max-width: 768px) {
+	.public-chat-title {
+		font-size: 32px;
+	}
+
+	.question-input {
+		font-size: 20px;
+	}
+
+	.chat-content {
+		font-size: 22px;
+	}
+
+	.pathway-panel {
+		min-height: 420px;
+	}
 }
