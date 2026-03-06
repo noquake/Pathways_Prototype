@@ -4,9 +4,9 @@
 -- After running this, backend calls that include `filter_pathway_id`
 -- will be filtered in-database instead of client-side post-filtering.
 
-create or replace function public.match_pathway_chunks(
+create or replace function public.match_medcpt_pathway_chunks(
 
-  query_embedding vector(384),
+  query_embedding vector(1024),
   match_count int default 5,
   filter_pathway_id varchar default null
 )
@@ -26,14 +26,15 @@ as $$
     pc.chunk_length,
     pc.pathway_id,
     1 - (pc.embedding <=> query_embedding) as similarity
-  from public.pathway_chunks pc
+ 
+  from public.pathway_chunks_medcpt pc
 
   where filter_pathway_id is null or pc.pathway_id = filter_pathway_id
   order by pc.embedding <=> query_embedding
   limit greatest(coalesce(match_count, 5), 1);
 $$;
 
-grant execute on function public.match_pathway_chunks(vector, int, varchar)
+grant execute on function public.match_medcpt_pathway_chunks(vector, int, varchar)
 
 to anon, authenticated, service_role;
 
