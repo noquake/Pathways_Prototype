@@ -188,6 +188,29 @@
 	text-decoration: underline;
 }
 
+.pathway-resource-selector {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.pathway-resource-button {
+	border: 1px solid #d9dbe0;
+	border-radius: 999px;
+	background: #ebecf0;
+	color: #4f5258;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 8px 12px;
+}
+
+.pathway-resource-button.active {
+	background: #2f3135;
+	border-color: #2f3135;
+	color: #fff;
+}
+
 .pathway-preview-shell {
 	flex: 1;
 	min-height: 0;
@@ -261,5 +284,9 @@
 
 	.pathway-panel {
 		min-height: 420px;
+	}
+
+	.pathway-resource-button {
+		font-size: 12px;
 	}
 }
