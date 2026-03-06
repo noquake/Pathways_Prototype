@@ -8,7 +8,7 @@ pydantic-settings
 httpx
 cryptography
 
-llama-cpp-python
+pgvector
 docling
 sentence-transformers
 langchain

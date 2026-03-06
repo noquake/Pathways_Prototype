@@ -14,6 +14,7 @@ from jose import JWTError, jwt
 from logger import query_logger
 import time
 import uuid
+from pathways_catalog import list_pathways, get_pathway_by_id
 
 # Import existing RAG components
 from rag.embeddings import get_embeddings
@@ -27,17 +28,21 @@ from rag.retrieval import retrieve_chunks as retrieve_chunks_by_model
 
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 
-PATHWAY_DOCS_TABLE = os.getenv("SUPABASE_TABLE_PATHWAY_DOCUMENTS", "pathway_documents")
 PATHWAY_QUERIES_TABLE = os.getenv("SUPABASE_TABLE_PATHWAY_QUERIES", "pathway_queries")
 
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://frontend:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://frontend:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 def get_supabase_client():
     supabase_url = os.getenv("SUPABASE_URL")
@@ -53,20 +58,20 @@ def get_supabase_client():
         )
     return create_client(supabase_url, supabase_key)
 
+
 # JWT validation
 async def verify_token(authorization: Optional[str] = Header(None)) -> Optional[Dict[str, Any]]:
     """Verify JWT token and extract user info."""
     if not authorization:
         return None
-    
+
     try:
         token = authorization.replace("Bearer ", "")
-        # In production, verify with Keycloak public key
-        # For MVP 1, we'll use a simple JWT decode
         payload = jwt.decode(token, os.getenv("JWT_SECRET", "change-me"), algorithms=["HS256"])
         return payload
     except JWTError:
         return None
+
 
 def get_user_role(user_info: Optional[Dict[str, Any]] = Depends(verify_token)) -> str:
     """Extract user role from JWT or return 'public'."""
@@ -74,23 +79,27 @@ def get_user_role(user_info: Optional[Dict[str, Any]] = Depends(verify_token)) -
         return user_info["role"]
     return "public"
 
+
 # Request/Response models
 class ChatRequest(BaseModel):
     query: str
-    model: Optional[str] = "gemini"  # Changed default from "ollama" to "gemini"
-    model_name: Optional[str] = "gemini-2.5-flash"  # Specific Gemini model to use (2026 API)
+    model: Optional[str] = "gemini"
+    model_name: Optional[str] = "gemini-2.5-flash"
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
     embedding_model: Optional[str] = "minilm"  # ← add this
 
+
 class PractitionerChatRequest(ChatRequest):
     pathway_id: str
 
-# class ChatResponse(BaseModel):
-#     response: str
-#     citations: List[Dict[str, Any]]
-#     timestamp: str
-#     role: str
+
+class PathwayOption(BaseModel):
+    id: str
+    label: str
+    doc_name: str
+    preview_image_path: str
+
 
 class Citation(BaseModel):
     chunk_id: str
@@ -98,16 +107,29 @@ class Citation(BaseModel):
     chunk_length: int
     source_file: str
 
+
 class ChatResponse(BaseModel):
     response: str
     citations: List[Citation]
     timestamp: str
     role: str
 
+
 class ChatHistoryItem(BaseModel):
     query: str
     response: str
     timestamp: str
+
+
+def resolve_pathway_doc_name(pathway_id: Optional[str]) -> Optional[str]:
+    if not pathway_id:
+        return None
+
+    pathway = get_pathway_by_id(pathway_id)
+    if not pathway:
+        raise HTTPException(status_code=400, detail=f"Unknown pathway_id: {pathway_id}")
+    return pathway["doc_name"]
+
 
 # Health check
 @app.get("/health")
@@ -115,48 +137,39 @@ async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "backend-api"}
 
-@app.get("/pathways")
+
+@app.get("/pathways", response_model=List[PathwayOption])
 async def get_pathways():
-    """Return all available pathway identifiers."""
-    try:
-        supabase = get_supabase_client()
-        result = (
-            supabase.table(PATHWAY_DOCS_TABLE)
-            .select("pathway_id")
-            .eq("active", True)
-            .order("pathway_id")
-            .execute()
-        )
-        pathways = [str(r["pathway_id"]) for r in (result.data or []) if r.get("pathway_id")]
-        return {"pathways": pathways}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    """Return curated pathway options for the frontend dropdown."""
+    return [PathwayOption(**pathway) for pathway in list_pathways()]
+
 
 # Public chat endpoint
 @app.post("/chat/public", response_model=ChatResponse)
 async def chat_public(request: ChatRequest):
-
     session_id = str(uuid.uuid4())
     start_time = time.time()
-    
+
     try:
 
         print("="*60)
         print("=== NEW QUERY RECEIVED ===")
         print(f"Session ID: {session_id}")
         print(f"Query: {request.query}")
-        print(f"Model: {request.model}")
-        print(f"Top K: {request.top_k}")
-        print(f"Pathway ID: {request.pathway_id}")
-        print("="*60)
+        print("Provider: gemini")
+        print(f"Model: {request.model_name}")
+        print(f"Top K: {top_k}")
+        if selected_pathway_doc_name:
+            print(f"Pathway filter requested: {request.pathway_id} -> {selected_pathway_doc_name}")
+        print("=" * 60)
 
         db_handle = get_supabase_client()
-        
+
         print("\n[1/6] Generating embeddings...")
         query_emb = get_embeddings([request.query], model_key=request.embedding_model, is_query=True)[0]
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
         print(f"✓ Embedding generated: dimension={len(query_emb_list)}\n")
-        
+
         # Retrieve top-k chunks
         print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
         results = retrieve_chunks_by_model(db_handle, request.query, top_k=request.top_k, pathway_id=request.pathway_id, model_key=request.embedding_model)
@@ -165,16 +178,16 @@ async def chat_public(request: ChatRequest):
         citations = []
         for r in results:
             citation = {
-                "chunk_id": int(r['chunk_id']),
-                "chunk_text": str(r['chunk_text']),
-                "chunk_length": int(r['chunk_length']) if r['chunk_length'] is not None else 0,
-                "source_file": str(r.get('source_file') or r.get('pathway_id') or ""),
-                "similarity_score": float(r.get('distance', r.get('similarity', 0.0)))
+                "chunk_id": int(r["chunk_id"]),
+                "chunk_text": str(r["chunk_text"]),
+                "chunk_length": int(r["chunk_length"]) if r["chunk_length"] is not None else 0,
+                "source_file": str(r.get("source_file") or r.get("pathway_id") or ""),
+                "similarity_score": float(r.get("distance", r.get("similarity", 0.0))),
             }
             citations.append(citation)
 
         if citations:
-            print(f"\nTop chunk:")
+            print("\nTop chunk:")
             print(f"  - Source: {citations[0]['source_file']}")
             print(f"  - Similarity: {citations[0]['similarity_score']:.4f}")
         
@@ -199,56 +212,57 @@ async def chat_public(request: ChatRequest):
 
         response_time_ms = int((time.time() - start_time) * 1000)
 
-        print(f"\n[5/6] Logging to Supabase...")
+        print("\n[5/6] Logging to Supabase...")
         query_logger.log_query(
             session_id=session_id,
             user_query=request.query,
             query_embedding=query_emb_list,
             bot_response=response_text,
             retrieved_chunks=citations,
-            llm_provider=request.model,
-            llm_model=request.model_name if request.model == "gemini" else "llama2",
+            llm_provider="gemini",
+            llm_model=request.model_name or "gemini-2.5-flash",
             response_time_ms=response_time_ms,
             pathway_id=request.pathway_id,
-            user_role="public"
+            user_role="public",
         )
-        
-        print(f"\n[6/6] Creating response...")
-        
-        # different citations for end users, omitting the similarity score
+
+        print("\n[6/6] Creating response...")
+
         client_citations = [
             {
-                "chunk_id": str(c['chunk_id']),
-                "chunk_text": c['chunk_text'],
-                "chunk_length": c['chunk_length'],
-                "source_file": c['source_file']
+                "chunk_id": str(c["chunk_id"]),
+                "chunk_text": c["chunk_text"],
+                "chunk_length": c["chunk_length"],
+                "source_file": c["source_file"],
             }
             for c in citations
         ]
-        
+
         response_obj = ChatResponse(
             response=response_text,
             citations=client_citations,
             timestamp=datetime.now().isoformat(),
-            role="public"
+            role="public",
         )
 
         print(f"✓ Response time: {response_time_ms}ms")
-        print("="*60)
+        print("=" * 60)
         print("=== QUERY COMPLETE ===")
-        print("="*60)
+        print("=" * 60)
 
         return response_obj
-    
+
     except Exception as e:
-        print("\n" + "!"*60)
+        print("\n" + "!" * 60)
         print("!!! ERROR OCCURRED !!!")
         print(f"Query: {request.query}")
         print(f"Error: {e}")
-        print("!"*60)
+        print("!" * 60)
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # Practitioner chat endpoint
 # @app.post("/chat/practitioner", response_model=ChatResponse)
@@ -339,16 +353,17 @@ async def chat_public(request: ChatRequest):
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
 
+
 # Get practitioner history
 @app.get("/history/{user_id}", response_model=List[ChatHistoryItem])
 async def get_history(
     user_id: str,
-    user_info: Dict[str, Any] = Depends(verify_token)
+    user_info: Dict[str, Any] = Depends(verify_token),
 ):
     """Get chat history for a practitioner."""
     if not user_info or (user_info.get("user_id") != user_id and user_info.get("role") not in ["admin", "hr"]):
         raise HTTPException(status_code=403, detail="Access denied.")
-    
+
     try:
         db_handle = get_supabase_client()
         response = (
@@ -365,13 +380,15 @@ async def get_history(
             ChatHistoryItem(
                 query=str(r.get("user_query", "")),
                 response=str(r.get("bot_response", "")),
-                timestamp=str(r.get("created_at", datetime.now().isoformat()))
+                timestamp=str(r.get("created_at", datetime.now().isoformat())),
             )
             for r in rows
         ]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
