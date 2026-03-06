@@ -187,7 +187,7 @@ function PublicChat({ apiUrl }) {
 						<div className="pathway-panel-title">
 							{selectedPathway
 								? `${selectedPathway.label} Pathway`
-								: "Pathway Preview"}
+								: "Pathway PDF"}
 						</div>
 						{selectedPathway?.pdf_url && (
 							<a

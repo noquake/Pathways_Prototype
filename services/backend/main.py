@@ -101,7 +101,6 @@ class PathwayOption(BaseModel):
     id: str
     label: str
     doc_name: str
-    preview_image_path: str
     pdf_url: str
 
 
