@@ -1,7 +1,11 @@
 from dotenv import load_dotenv
+from httpx import request
 load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Response
+import sys
+sys.path.append('/app')
+from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
@@ -15,12 +19,15 @@ import time
 import uuid
 from pathways_catalog import list_pathways, get_pathway_by_id
 
-
 # Import existing RAG components
-import sys
-sys.path.append('/app')
-from rag.query import get_embeddings, rag_api_llm
-from rag.query import retrieve_chunks
+from rag.embeddings import get_embeddings
+
+from rag.query import retrieve_chunks as retrieve_original_chunks
+from rag.query import rag_api_llm as original_rag_api_llm
+
+from rag.query import retrieve_chunks as retrieve_original_chunks
+from rag.query import rag_api_llm as original_rag_api_llm
+from rag.retrieval import retrieve_chunks as retrieve_chunks_by_model
 
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 
@@ -83,6 +90,7 @@ class ChatRequest(BaseModel):
     model_name: Optional[str] = "gemini-2.5-flash"
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
+    embedding_model: Optional[str] = "minilm"  # ← add this
 
 
 class PractitionerChatRequest(ChatRequest):
@@ -202,10 +210,8 @@ async def chat_public(request: ChatRequest):
     start_time = time.time()
 
     try:
-        selected_pathway_doc_name = resolve_pathway_doc_name(request.pathway_id)
-        top_k = request.top_k or 5
 
-        print("=" * 60)
+        print("="*60)
         print("=== NEW QUERY RECEIVED ===")
         print(f"Session ID: {session_id}")
         print(f"Query: {request.query}")
@@ -219,13 +225,13 @@ async def chat_public(request: ChatRequest):
         db_handle = get_supabase_client()
 
         print("\n[1/6] Generating embeddings...")
-        query_emb = get_embeddings([request.query])[0]
+        query_emb = get_embeddings([request.query], model_key=request.embedding_model, is_query=True)[0]
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
         print(f"✓ Embedding generated: dimension={len(query_emb_list)}\n")
 
         # Retrieve top-k chunks
-        print(f"\n[2/6] Retrieving top {top_k} chunks...")
-        results = retrieve_chunks(db_handle, query_emb_list, top_k=top_k, pathway_id=request.pathway_id)
+        print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
+        results = retrieve_chunks_by_model(db_handle, request.query, top_k=request.top_k, pathway_id=request.pathway_id, model_key=request.embedding_model)
         print(f"DEBUG: Retrieved {len(results)} results\n")
 
         citations = []
@@ -243,20 +249,23 @@ async def chat_public(request: ChatRequest):
             print("\nTop chunk:")
             print(f"  - Source: {citations[0]['source_file']}")
             print(f"  - Similarity: {citations[0]['similarity_score']:.4f}")
-
-        print("\n[3/6] Sending to gemini...")
-        response_text = rag_api_llm(
-            db_handle,
-            request.query,
-            top_k=top_k,
-            model_name=request.model_name or "gemini-2.5-flash",
-            pathway_id=request.pathway_id,
-            retrieved_results=results,
-        )
-        if not isinstance(response_text, str) or not response_text.strip():
-            response_text = "I couldn't generate a response right now. Please try again."
-
-        print("\n[4/6] Response received:")
+        
+        print(f"\n[3/6] Sending to {request.model}...")
+        # Generate response using LLM
+        if request.model == "gemini":
+            # Use Gemini API (default)
+            response_text = original_rag_api_llm(db_handle, request.query, top_k=request.top_k, 
+                                       model_name=request.model_name, api_provider="gemini",
+                                       pathway_id=request.pathway_id,
+                                       retrieved_results=results)
+        else:
+            # Default to Gemini if unknown model specified
+            response_text = original_rag_api_llm(db_handle, request.query, top_k=request.top_k, 
+                                       model_name="gemini-2.5-flash", api_provider="gemini",
+                                       pathway_id=request.pathway_id,
+                                       retrieved_results=results)
+        
+        print(f"\n[4/6] Response received:")
         print(f"✓ Length: {len(response_text)} chars")
         print(f"✓ Preview: {response_text[:150]}...")
 
@@ -315,104 +324,93 @@ async def chat_public(request: ChatRequest):
 
 
 # Practitioner chat endpoint
-@app.post("/chat/practitioner", response_model=ChatResponse)
-async def chat_practitioner(
-    request: PractitionerChatRequest,
-    user_info: Dict[str, Any] = Depends(verify_token),
-):
-    """
-    Practitioner chat endpoint - requires authentication.
-    Includes memory/context from previous interactions.
-    """
-    if not user_info or user_info.get("role") != "practitioner":
-        raise HTTPException(status_code=403, detail="Access denied. Practitioner role required.")
+# @app.post("/chat/practitioner", response_model=ChatResponse)
+# async def chat_practitioner(
+#     request: PractitionerChatRequest,
+#     user_info: Dict[str, Any] = Depends(verify_token)
+# ):
+#     """
+#     Practitioner chat endpoint - requires authentication.
+#     Includes memory/context from previous interactions.
+#     """
+#     if not user_info or user_info.get("role") != "practitioner":
+#         raise HTTPException(status_code=403, detail="Access denied. Practitioner role required.")
+    
+#     user_id = user_info.get("user_id")
+#     session_id = str(uuid.uuid4())
+#     start_time = time.time()
+    
+#     try:
+#         db_handle = get_supabase_client()
+#         history_response = (
+#             db_handle.table(PATHWAY_QUERIES_TABLE)
+#             .select("user_query, bot_response, created_at")
+#             .eq("user_id", user_id)
+#             .eq("user_role", "practitioner")
+#             .order("created_at", desc=True)
+#             .limit(5)
+#             .execute()
+#         )
+#         history = history_response.data or []
+        
+#         # Build context from history
+#         context_history = "\n\nPrevious conversation:\n"
+#         for h in reversed(history):
+#             response_preview = (h.get('bot_response') or "")[:200]
+#             context_history += f"Q: {h.get('user_query', '')}\nA: {response_preview}...\n\n"
+        
+#         # Perform RAG
+#         query_emb = get_embeddings([request.query])[0]
+#         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
+        
+#         results = retrieve_chunks(db_handle, query_emb_list, top_k=request.top_k, pathway_id=request.pathway_id)
+#         citations = [
+#             {
+#                 "chunk_id": str(r.get("chunk_id", "")),
+#                 "chunk_text": str(r.get("chunk_text", "")),
+#                 "chunk_length": int(r.get("chunk_length") or 0),
+#                 "source_file": str(r.get("source_file") or r.get("pathway_id") or "")
+#             }
+#             for r in results
+#         ]
+        
+#         # Generate response with context using specified model
+#         if request.model == "ollama":
+#             response_text = rag_ollama(db_handle, request.query, top_k=request.top_k,
+#                                        pathway_id=request.pathway_id, retrieved_results=results)
+#         elif request.model == "gemini":
+#             response_text = rag_api_llm(db_handle, request.query, top_k=request.top_k, 
+#                                        model_name=request.model_name, api_provider="gemini",
+#                                        pathway_id=request.pathway_id, retrieved_results=results)
+#         else:
+#             # Default to Gemini
+#             response_text = rag_api_llm(db_handle, request.query, top_k=request.top_k, 
+#                                        model_name="gemini-2.5-flash", api_provider="gemini",
+#                                        pathway_id=request.pathway_id, retrieved_results=results)
 
-    selected_pathway_doc_name = resolve_pathway_doc_name(request.pathway_id)
-    user_id = user_info.get("user_id")
-    session_id = str(uuid.uuid4())
-    start_time = time.time()
-
-    try:
-        top_k = request.top_k or 5
-        db_handle = get_supabase_client()
-        if selected_pathway_doc_name:
-            print(f"Pathway filter requested: {request.pathway_id} -> {selected_pathway_doc_name}")
-
-        history_response = (
-            db_handle.table(PATHWAY_QUERIES_TABLE)
-            .select("user_query, bot_response, created_at")
-            .eq("user_id", user_id)
-            .eq("user_role", "practitioner")
-            .order("created_at", desc=True)
-            .limit(5)
-            .execute()
-        )
-        history = history_response.data or []
-
-        context_history = "\n\nPrevious conversation:\n"
-        for h in reversed(history):
-            response_preview = (h.get("bot_response") or "")[:200]
-            context_history += f"Q: {h.get('user_query', '')}\nA: {response_preview}...\n\n"
-
-        query_emb = get_embeddings([request.query])[0]
-        query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
-
-        results = retrieve_chunks(db_handle, query_emb_list, top_k=top_k, pathway_id=request.pathway_id)
-        citations = [
-            {
-                "chunk_id": str(r.get("chunk_id", "")),
-                "chunk_text": str(r.get("chunk_text", "")),
-                "chunk_length": int(r.get("chunk_length") or 0),
-                "source_file": str(r.get("source_file") or r.get("pathway_id") or ""),
-                "similarity_score": float(r.get("distance", r.get("similarity", 0.0))),
-            }
-            for r in results
-        ]
-
-        response_text = rag_api_llm(
-            db_handle,
-            request.query,
-            top_k=top_k,
-            model_name=request.model_name or "gemini-2.5-flash",
-            pathway_id=request.pathway_id,
-            retrieved_results=results,
-        )
-        if not isinstance(response_text, str) or not response_text.strip():
-            response_text = "I couldn't generate a response right now. Please try again."
-
-        response_time_ms = int((time.time() - start_time) * 1000)
-        query_logger.log_query(
-            session_id=session_id,
-            user_query=request.query,
-            query_embedding=query_emb_list,
-            bot_response=response_text,
-            retrieved_chunks=citations,
-            llm_provider="gemini",
-            llm_model=request.model_name or "gemini-2.5-flash",
-            response_time_ms=response_time_ms,
-            pathway_id=request.pathway_id,
-            user_id=user_id,
-            user_role="practitioner",
-        )
-
-        client_citations = [
-            {
-                "chunk_id": c["chunk_id"],
-                "chunk_text": c["chunk_text"],
-                "chunk_length": c["chunk_length"],
-                "source_file": c["source_file"],
-            }
-            for c in citations
-        ]
-
-        return ChatResponse(
-            response=response_text,
-            citations=client_citations,
-            timestamp=datetime.now().isoformat(),
-            role="practitioner",
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#         response_time_ms = int((time.time() - start_time) * 1000)
+#         query_logger.log_query(
+#             session_id=session_id,
+#             user_query=request.query,
+#             query_embedding=query_emb_list,
+#             bot_response=response_text,
+#             retrieved_chunks=citations,
+#             llm_provider=request.model,
+#             llm_model=request.model_name if request.model == "gemini" else "llama2",
+#             response_time_ms=response_time_ms,
+#             pathway_id=request.pathway_id,
+#             user_id=user_id,
+#             user_role="practitioner"
+#         )
+        
+#         return ChatResponse(
+#             response=response_text,
+#             citations=citations,
+#             timestamp=datetime.now().isoformat(),
+#             role="practitioner"
+#         )
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 # Get practitioner history
