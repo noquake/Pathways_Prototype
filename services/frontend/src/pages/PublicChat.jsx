@@ -10,7 +10,8 @@ function PublicChat({ apiUrl }) {
 	const [pathways, setPathways] = useState([]);
 	const [selectedPathwayId, setSelectedPathwayId] = useState("");
 	const [pathwayLoadError, setPathwayLoadError] = useState("");
-	const [previewLoadError, setPreviewLoadError] = useState(false);
+	const [pdfLoading, setPdfLoading] = useState(false);
+	const [pdfLoadError, setPdfLoadError] = useState(false);
 	const transcriptRef = useRef(null);
 
 	useEffect(() => {
@@ -31,7 +32,13 @@ function PublicChat({ apiUrl }) {
 	}, [apiUrl]);
 
 	useEffect(() => {
-		setPreviewLoadError(false);
+		if (selectedPathwayId) {
+			setPdfLoading(true);
+			setPdfLoadError(false);
+			return;
+		}
+		setPdfLoading(false);
+		setPdfLoadError(false);
 	}, [selectedPathwayId]);
 
 	useEffect(() => {
@@ -44,6 +51,9 @@ function PublicChat({ apiUrl }) {
 		() => pathways.find((pathway) => pathway.id === selectedPathwayId),
 		[pathways, selectedPathwayId],
 	);
+	const selectedPathwayPdfSrc = selectedPathwayId
+		? `${apiUrl}/pathways/${selectedPathwayId}/pdf`
+		: "";
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -173,22 +183,52 @@ function PublicChat({ apiUrl }) {
 				</section>
 
 				<aside className="pathway-panel">
-					<div className="pathway-panel-title">
-						{selectedPathway
-							? `${selectedPathway.label} Pathway`
-							: "Pathway Preview"}
+					<div className="pathway-panel-header">
+						<div className="pathway-panel-title">
+							{selectedPathway
+								? `${selectedPathway.label} Pathway`
+								: "Pathway PDF"}
+						</div>
+						{selectedPathway?.pdf_url && (
+							<a
+								className="pathway-panel-link"
+								href={selectedPathway.pdf_url}
+								target="_blank"
+								rel="noreferrer"
+							>
+								Open full PDF
+							</a>
+						)}
 					</div>
 					<div className="pathway-preview-shell">
-						{selectedPathway && !previewLoadError ? (
-							<img
-								src={selectedPathway.preview_image_path}
-								alt={`${selectedPathway.label} pathway`}
-								className="pathway-preview-image"
-								onError={() => setPreviewLoadError(true)}
-							/>
+						{selectedPathway ? (
+							<>
+								{pdfLoading && !pdfLoadError && (
+									<div className="pathway-preview-status">
+										<p>Loading pathway PDF...</p>
+									</div>
+								)}
+								{pdfLoadError ? (
+									<div className="pathway-preview-empty">
+										<p>Pathway PDF unavailable.</p>
+									</div>
+								) : (
+									<iframe
+										key={selectedPathwayId}
+										src={selectedPathwayPdfSrc}
+										title={`${selectedPathway.label} pathway PDF`}
+										className="pathway-preview-frame"
+										onLoad={() => setPdfLoading(false)}
+										onError={() => {
+											setPdfLoading(false);
+											setPdfLoadError(true);
+										}}
+									/>
+								)}
+							</>
 						) : (
 							<div className="pathway-preview-empty">
-								<p>Pathway preview not available yet.</p>
+								<p>Select a pathway to view the PDF.</p>
 							</div>
 						)}
 					</div>
