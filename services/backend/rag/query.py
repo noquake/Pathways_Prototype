@@ -1,5 +1,6 @@
-from typing import List, Optional
+from typing import List, Dict, Optional
 from sentence_transformers import SentenceTransformer
+import openai
 import os
 from google import genai
 from ollama import Client
@@ -8,6 +9,7 @@ from rag.embeddings import get_embeddings
 
 # API Keys from environment variables
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # ----------------------
 # Models and DB
@@ -18,12 +20,14 @@ def retrieve_chunks(supabase, query_emb_list, top_k: int = 5, pathway_id: str = 
     """Retrieve top-k chunks from Supabase RPC function."""
     configured_rpc = os.getenv("SUPABASE_MATCH_RPC", "match_pathway_chunks")
     rpc_candidates = [configured_rpc, "match_pathway_chunks", "match_documents", "match_chunks"]
+    # Keep deterministic order while removing duplicates.
     rpc_names = list(dict.fromkeys(rpc_candidates))
 
     rpc_payload = {
         "query_embedding": query_emb_list,
         "match_count": top_k,
     }
+    # If SQL function supports pathway filtering, pass it through.
     if pathway_id:
         rpc_payload["filter_pathway_id"] = pathway_id
 
@@ -51,7 +55,6 @@ def retrieve_chunks(supabase, query_emb_list, top_k: int = 5, pathway_id: str = 
         f"Supabase retrieval RPC failed for DEFAULT chunks. Tried: {', '.join(rpc_names)}. Last error: {last_error}"
     )
 
-
 def build_context(results):
     """Build prompt context string from retrieval results."""
     if results and isinstance(results[0], dict):
@@ -61,7 +64,6 @@ def build_context(results):
             text = r.get("chunk_text", "")
             context_lines.append(f"[{i+1}] {source}: {text}")
         return "\n\n".join(context_lines)
-
     context_lines = []
     for i, r in enumerate(results):
         # retrieve_chunks tuple shape: (chunk_id, chunk_text, chunk_length, source_file, distance)
@@ -78,51 +80,19 @@ def build_context(results):
         context_lines.append(f"[{i+1}] {source}: {text}")
     return "\n\n".join(context_lines)
 
-
-def extract_gemini_text(response) -> Optional[str]:
-    """Best-effort extraction for Gemini responses that may not populate `response.text`."""
-    direct_text = getattr(response, "text", None)
-    if isinstance(direct_text, str) and direct_text.strip():
-        return direct_text.strip()
-
-    candidates = getattr(response, "candidates", None) or []
-    candidate_parts: List[str] = []
-
-    for candidate in candidates:
-        content = getattr(candidate, "content", None)
-        parts = getattr(content, "parts", None) if content is not None else None
-        for part in parts or []:
-            part_text = getattr(part, "text", None)
-            if isinstance(part_text, str) and part_text.strip():
-                candidate_parts.append(part_text.strip())
-
-    if candidate_parts:
-        return "\n\n".join(candidate_parts)
-
-    return None
-
-
 # ----------------------
-# Retrieval + RAG with Gemini API
+# Retrieval + RAG with API-based LLMs
 # ----------------------
-def rag_api_llm(
-    supabase,
-    query: str,
-    top_k: int = 5,
-    model_name: str = "gemini-2.5-flash",
-    pathway_id: Optional[str] = None,
-    retrieved_results=None,
-):
+def rag_api_llm(supabase, query: str, top_k: int = 5, model_name: str = "gpt-4", api_provider: str = "gemini", pathway_id: str = None, retrieved_results=None):
     """
-    Retrieve top-k chunks and use Gemini API to answer the query.
-
+    Retrieve top-k chunks and use an API-based LLM (OpenAI, Gemini, etc.) to answer the query.
+    
     Args:
         supabase: Supabase client
         query: User query string
         top_k: Number of top chunks to retrieve
-        model_name: Gemini model name to use
-        pathway_id: Optional pathway filter
-        retrieved_results: Optional pre-retrieved chunks to avoid duplicate retrieval
+        model_name: Name of the model to use
+        api_provider: API provider to use ("openai" or "gemini")
     """
     results = retrieved_results
     if results is None:
@@ -132,10 +102,104 @@ def rag_api_llm(
 
     if not results:
         print("No relevant chunks found.")
-        return "I couldn't find relevant pathway content for this query."
+        return "No relevant chunks found in pathway documents."
 
     context = build_context(results)
+    
+    prompt = f"""
+You are a clinical assistant that STRICTLY follows institutional protocols.
 
+CRITICAL INSTRUCTIONS:
+- You MUST answer ONLY based on the provided context sources below
+- The context sources are AUTHORITATIVE clinical protocols that you must follow exactly
+- DO NOT use any external knowledge or add caveats about missing information
+- DO NOT say "the context doesn't contain" - if information appears in the sources or their references, state it definitively
+- When information is in the sources, present it as established medical protocol
+- ALWAYS cite sources using [1], [2], etc. when referencing information
+
+Context Sources (AUTHORITATIVE INSTITUTIONAL PROTOCOLS):
+{context}
+
+Question:
+{query}
+
+Provide a definitive answer based ONLY on the context above. Present the information from the sources as established protocol without hedging or adding external caveats.
+
+Answer:
+"""
+    
+    if api_provider.lower() == "openai":
+        if not OPENAI_API_KEY:
+            raise ValueError("OPENAI_API_KEY environment variable not set")
+        openai.api_key = OPENAI_API_KEY
+        response = openai.ChatCompletion.create(
+            model=model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0
+        )
+        answer = response.choices[0].message.content
+        print("\n=== OpenAI Answer ===\n")
+        print(answer)
+        return answer
+    elif api_provider.lower() == "gemini":
+        if not GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY environment variable not set")
+        
+        # Create Gemini client with API key
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        
+        # Map model names to correct format for new API (2026 models)
+        model_mapping = {
+            "gemini-1.5-flash": "gemini-2.5-flash",
+            "gemini-1.5-pro": "gemini-2.5-pro",
+            "gemini-2.5-flash": "gemini-2.5-flash",
+            "gemini-2.5-pro": "gemini-2.5-pro",
+            "gemini-2.0-flash": "gemini-2.0-flash",
+            "gemini-pro": "gemini-2.5-flash",  # Map old name to new model
+            "gemini-pro-vision": "gemini-2.5-pro",
+            "gemini-flash-latest": "gemini-flash-latest",
+            "gemini-pro-latest": "gemini-pro-latest",
+        }
+        
+        # Get the correct model name
+        if model_name.startswith("gpt"):
+            model_name = "gemini-2.5-flash"  # Default for OpenAI model names
+        
+        actual_model = model_mapping.get(model_name, "gemini-2.5-flash")
+        
+        # Generate response using new API
+        response = client.models.generate_content(
+            model=actual_model,
+            contents=prompt
+        )
+        
+        # Extract answer
+        answer = response.text
+        print("\n=== Gemini Answer ===\n")
+        print(answer)
+        return answer
+    else:
+        raise ValueError(f"Unsupported API provider: {api_provider}. Use 'openai' or 'gemini'.")
+
+# ----------------------
+# Retrieval + RAG with local LLaMA
+# ----------------------
+def rag_ollama(supabase, query: str, top_k: int = 5, model_name: str = "llama2", pathway_id: str = None, retrieved_results=None):
+    """
+    Retrieve top-k chunks and use local LLaMA (Ollama) to answer the query.
+    """
+    results = retrieved_results
+    if results is None:
+        query_emb = get_embeddings([query])[0]
+        query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
+        results = retrieve_chunks(supabase, query_emb_list, top_k=top_k, pathway_id=pathway_id)
+
+    if not results:
+        print("No relevant chunks found.")
+        return "No relevant chunks found in pathway documents."
+
+    context = build_context(results)
+        
     prompt = f"""
 You are a clinical assistant that STRICTLY follows institutional protocols.
 
@@ -158,43 +222,11 @@ Provide a definitive answer based ONLY on the context above. Present the informa
 Answer:
 """
 
-    if not GEMINI_API_KEY:
-        raise ValueError("GEMINI_API_KEY environment variable not set")
-
-    client = genai.Client(api_key=GEMINI_API_KEY)
-
-    model_mapping = {
-        "gemini-1.5-flash": "gemini-2.5-flash",
-        "gemini-1.5-pro": "gemini-2.5-pro",
-        "gemini-2.5-flash": "gemini-2.5-flash",
-        "gemini-2.5-pro": "gemini-2.5-pro",
-        "gemini-2.0-flash": "gemini-2.0-flash",
-        "gemini-pro": "gemini-2.5-flash",
-        "gemini-pro-vision": "gemini-2.5-pro",
-        "gemini-flash-latest": "gemini-flash-latest",
-        "gemini-pro-latest": "gemini-pro-latest",
-    }
-
-    actual_model = model_mapping.get(model_name, "gemini-2.5-flash")
-
-    response = client.models.generate_content(
-        model=actual_model,
-        contents=prompt,
-    )
-
-    answer = extract_gemini_text(response)
-    if not answer:
-        prompt_feedback = getattr(response, "prompt_feedback", None)
-        block_reason = getattr(prompt_feedback, "block_reason", None) if prompt_feedback else None
-        print("\n=== Gemini Answer ===\n")
-        print(None)
-        print(f"Gemini returned empty text. block_reason={block_reason}")
-        return "I couldn't generate a complete response for that request. Please rephrase and try again."
-
-    print("\n=== Gemini Answer ===\n")
+    response = ollama_client.chat(model=model_name, messages=[{"role": "user", "content": prompt}])
+    answer = response['message']['content']
+    print("\n=== Local LLaMA Answer ===\n")
     print(answer)
     return answer
-
 
 # ----------------------
 # Example usage
@@ -202,7 +234,6 @@ Answer:
 if __name__ == "__main__":
     from supabase import create_client
     from dotenv import load_dotenv
-
     load_dotenv()
     supabase = create_client(
         os.getenv("SUPABASE_URL"),
@@ -212,4 +243,6 @@ if __name__ == "__main__":
     )
 
     query = input("Enter your query: ")
-    rag_api_llm(supabase, query, top_k=5, model_name="gemini-2.5-flash")
+    # Use Gemini by default (with gemini-2.5-flash for faster responses)
+    rag_api_llm(supabase, query, top_k=5, model_name="gemini-2.5-flash", api_provider="gemini")
+    # rag_ollama(supabase, query, top_k=5)
