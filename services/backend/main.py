@@ -216,10 +216,10 @@ async def chat_public(request: ChatRequest):
         print(f"Query: {request.query}")
         print("Provider: gemini")
         print(f"Model: {request.model_name}")
-        print(f"Top K: {top_k}")
-        if selected_pathway_doc_name:
-            print(f"Pathway filter requested: {request.pathway_id} -> {selected_pathway_doc_name}")
-        print("=" * 60)
+        print(f"Top K: {request.top_k}")
+        # if selected_pathway_doc_name:
+        #     print(f"Pathway filter requested: {request.pathway_id} -> {selected_pathway_doc_name}")
+        # print("=" * 60)
 
         db_handle = get_supabase_client()
 
