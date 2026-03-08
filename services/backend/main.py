@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
-from httpx import request
-load_dotenv()
 
+load_dotenv()
+from httpx import request
 from fastapi import FastAPI, HTTPException, Depends, Header, Response
 import sys
 sys.path.append('/app')
