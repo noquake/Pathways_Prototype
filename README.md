@@ -1,125 +1,83 @@
-# Local RAG Pipeline with Docling and PostgreSQL + pgvector
+# Pathways Prototype
 
-A lightweight **Retrieval-Augmented Generation** system using:
-
-- **Docling** for PDF and Word document ingestion and generation of various files for later LLM ingestion (primarily .md at this stage 12/25)
-- **SentenceTransformers** for embedding generation
-- **Docker** spinning containers for embedding and (future) usage statistics as well as pgadmin for simple monitoring of database activity via docker-compose
-- **PostgreSQL + PGVector** preferred database technology for this project and pjvector for injection of embeddings into containers
-
-This project has been designed to be as clear as possible in its execution and debugging. It streams the generation of chunks, embeddings and their injection the docker database to reduce memory usage.
-
-## TO-DO
-
-- citation information support in chunk generation based on document & document page origin
-- PUBLIC ASSISTANT
-  - Single-page web app (React / Next.js / simple HTML+JS)
-  - Chat UI (prompt → response)
-  - Stateless back-end calls (no session persistence)
-  - Rate-limiting + abuse protection
-  - Pathway citation display (doc name + section)
-- AUTHENTICATED PRACTITIONER
-  - Secure login
-  - Role = Practitioner
-  - Persistent conversational context
-  - Query history tied to user identity
-  - Team based collaboration?
-  - EMR/EHR integration?
-- ADMINISTRATIVE DASHBOARD
-  - Login + admin role
-  - Usage metrics:
-    - Number of queries
-    - Most accessed pathways
-    - Peak usage times
-    - Public vs staff usage split
-  - Health monitoring:
-    - System uptime
-    - Ingestion status
-    - Embedding freshness
-  - Exportable reports (CSV)
+A **Retrieval-Augmented Generation (RAG)** system built for the Connecticut Children's use case. The core focus is clean data processing and high-fidelity retrieval — clinical pathways are dense, structured documents and preserving their integrity from ingestion through retrieval is the priority.
 
 ---
 
-## Getting Started
+## Description
 
-### Prerequisites
+This prototype ingests clinical pathway documents, chunks and embeds them, and stores them in a vector database for semantic retrieval. A FastAPI backend handles query routing and LLM interaction, served locally via Uvicorn.
 
-- Python 3.11+
-- Docker
-- PostgreSQL with pgvector extension
+The project has pivoted away from a Docker-based development environment. Running services locally through **Uvicorn** provides significantly clearer debugging and faster iteration. Storage and database concerns have been offloaded to **Supabase**, removing the overhead of managing local containers and freeing the team to focus on what matters most: retrieval quality and prompt engineering.
+
+### Technologies
+
+| Layer                          | Tool                                                                       |
+| ------------------------------ | -------------------------------------------------------------------------- |
+| Document ingestion             | [Docling](https://github.com/DS4SD/docling) initially -> Claude Sonnet 4.6 |
+| Embeddings                     | SentenceTransformers (Various models)                                      |
+| Vector storage                 | PostgreSQL + pgvector (via Supabase)                                       |
+| Backend                        | FastAPI + Uvicorn                                                          |
+| Frontend                       | React                                                                      |
+| Code Hygiene + Static analysis | [Vulture](https://github.com/jendrikseipp/vulture)                         |
+| Auth (planned)                 | Keycloak                                                                   |
 
 ---
 
-### 1. Install Dependencies
+## Installation
+
+**Prerequisites:** Python 3.11+, Node.js
 
 ```bash
-# Create virtual environment
+# Clone the repo
+git clone https://github.com/noquake/Pathways_Prototype.git
+cd Pathways_Prototype
+
+# Create and activate virtual environment
 python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate     # Windows
 
-# Install Python packages
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Spin up psql database and administration containers
+Set up your environment variables:
 
 ```bash
-docker compose up -d
-docker ps # check status of containers
+cp .env.example .env
+# Fill in your Supabase URL, anon key, and OpenAI/LLM API key
 ```
 
-## Frontend Structure
+---
 
+## Running
+
+```bash
+# Start the backend
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+# In a separate terminal, start the frontend
+cd services/frontend
+npm install
+npm run dev
 ```
 
-services/frontend/
-├── .env # API URLs and Keycloak Client IDs
-├── Dockerfile # Containerization for deployment
-├── package.json
-├── public/ # Static assets (Not processed by React)
-│ ├── favicon.ico
-│ ├── manifest.json # Metadata for mobile/web app install
-│ └── robots.txt # SEO/Crawler instructions
-├── src/ # The "Engine Room"
-│ ├── index.jsx # React entry point & Keycloak initialization
-│ ├── App.jsx # Top-level Routing & Theme Provider
-│ ├── index.css # Your Burgundy/Green CSS Variables & Global styles
-│ │
-│ ├── assets/ # Brand assets (Processed by Vite/Webpack)
-│ │ ├── logo-burgundy.svg
-│ │ ├── logo-white.svg
-│ │ └── icons/ # Medical-specific SVGs (Stethoscopes, Checklists)
-│ │
-│ ├── components/ # Reusable building blocks
-│ │ ├── ui/ # "Atoms": Buttons, Inputs, Modals
-│ │ ├── layout/ # "Templates": Nav, Footer, Sidebar
-│ │ ├── clinical/ # Specialized: PathwayCards, CitationBox, ChatBubble
-│ │ └── roles/ # Role-specific dashboard components
-│ │ ├── AdminDashboard.jsx
-│ │ ├── HRDashboard.jsx
-│ │ └── PractitionerDashboard.jsx
-│ │
-│ ├── pages/ # Route-level views (The "Destinations")
-│ │ ├── Landing.jsx # The public home page
-│ │ ├── Dashboard.jsx # The main "Switcher" for authenticated users
-│ │ ├── Chat.jsx # Clinical Chat Interface
-│ │ ├── Explorer.jsx # Pathway Explorer
-│ │ └── Unauthorized.jsx # 403 error page (User has wrong role)
-│ │
-│ ├── hooks/ # Custom Logic (The "Brain")
-│ │ ├── useAuth.js # Custom wrapper for Keycloak
-│ │ ├── useRole.js # Helper: const { isAdmin } = useRole()
-│ │ └── useChat.js # Logic for managing AI chat streams
-│ │
-│ ├── services/ # External Communications
-│ │ ├── api.js # Axios/Fetch wrapper for backend calls
-│ │ └── auth.js # Keycloak configuration/logic
-│ │
-│ ├── utils/ # Helper functions
-│ │ ├── validators.js # Data validation (Clinical code checks)
-│ │ └── formatters.js # Date and text formatting
-│ │
-│ └── routes/ # Access Control
-│ ├── AppRoutes.jsx # Central route definitions
-│ └── ProtectedRoute.jsx # Wrapper to check Login/Roles
+The API will be available at `http://localhost:8000` and the frontend at `http://localhost:5173`.
+
+To identify unused code before making changes:
+
+```bash
+pip install vulture
+vulture services/ --min-confidence 80
 ```
+
+---
+
+## Next Steps
+
+- **Prompt engineering** — refine system prompts to improve grounding and citation accuracy against clinical pathway content
+- **Retrieval tuning** — improve chunking strategy and similarity thresholds to maximize fidelity of returned context
+- **Session separation** — isolate conversation context per user session for cleaner multi-turn interactions
+- **User accounts** — persistent conversation history and per-user query tracking (most accessed pathways, usage patterns)
+- **Role-based access** — public assistant vs. authenticated practitioner vs. admin dashboard, via Keycloak
