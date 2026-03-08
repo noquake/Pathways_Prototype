@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 import os
-import subprocess
 import sys
 
 from rag.chunking import main as chunking
