@@ -22,10 +22,8 @@ from pathways_catalog import list_pathways, get_pathway_by_id
 # Import existing RAG components
 from rag.embeddings import get_embeddings
 
-from rag.query import retrieve_chunks as retrieve_original_chunks
 from rag.query import rag_api_llm as original_rag_api_llm
 
-from rag.query import retrieve_chunks as retrieve_original_chunks
 from rag.query import rag_api_llm as original_rag_api_llm
 from rag.retrieval import retrieve_chunks as retrieve_chunks_by_model
 
@@ -217,9 +215,6 @@ async def chat_public(request: ChatRequest):
         print("Provider: gemini")
         print(f"Model: {request.model_name}")
         print(f"Top K: {request.top_k}")
-        # if selected_pathway_doc_name:
-        #     print(f"Pathway filter requested: {request.pathway_id} -> {selected_pathway_doc_name}")
-        # print("=" * 60)
 
         db_handle = get_supabase_client()
 
