@@ -150,7 +150,7 @@ function PublicChat({ apiUrl }) {
 					<div className="chat-transcript" ref={transcriptRef}>
 						{messages.length === 0 && (
 							<div className="chat-card assistant">
-								<div className="chat-icon assistant">★</div>
+								<div className="chat-icon assistant">A</div>
 								<div className="chat-content">
 									<p>
 										Select a pathway and ask a question. Responses are limited to
@@ -163,7 +163,7 @@ function PublicChat({ apiUrl }) {
 						{messages.map((msg, idx) => (
 							<div key={idx} className={`chat-card ${msg.role}`}>
 								<div className={`chat-icon ${msg.role}`}>
-									{msg.role === "user" ? "◎" : "★"}
+									{msg.role === "user" ? "Q" : "A"}
 								</div>
 								<div className="chat-content">
 									<ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -173,7 +173,7 @@ function PublicChat({ apiUrl }) {
 
 						{loading && (
 							<div className="chat-card assistant">
-								<div className="chat-icon assistant">★</div>
+								<div className="chat-icon assistant">A</div>
 								<div className="chat-content">
 									<p>Thinking...</p>
 								</div>

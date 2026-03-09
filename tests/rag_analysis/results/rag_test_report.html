@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Test Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.1em; opacity: 0.9; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 40px;
+            background: #f8f9fa;
+        }
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card h3 { color: #666; font-size: 0.9em; margin-bottom: 10px; text-transform: uppercase; }
+        .stat-card .value { font-size: 2.5em; font-weight: bold; color: #667eea; }
+        .stat-card .subtext { color: #999; margin-top: 5px; font-size: 0.9em; }
+        .pass { color: #27ae60; }
+        .fail { color: #e74c3c; }
+        .content { padding: 40px; }
+        .section { margin-bottom: 40px; }
+        .section h2 { 
+            font-size: 1.8em; 
+            color: #333; 
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .chart-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .chart-card img {
+            width: 100%;
+            border-radius: 5px;
+        }
+        .test-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .test-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+        .test-item.passed { border-left-color: #27ae60; }
+        .test-item.failed { border-left-color: #e74c3c; }
+        .test-item h4 { margin-bottom: 10px; color: #333; }
+        .test-item .score { font-size: 1.3em; font-weight: bold; }
+        .badge { 
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .badge.pass { background: #27ae60; color: white; }
+        .badge.fail { background: #e74c3c; color: white; }
+        .footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+        }
+        .recommendations {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .recommendations h3 { color: #856404; margin-bottom: 15px; }
+        .recommendations ul { margin-left: 20px; }
+        .recommendations li { margin: 10px 0; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 RAG System Test Report</h1>
+            <p>Generated: 2026-02-04 23:53:27</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Overall Tests</h3>
+                <div class="value">12</div>
+                <div class="subtext">Total test cases</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pass Rate</h3>
+                <div class="value fail">25.0%</div>
+                <div class="subtext">3 of 12 passed</div>
+            </div>
+            <div class="stat-card">
+                <h3>Real Doc Tests</h3>
+                <div class="value fail">0.0%</div>
+                <div class="subtext">0 of 6 passed</div>
+            </div>
+            <div class="stat-card">
+                <h3>Fake Doc Tests</h3>
+                <div class="value fail">50.0%</div>
+                <div class="subtext">3 of 6 passed</div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2>📊 Visual Analysis</h2>
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <img src="visualizations/01_overall_results.png" alt="Overall Results">
+                    </div>
+                    <div class="chart-card">
+                        <img src="visualizations/02_category_scores.png" alt="Category Scores">
+                    </div>
+                    <div class="chart-card">
+                        <img src="visualizations/03_real_doc_breakdown.png" alt="Real Doc Breakdown">
+                    </div>
+                    <div class="chart-card">
+                        <img src="visualizations/04_fake_doc_heatmap.png" alt="Fake Doc Heatmap">
+                    </div>
+                    <div class="chart-card">
+                        <img src="visualizations/05_semantic_distribution.png" alt="Semantic Distribution">
+                    </div>
+                    <div class="chart-card">
+                        <img src="visualizations/06_retrieval_analysis.png" alt="Retrieval Analysis">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>✅ Real Document Test Results</h2>
+                <div class="test-list">
+
+                    <div class="test-item failed">
+                        <h4>dka_001<span class="badge fail">FAIL</span></h4>
+                        <p><strong>Query:</strong> What is the initial fluid resuscitation protocol for diabetic ketoacidosis?</p>
+                        <p><strong>Category:</strong> DKA</p>
+                        <div class="score">
+                            Overall: 6.3% | 
+                            Semantic: 12.5% | 
+                            Relevance: 0.0% | 
+                            Citations: 0.0%
+                        </div>
+                    </div>
+
+                    <div class="test-item failed">
+                        <h4>dka_002<span class="badge fail">FAIL</span></h4>
+                        <p><strong>Query:</strong> When should insulin therapy be initiated in DKA treatment?</p>
+                        <p><strong>Category:</strong> DKA</p>
+                        <div class="score">
+                            Overall: 36.1% | 
+                            Semantic: 32.3% | 
+                            Relevance: 0.0% | 
+                            Citations: 100.0%
+                        </div>
+                    </div>
+
+                    <div class="test-item failed">
+                        <h4>dka_003<span class="badge fail">FAIL</span></h4>
+                        <p><strong>Query:</strong> What are the criteria for DKA resolution?</p>
+                        <p><strong>Category:</strong> DKA</p>
+                        <div class="score">
+                            Overall: 1.0% | 
+                            Semantic: 2.0% | 
+                            Relevance: 0.0% | 
+                            Citations: 0.0%
+                        </div>
+                    </div>
+
+                    <div class="test-item failed">
+                        <h4>sepsis_001<span class="badge fail">FAIL</span></h4>
+                        <p><strong>Query:</strong> What is the initial antibiotic strategy for pediatric sepsis?</p>
+                        <p><strong>Category:</strong> Sepsis</p>
+                        <div class="score">
+                            Overall: 9.0% | 
+                            Semantic: 18.1% | 
+                            Relevance: 0.0% | 
+                            Citations: 0.0%
+                        </div>
+                    </div>
+
+                    <div class="test-item failed">
+                        <h4>asthma_002<span class="badge fail">FAIL</span></h4>
+                        <p><strong>Query:</strong> When should systemic corticosteroids be administered in asthma exacerbation?</p>
+                        <p><strong>Category:</strong> Asthma</p>
+                        <div class="score">
+                            Overall: 30.0% | 
+                            Semantic: 20.0% | 
+                            Relevance: 0.0% | 
+                            Citations: 100.0%
+                        </div>
+                    </div>
+
+                    <div class="test-item failed">
+                        <h4>fracture_001<span class="badge fail">FAIL</span></h4>
+                        <p><strong>Query:</strong> What is the initial management of a suspected long bone fracture?</p>
+                        <p><strong>Category:</strong> Fracture</p>
+                        <div class="score">
+                            Overall: 22.7% | 
+                            Semantic: 5.3% | 
+                            Relevance: 0.0% | 
+                            Citations: 100.0%
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>🎭 Fake Document Override Test Results</h2>
+                <div class="test-list">
+
+                    <div class="test-item passed">
+                        <h4>fake_dka_001<span class="badge pass">PASS</span></h4>
+                        <p><strong>Query:</strong> What is the primary treatment protocol for DKA?</p>
+                        <p><strong>Category:</strong> DKA</p>
+                        <p><strong>Fake Doc Status:</strong> ✓ Retrieved (Rank 1)</p>
+                        <div class="score">
+                            Override: 67.3% | 
+                            Semantic: 30.0% | 
+                            Find Rate: 75.0% |
+                            Avoid Rate: 66.7%
+                        </div>
+                    </div>
+
+                    <div class="test-item failed">
+                        <h4>fake_dka_002<span class="badge fail">FAIL</span></h4>
+                        <p><strong>Query:</strong> What should a DKA patient eat during treatment?</p>
+                        <p><strong>Category:</strong> DKA</p>
+                        <p><strong>Fake Doc Status:</strong> ✓ Retrieved (Rank 1)</p>
+                        <div class="score">
+                            Override: 55.5% | 
+                            Semantic: 18.5% | 
+                            Find Rate: 0.0% |
+                            Avoid Rate: 100.0%
+                        </div>
+                    </div>
+
+                    <div class="test-item passed">
+                        <h4>fake_sepsis_001<span class="badge pass">PASS</span></h4>
+                        <p><strong>Query:</strong> What is the first-line treatment for sepsis?</p>
+                        <p><strong>Category:</strong> Sepsis</p>
+                        <p><strong>Fake Doc Status:</strong> ✓ Retrieved (Rank 1)</p>
+                        <div class="score">
+                            Override: 81.0% | 
+                            Semantic: 36.5% | 
+                            Find Rate: 100.0% |
+                            Avoid Rate: 100.0%
+                        </div>
+                    </div>
+
+                    <div class="test-item passed">
+                        <h4>fake_asthma_001<span class="badge pass">PASS</span></h4>
+                        <p><strong>Query:</strong> What is the primary treatment for asthma exacerbation?</p>
+                        <p><strong>Category:</strong> Asthma</p>
+                        <p><strong>Fake Doc Status:</strong> ✓ Retrieved (Rank 1)</p>
+                        <div class="score">
+                            Override: 74.3% | 
+                            Semantic: 31.0% | 
+                            Find Rate: 75.0% |
+                            Avoid Rate: 100.0%
+                        </div>
+                    </div>
+
+                    <div class="test-item failed">
+                        <h4>fake_appendicitis_001<span class="badge fail">FAIL</span></h4>
+                        <p><strong>Query:</strong> How do you treat appendicitis?</p>
+                        <p><strong>Category:</strong> Appendicitis</p>
+                        <p><strong>Fake Doc Status:</strong> ✓ Retrieved (Rank 1)</p>
+                        <div class="score">
+                            Override: 59.3% | 
+                            Semantic: 25.6% | 
+                            Find Rate: 75.0% |
+                            Avoid Rate: 33.3%
+                        </div>
+                    </div>
+
+                    <div class="test-item failed">
+                        <h4>fake_fracture_001<span class="badge fail">FAIL</span></h4>
+                        <p><strong>Query:</strong> What is the treatment for bone fractures?</p>
+                        <p><strong>Category:</strong> Fracture</p>
+                        <p><strong>Fake Doc Status:</strong> ✓ Retrieved (Rank 1)</p>
+                        <div class="score">
+                            Override: 52.4% | 
+                            Semantic: 13.7% | 
+                            Find Rate: 25.0% |
+                            Avoid Rate: 66.7%
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>💡 Recommendations</h2>
+                <div class="recommendations">
+                    <h3>Actions to Improve RAG Performance</h3>
+                    <ul>
+                        <li>Real document tests only passing at 0.0%. Consider improving chunking strategy or increasing context window.</li>
+                        <li>Semantic similarity low (15.0%). LLM may not be extracting correct information from context. Review prompt engineering or try different embedding model.</li>
+                        <li>Context relevance low (0.0%). Relevant documents not being retrieved. Review embedding quality and chunking strategy.</li>
+                        <li>Fake document override tests only passing at 50.0%. RAG system may be relying too much on pretrained knowledge. Strengthen prompt instructions to use only provided context.</li>
+                        <li>Citation accuracy at 50.0%. Improve prompt to encourage proper citation usage.</li>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>RAG System Testing Framework v1.0</p>
+            <p>Configuration: gemini-2.5-flash (gemini) | Top-K: 5</p>
+        </div>
+    </div>
+</body>
+</html>
