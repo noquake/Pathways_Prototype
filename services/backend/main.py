@@ -1,23 +1,27 @@
 from dotenv import load_dotenv
+load_dotenv()
+
 
 load_dotenv()
 from httpx import request
 from fastapi import FastAPI, HTTPException, Depends, Header, Response
 import sys
 sys.path.append('/app')
-from fastapi import FastAPI, HTTPException, Depends, Header
+import os
+from datetime import datetime
+import time
+import uuid
+
+import httpx
+from fastapi import FastAPI, HTTPException, Depends, Header, Response
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
-import os
-from datetime import datetime
-import httpx
 from supabase import create_client
 from jose import JWTError, jwt
+
 from logger import query_logger
-import time
-import uuid
-from pathways_catalog import list_pathways, get_pathway_by_id
+from pathways_catalog import list_pathways, get_pathway_by_id, get_pathway_resource
 
 # Import existing RAG components
 from rag.embeddings import get_embeddings
@@ -95,11 +99,20 @@ class PractitionerChatRequest(ChatRequest):
     pathway_id: str
 
 
-class PathwayOption(BaseModel):
+class PathwayResourceOption(BaseModel):
     id: str
     label: str
     doc_name: str
     pdf_url: str
+
+
+class PathwayOption(BaseModel):
+    id: str
+    label: str
+    default_resource_id: str
+    doc_name: str
+    pdf_url: str
+    resources: List[PathwayResourceOption]
 
 
 class Citation(BaseModel):
@@ -148,12 +161,17 @@ async def get_pathways():
 @app.get("/pathways/{pathway_id}/pdf")
 async def get_pathway_pdf(
     pathway_id: str,
+    resource_id: Optional[str] = None,
     range_header: Optional[str] = Header(None, alias="Range"),
     if_range: Optional[str] = Header(None, alias="If-Range"),
 ):
     pathway = get_pathway_by_id(pathway_id)
     if not pathway:
         raise HTTPException(status_code=404, detail=f"Unknown pathway_id: {pathway_id}")
+
+    resource = get_pathway_resource(pathway_id, resource_id)
+    if not resource:
+        raise HTTPException(status_code=404, detail=f"Unknown resource_id for pathway_id: {pathway_id}")
 
     upstream_headers = {}
     if range_header:
@@ -166,7 +184,7 @@ async def get_pathway_pdf(
             follow_redirects=True,
             timeout=httpx.Timeout(20.0, connect=10.0),
         ) as client:
-            upstream_response = await client.get(pathway["pdf_url"], headers=upstream_headers)
+            upstream_response = await client.get(resource["pdf_url"], headers=upstream_headers)
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Timed out fetching pathway PDF.")
     except httpx.HTTPError:
@@ -207,6 +225,8 @@ async def chat_public(request: ChatRequest):
     start_time = time.time()
 
     try:
+        top_k = request.top_k or 5
+        selected_pathway_doc_name = resolve_pathway_doc_name(request.pathway_id)
 
         print("="*60)
         print("=== NEW QUERY RECEIVED ===")
@@ -224,8 +244,8 @@ async def chat_public(request: ChatRequest):
         print(f"✓ Embedding generated: dimension={len(query_emb_list)}\n")
 
         # Retrieve top-k chunks
-        print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
-        results = retrieve_chunks_by_model(db_handle, request.query, top_k=request.top_k, pathway_id=request.pathway_id, model_key=request.embedding_model)
+        print(f"\n[2/6] Retrieving top {top_k} chunks...")
+        results = retrieve_chunks_by_model(db_handle, request.query, top_k=top_k, pathway_id=request.pathway_id, model_key=request.embedding_model)
         print(f"DEBUG: Retrieved {len(results)} results\n")
 
         citations = []
@@ -248,13 +268,13 @@ async def chat_public(request: ChatRequest):
         # Generate response using LLM
         if request.model == "gemini":
             # Use Gemini API (default)
-            response_text = original_rag_api_llm(db_handle, request.query, top_k=request.top_k, 
+            response_text = original_rag_api_llm(db_handle, request.query, top_k=top_k, 
                                        model_name=request.model_name, api_provider="gemini",
                                        pathway_id=request.pathway_id,
                                        retrieved_results=results)
         else:
             # Default to Gemini if unknown model specified
-            response_text = original_rag_api_llm(db_handle, request.query, top_k=request.top_k, 
+            response_text = original_rag_api_llm(db_handle, request.query, top_k=top_k, 
                                        model_name="gemini-2.5-flash", api_provider="gemini",
                                        pathway_id=request.pathway_id,
                                        retrieved_results=results)
