@@ -104,6 +104,10 @@
 	margin-bottom: 12px;
 }
 
+.chat-card.assistant {
+	margin-left: 16px;
+}
+
 .chat-icon {
 	width: 30px;
 	height: 30px;
@@ -128,8 +132,15 @@
 
 .chat-content {
 	color: #4f5258;
-	font-size: 30px;
 	line-height: 1.32;
+}
+
+.chat-card.user .chat-content {
+	font-size: 30px;
+}
+
+.chat-card.assistant .chat-content {
+	font-size: 28px;
 }
 
 .chat-content p {
@@ -278,8 +289,16 @@
 		font-size: 20px;
 	}
 
-	.chat-content {
+	.chat-card.assistant {
+		margin-left: 8px;
+	}
+
+	.chat-card.user .chat-content {
 		font-size: 22px;
+	}
+
+	.chat-card.assistant .chat-content {
+		font-size: 20px;
 	}
 
 	.pathway-panel {
