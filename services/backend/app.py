@@ -1,19 +1,10 @@
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 import os
-import subprocess
 import sys
 
-# from rag.scrape_docs import main as scrape_docs
-# from rag.transform_data import main as transform_data
-# from rag.docling_chunk_supabase import main as docling_chunk_to_supabase
-
-# from rag.semantic_chunk_supabase import main as semantic_chunk_supabase
 from rag.chunking import main as chunking
 
-def spin_up_docker():
-    # subprocess.run(["docker", "compose", "up", "-d", ])
-    subprocess.run(["docker", "compose", "-f", "docker-compose.db.yml", "up", "-d"])
 
 def main():
     from sentence_transformers import SentenceTransformer

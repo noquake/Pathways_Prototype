@@ -1,6 +1,10 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+
+load_dotenv()
+from httpx import request
+from fastapi import FastAPI, HTTPException, Depends, Header, Response
 import sys
 sys.path.append('/app')
 import os
@@ -21,6 +25,9 @@ from pathways_catalog import list_pathways, get_pathway_by_id, get_pathway_resou
 
 # Import existing RAG components
 from rag.embeddings import get_embeddings
+
+from rag.query import rag_api_llm as original_rag_api_llm
+
 from rag.query import rag_api_llm as original_rag_api_llm
 from rag.retrieval import retrieve_chunks as retrieve_chunks_by_model
 
@@ -227,10 +234,7 @@ async def chat_public(request: ChatRequest):
         print(f"Query: {request.query}")
         print("Provider: gemini")
         print(f"Model: {request.model_name}")
-        print(f"Top K: {top_k}")
-        if selected_pathway_doc_name:
-            print(f"Pathway filter requested: {request.pathway_id} -> {selected_pathway_doc_name}")
-        print("=" * 60)
+        print(f"Top K: {request.top_k}")
 
         db_handle = get_supabase_client()
 

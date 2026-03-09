@@ -32,7 +32,7 @@ EMBEDDING_MODELS: Dict[str, Dict[str, Any]] = {
     "medcpt": {
         "model_name": "ncbi/MedCPT-Article-Encoder",
         "query_model_name": "ncbi/MedCPT-Query-Encoder",
-        "dimension": 1024,
+        "dimension": 768,
         "table": "pathway_chunks_medcpt",
         "rpc_function": "match_chunks_medcpt",
         "description": "Clinical Q&A specialized"
