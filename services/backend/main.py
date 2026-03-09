@@ -21,7 +21,12 @@ from supabase import create_client
 from jose import JWTError, jwt
 
 from logger import query_logger
-from pathways_catalog import list_pathways, get_pathway_by_id, get_pathway_resource
+from pathways_catalog import (
+    list_pathways,
+    get_pathway_by_id,
+    get_pathway_resource,
+    get_pathway_retrieval_documents,
+)
 
 # Import existing RAG components
 from rag.embeddings import get_embeddings
@@ -92,7 +97,7 @@ class ChatRequest(BaseModel):
     model_name: Optional[str] = "gemini-2.5-flash"
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
-    embedding_model: Optional[str] = "minilm"  # ← add this
+    embedding_model: Optional[str] = "minilm_semantic"
 
 
 class PractitionerChatRequest(ChatRequest):
@@ -227,6 +232,7 @@ async def chat_public(request: ChatRequest):
     try:
         top_k = request.top_k or 5
         selected_pathway_doc_name = resolve_pathway_doc_name(request.pathway_id)
+        retrieval_pathway_ids = get_pathway_retrieval_documents(request.pathway_id) or None
 
         print("="*60)
         print("=== NEW QUERY RECEIVED ===")
@@ -245,7 +251,14 @@ async def chat_public(request: ChatRequest):
 
         # Retrieve top-k chunks
         print(f"\n[2/6] Retrieving top {top_k} chunks...")
-        results = retrieve_chunks_by_model(db_handle, request.query, top_k=top_k, pathway_id=request.pathway_id, model_key=request.embedding_model)
+        results = retrieve_chunks_by_model(
+            db_handle,
+            request.query,
+            top_k=top_k,
+            pathway_id=request.pathway_id if not retrieval_pathway_ids else None,
+            pathway_ids=retrieval_pathway_ids,
+            model_key=request.embedding_model,
+        )
         print(f"DEBUG: Retrieved {len(results)} results\n")
 
         citations = []
