@@ -8,6 +8,11 @@ PATHWAY_CATALOG: List[Dict[str, Any]] = [
         "default_resource_id": "emergency-department-algorithm",
         "doc_name": "asthma_emergency_department_algorithm_-_9.8.23",
         "pdf_url": "https://www.connecticutchildrens.org/sites/default/files/2023-09/asthma_emergency_department_algorithm_-_9.8.23.pdf",
+        "retrieval_document_ids": [
+            "asthma-emergency-department-algorithm",
+            "asthma-inpatient-algorithm",
+            "asthma-appendix-a-mpis",
+        ],
         "resources": [
             {
                 "id": "emergency-department-algorithm",
@@ -41,6 +46,7 @@ PATHWAY_CATALOG: List[Dict[str, Any]] = [
         "default_resource_id": "default",
         "doc_name": "anaphylaxis_-_1.16.25",
         "pdf_url": "https://www.connecticutchildrens.org/sites/default/files/2025-01/anaphylaxis_-_1.16.25.pdf",
+        "retrieval_document_ids": ["anaphylaxis"],
         "resources": [
             {
                 "id": "default",
@@ -56,6 +62,7 @@ PATHWAY_CATALOG: List[Dict[str, Any]] = [
         "default_resource_id": "default",
         "doc_name": "bronchiolitis-educational-module-10.13.23",
         "pdf_url": "https://www.connecticutchildrens.org/sites/default/files/2023-10/bronchiolitis-algorithm-10.4.23.pdf",
+        "retrieval_document_ids": ["bronchiolitis-algorithm-10.4.23"],
         "resources": [
             {
                 "id": "default",
@@ -71,6 +78,7 @@ PATHWAY_CATALOG: List[Dict[str, Any]] = [
         "default_resource_id": "default",
         "doc_name": "croup-module-3.25.25",
         "pdf_url": "https://www.connecticutchildrens.org/sites/default/files/2025-03/croup-algorithm-3.20.25.pdf",
+        "retrieval_document_ids": ["croup-algorithm-3.20.25"],
         "resources": [
             {
                 "id": "default",
@@ -86,6 +94,7 @@ PATHWAY_CATALOG: List[Dict[str, Any]] = [
         "default_resource_id": "default",
         "doc_name": "appendicitis-6.30.23",
         "pdf_url": "https://www.connecticutchildrens.org/sites/default/files/2023-09/appendicitis-6.30.23.pdf",
+        "retrieval_document_ids": ["appendicitis-6.30.23"],
         "resources": [
             {
                 "id": "default",
@@ -120,3 +129,10 @@ def get_pathway_resource(pathway_id: str, resource_id: Optional[str] = None) -> 
         if resource["id"] == desired_resource_id:
             return resource
     return None
+
+
+def get_pathway_retrieval_documents(pathway_id: str) -> List[str]:
+    pathway = get_pathway_by_id(pathway_id)
+    if not pathway:
+        return []
+    return list(pathway.get("retrieval_document_ids", []))
