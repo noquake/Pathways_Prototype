@@ -27,7 +27,7 @@ as $$
     pc.pathway_id,
     1 - (pc.embedding <=> query_embedding) as similarity
  
-  from public.pathway_chunks_medcpt pc
+  from public.pathway_chunks_medembed_large pc
 
   where filter_pathway_id is null or pc.pathway_id = filter_pathway_id
   order by pc.embedding <=> query_embedding

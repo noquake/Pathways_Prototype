@@ -18,6 +18,21 @@ load_dotenv()
 def hash_chunk_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
+def extract_metadata_from_header(file_path: Path) -> dict:
+    """Parse pathway_tag and other metadata from the <!-- source: --> comment."""
+    content = file_path.read_text()
+    match = re.search(r'<!--(.+?)-->', content, re.DOTALL)
+    if not match:
+        return {}
+    
+    header = match.group(1)
+    result = {}
+    for field in ["pathway_tag", "institution", "cross_reference"]:
+        field_match = re.search(rf'{field}:\s*([^|]+)', header)
+        if field_match:
+            result[field] = field_match.group(1).strip()
+    return result
+
 def extract_pathway_metadata(doc_name: str, file_path: Path) -> dict:
     """
     Extract metadata from document filename.
@@ -128,7 +143,9 @@ def generate_chunks_with_model(model_key: str = DEFAULT_MODEL):
             # Extract document metadata
             doc_metadata = extract_pathway_metadata(file.stem, file)
             doc_metadata["doc_file_path"] = str(file)
-            
+            header_metadata = extract_metadata_from_header(file)
+            pathway_tag = header_metadata.get("pathway_tag", doc_metadata["pathway_id"])  # ← and here
+
             # Insert document
             print(f"📄 Processing: {doc_metadata['pathway_id']}")
             supabase.table("pathway_documents").upsert({
@@ -158,9 +175,9 @@ def generate_chunks_with_model(model_key: str = DEFAULT_MODEL):
                 # Insert chunk
                 supabase.table(table_name).upsert({
                     "chunk_hash":      chunk_hash,
-                    "pathway_tag":     doc_metadata["pathway_id"],
                     "source_docs":     [doc_metadata["doc_name"]],
                     "source_section":  source_section,
+                    "pathway_tag": pathway_tag,
                     "pathway_id":      doc_metadata["pathway_id"],
                     "doc_chunk_index": doc_chunk_idx,
                     "chunk_text":      chunk_text,
