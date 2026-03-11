@@ -88,7 +88,8 @@ class ChatRequest(BaseModel):
     model_name: Optional[str] = "gemini-2.5-flash"
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
-    embedding_model: Optional[str] = "minilm"  # ← add this
+    embedding_model: Optional[str] = "minilm" 
+    pathway_tag: Optional[str] = None
 
 
 class PractitionerChatRequest(ChatRequest):
@@ -225,7 +226,7 @@ async def chat_public(request: ChatRequest):
 
         # Retrieve top-k chunks
         print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
-        results = retrieve_chunks_by_model(db_handle, request.query, top_k=request.top_k, pathway_id=request.pathway_id, model_key=request.embedding_model)
+        results = retrieve_chunks_by_model(db_handle, request.query, top_k=request.top_k, pathway_id=request.pathway_id, pathway_tag=request.pathway_tag,model_key=request.embedding_model)
         print(f"DEBUG: Retrieved {len(results)} results\n")
 
         citations = []
