@@ -97,6 +97,7 @@ class ChatRequest(BaseModel):
     model_name: Optional[str] = "gemini-2.5-flash"
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
+    pathway_tag: Optional[str] = None
     embedding_model: Optional[str] = "minilm_semantic"
 
 
@@ -250,6 +251,8 @@ async def chat_public(request: ChatRequest):
         print(f"✓ Embedding generated: dimension={len(query_emb_list)}\n")
 
         # Retrieve top-k chunks
+        # print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
+        # results = retrieve_chunks_by_model(db_handle, request.query, top_k=request.top_k, pathway_id=request.pathway_id, pathway_tag=request.pathway_tag,model_key=request.embedding_model)
         print(f"\n[2/6] Retrieving top {top_k} chunks...")
         results = retrieve_chunks_by_model(
             db_handle,

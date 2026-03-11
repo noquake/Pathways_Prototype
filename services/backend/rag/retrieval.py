@@ -2,6 +2,7 @@ from typing import List, Optional
 from .models import EMBEDDING_MODELS, DEFAULT_MODEL
 from .embeddings import get_embeddings
 
+# def retrieve_chunks(supabase, query: str, top_k: int = 5, pathway_id: Optional[str] = None, pathway_tag: Optional[str] = None, model_key: str = DEFAULT_MODEL):
 def retrieve_chunks(
     supabase,
     query: str,
@@ -26,6 +27,11 @@ def retrieve_chunks(
         "query_embedding": query_emb_list,
         "match_count": top_k,
     }
+
+    # if pathway_id:
+    #     payload["filter_pathway_id"] = pathway_id
+    # if pathway_tag:
+    #     payload["filter_pathway_tag"] = pathway_tag
 
     try:
         if pathway_ids:

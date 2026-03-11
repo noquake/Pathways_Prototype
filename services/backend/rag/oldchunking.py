@@ -18,21 +18,6 @@ load_dotenv()
 def hash_chunk_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
-def extract_metadata_from_header(file_path: Path) -> dict:
-    """Parse pathway_tag and other metadata from the <!-- source: --> comment."""
-    content = file_path.read_text()
-    match = re.search(r'<!--(.+?)-->', content, re.DOTALL)
-    if not match:
-        return {}
-    
-    header = match.group(1)
-    result = {}
-    for field in ["pathway_tag", "institution", "cross_reference"]:
-        field_match = re.search(rf'{field}:\s*([^|]+)', header)
-        if field_match:
-            result[field] = field_match.group(1).strip()
-    return result
-
 def extract_pathway_metadata(doc_name: str, file_path: Path) -> dict:
     """
     Extract metadata from document filename.
@@ -71,15 +56,19 @@ def extract_pathway_metadata(doc_name: str, file_path: Path) -> dict:
         "doc_last_modified": doc_last_modified
     }
 
-def extract_source_section(text: str) -> str | None:
-    """Parse source_section from <!-- section: ... --> comments in chunk text."""
-    match = re.search(r'<!--\s*section:\s*(.+?)\s*-->', text)
-    return match.group(1) if match else None
+# Category mapping (manual - you'll need to maintain this)
+# PATHWAY_CATEGORIES = {
+#     "anaphylaxis": "emergency",
+#     "dka": "endocrine",
+#     "sepsis": "infectious-disease",
+#     "status-epilepticus": "neurology",
+#     "animal-bite": "infectious-disease",
+#     # TODO: ADD MORE / REFINE BASED ON TOPICS
+# }
 
-
-def strip_html_comments(text: str) -> str:
-    """Remove <!-- ... --> comments before storing/embedding."""
-    return re.sub(r'<!--.*?-->', '', text, flags=re.DOTALL).strip()
+# def get_pathway_category(pathway_id: str) -> str:
+#     """Get category from lookup table or return 'uncategorized'."""
+#     return PATHWAY_CATEGORIES.get(pathway_id, "uncategorized")
 
 def create_supabase_client():
     SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -143,9 +132,7 @@ def generate_chunks_with_model(model_key: str = DEFAULT_MODEL):
             # Extract document metadata
             doc_metadata = extract_pathway_metadata(file.stem, file)
             doc_metadata["doc_file_path"] = str(file)
-            header_metadata = extract_metadata_from_header(file)
-            pathway_tag = header_metadata.get("pathway_tag", doc_metadata["pathway_id"])  # ← and here
-
+            
             # Insert document
             print(f"📄 Processing: {doc_metadata['pathway_id']}")
             supabase.table("pathway_documents").upsert({
@@ -153,6 +140,7 @@ def generate_chunks_with_model(model_key: str = DEFAULT_MODEL):
                 "doc_name": doc_metadata["doc_name"],
                 "doc_display_name": doc_metadata["doc_display_name"],
                 "doc_version": doc_metadata["doc_version"],
+                # "doc_category": get_pathway_category(doc_metadata["pathway_id"]),
                 "doc_file_path": doc_metadata.get("doc_file_path"),
                 "doc_last_modified": doc_metadata["doc_last_modified"].isoformat()
             }).execute()
@@ -164,9 +152,7 @@ def generate_chunks_with_model(model_key: str = DEFAULT_MODEL):
             
             for raw_chunk in chunker.chunk(dl_doc=doc):
                 doc_chunk_idx += 1
-                raw_text = chunker.contextualize(raw_chunk)
-                source_section = extract_source_section(raw_text)
-                chunk_text = strip_html_comments(raw_text)
+                chunk_text = chunker.contextualize(raw_chunk)
                 chunk_hash = hash_chunk_text(chunk_text)
                 
                 # Generate embedding
@@ -174,15 +160,13 @@ def generate_chunks_with_model(model_key: str = DEFAULT_MODEL):
                 
                 # Insert chunk
                 supabase.table(table_name).upsert({
-                    "chunk_hash":      chunk_hash,
-                    "source_docs":     [doc_metadata["doc_name"]],
-                    "source_section":  source_section,
-                    "pathway_tag": pathway_tag,
-                    "pathway_id":      doc_metadata["pathway_id"],
+                    "chunk_hash": chunk_hash,
+                    "pathway_id": doc_metadata["pathway_id"],
                     "doc_chunk_index": doc_chunk_idx,
-                    "chunk_text":      chunk_text,
-                    "chunk_length":    len(chunk_text),
-                    "embedding":       embedding.tolist() if hasattr(embedding, "tolist") else embedding,
+                    "chunk_text": chunk_text,
+                    "chunk_length": len(chunk_text),
+                    "embedding": embedding.tolist() if hasattr(embedding, "tolist") else embedding,
+                    "metadata": {}  # Add metadata extraction if needed
                 }).execute()
                 
                 chunk_count += 1

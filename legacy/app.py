@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 import os
 import sys
 
-from rag.chunking import main as chunking
+from services.backend.rag.oldchunking import main as chunking
 
 
 def main():
