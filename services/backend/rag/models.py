@@ -2,11 +2,11 @@ from typing import Dict, Any
 
 EMBEDDING_MODELS: Dict[str, Dict[str, Any]] = {
     "minilm": {
-        "model_name": "all-MiniLM-L6-v2",
-        "dimension": 384,
-        "table": "pathway_chunks_linilm",
-        "rpc_function": "match_chunks_minilm",
-        "description": "Fast, lightweight (baseline) - standard chunking"
+    "model_name": "all-MiniLM-L6-v2",
+    "dimension": 384,
+    "table": "pathway_chunks_linilm",
+    "rpc_function": "match_pathway_chunks",
+    "description": "Fast, lightweight (baseline) - standard chunking"
     },
     "minilm_semantic": {
         "model_name": "all-MiniLM-L6-v2",

@@ -15,12 +15,15 @@ function AppLayout() {
   const location = useLocation();
   const isPublicChatRoute = location.pathname === '/chat';
   const showHeader = !isPublicChatRoute;
+  const mainContentClassName = isPublicChatRoute
+    ? 'main-content main-content-public-chat'
+    : 'main-content';
 
   const appContent = (
     <div className="App">
       {showHeader && <Header />}
 
-      <main className="main-content">
+      <main className={mainContentClassName}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/chat" element={<PublicChat apiUrl={API_URL} />} />

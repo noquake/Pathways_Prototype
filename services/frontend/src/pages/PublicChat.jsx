@@ -9,6 +9,7 @@ function PublicChat({ apiUrl }) {
 	const [loading, setLoading] = useState(false);
 	const [pathways, setPathways] = useState([]);
 	const [selectedPathwayId, setSelectedPathwayId] = useState("");
+	const [selectedResourceId, setSelectedResourceId] = useState("");
 	const [pathwayLoadError, setPathwayLoadError] = useState("");
 	const [pdfLoading, setPdfLoading] = useState(false);
 	const [pdfLoadError, setPdfLoadError] = useState(false);
@@ -32,16 +33,6 @@ function PublicChat({ apiUrl }) {
 	}, [apiUrl]);
 
 	useEffect(() => {
-		if (selectedPathwayId) {
-			setPdfLoading(true);
-			setPdfLoadError(false);
-			return;
-		}
-		setPdfLoading(false);
-		setPdfLoadError(false);
-	}, [selectedPathwayId]);
-
-	useEffect(() => {
 		if (transcriptRef.current) {
 			transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
 		}
@@ -51,9 +42,44 @@ function PublicChat({ apiUrl }) {
 		() => pathways.find((pathway) => pathway.id === selectedPathwayId),
 		[pathways, selectedPathwayId],
 	);
-	const selectedPathwayPdfSrc = selectedPathwayId
-		? `${apiUrl}/pathways/${selectedPathwayId}/pdf`
-		: "";
+	const selectedResource = useMemo(() => {
+		if (!selectedPathway) {
+			return null;
+		}
+
+		return (
+			selectedPathway.resources?.find((resource) => resource.id === selectedResourceId) ||
+			selectedPathway.resources?.find(
+				(resource) => resource.id === selectedPathway.default_resource_id,
+			) ||
+			selectedPathway.resources?.[0] ||
+			null
+		);
+	}, [selectedPathway, selectedResourceId]);
+	const selectedPathwayPdfSrc =
+		selectedPathwayId && selectedResource
+			? `${apiUrl}/pathways/${selectedPathwayId}/pdf?resource_id=${encodeURIComponent(selectedResource.id)}`
+			: "";
+
+	useEffect(() => {
+		if (!selectedPathway) {
+			setSelectedResourceId("");
+			return;
+		}
+
+		setSelectedResourceId(selectedPathway.default_resource_id);
+	}, [selectedPathway]);
+
+	useEffect(() => {
+		if (selectedPathway && selectedResource) {
+			setPdfLoading(true);
+			setPdfLoadError(false);
+			return;
+		}
+
+		setPdfLoading(false);
+		setPdfLoadError(false);
+	}, [selectedPathway, selectedResource]);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -150,7 +176,7 @@ function PublicChat({ apiUrl }) {
 					<div className="chat-transcript" ref={transcriptRef}>
 						{messages.length === 0 && (
 							<div className="chat-card assistant">
-								<div className="chat-icon assistant">★</div>
+								<div className="chat-icon assistant">A</div>
 								<div className="chat-content">
 									<p>
 										Select a pathway and ask a question. Responses are limited to
@@ -163,7 +189,7 @@ function PublicChat({ apiUrl }) {
 						{messages.map((msg, idx) => (
 							<div key={idx} className={`chat-card ${msg.role}`}>
 								<div className={`chat-icon ${msg.role}`}>
-									{msg.role === "user" ? "◎" : "★"}
+									{msg.role === "user" ? "Q" : "A"}
 								</div>
 								<div className="chat-content">
 									<ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -173,7 +199,7 @@ function PublicChat({ apiUrl }) {
 
 						{loading && (
 							<div className="chat-card assistant">
-								<div className="chat-icon assistant">★</div>
+								<div className="chat-icon assistant">A</div>
 								<div className="chat-content">
 									<p>Thinking...</p>
 								</div>
@@ -189,10 +215,26 @@ function PublicChat({ apiUrl }) {
 								? `${selectedPathway.label} Pathway`
 								: "Pathway PDF"}
 						</div>
-						{selectedPathway?.pdf_url && (
+						{selectedPathway?.resources?.length > 1 && (
+							<div className="pathway-resource-selector">
+								{selectedPathway.resources.map((resource) => (
+									<button
+										key={resource.id}
+										type="button"
+										className={`pathway-resource-button ${
+											selectedResource?.id === resource.id ? "active" : ""
+										}`}
+										onClick={() => setSelectedResourceId(resource.id)}
+									>
+										{resource.label}
+									</button>
+								))}
+							</div>
+						)}
+						{selectedResource?.pdf_url && (
 							<a
 								className="pathway-panel-link"
-								href={selectedPathway.pdf_url}
+								href={selectedResource.pdf_url}
 								target="_blank"
 								rel="noreferrer"
 							>
@@ -214,9 +256,9 @@ function PublicChat({ apiUrl }) {
 									</div>
 								) : (
 									<iframe
-										key={selectedPathwayId}
+										key={`${selectedPathwayId}:${selectedResource?.id || ""}`}
 										src={selectedPathwayPdfSrc}
-										title={`${selectedPathway.label} pathway PDF`}
+										title={`${selectedPathway.label} ${selectedResource?.label || "Pathway"} PDF`}
 										className="pathway-preview-frame"
 										onLoad={() => setPdfLoading(false)}
 										onError={() => {
