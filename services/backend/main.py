@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from supabase import create_client
 from jose import JWTError, jwt
 
-from logger import query_logger
+from logger import query_logger, session_manager
 from pathways_catalog import (
     list_pathways,
     get_pathway_by_id,
@@ -98,7 +98,7 @@ class ChatRequest(BaseModel):
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
     pathway_tag: Optional[str] = None
-    embedding_model: Optional[str] = "minilm_semantic"
+    embedding_model: Optional[str] = "medcpt"
 
 
 class PractitionerChatRequest(ChatRequest):
@@ -227,13 +227,19 @@ async def get_pathway_pdf(
 # Public chat endpoint
 @app.post("/chat/public", response_model=ChatResponse)
 async def chat_public(request: ChatRequest):
-    session_id = str(uuid.uuid4())
     start_time = time.time()
 
     try:
         top_k = request.top_k or 5
         selected_pathway_doc_name = resolve_pathway_doc_name(request.pathway_id)
         retrieval_pathway_ids = get_pathway_retrieval_documents(request.pathway_id) or None
+
+        # --- BEGIN: Resolve session based on active pathway_ids ---
+        session_id = session_manager.get_or_create_session(
+            pathway_ids=retrieval_pathway_ids,
+            pathway_id=request.pathway_id,
+        )
+        # --- END: Resolve session based on active pathway_ids ---
 
         print("="*60)
         print("=== NEW QUERY RECEIVED ===")

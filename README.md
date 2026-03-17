@@ -81,3 +81,24 @@ vulture services/ --min-confidence 80
 - **Session separation** — isolate conversation context per user session for cleaner multi-turn interactions
 - **User accounts** — persistent conversation history and per-user query tracking (most accessed pathways, usage patterns)
 - **Role-based access** — public assistant vs. authenticated practitioner vs. admin dashboard, via Keycloak
+
+## Useful Commands
+
+- List of available Pathways
+
+```bash
+curl -s http://localhost:8000/pathways | jq
+```
+
+- Using a different
+
+```bash
+curl -s -X POST http://localhost:8000/chat/public \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Signs of anaphylaxis?",
+    "pathway_id": "anaphylaxis",
+    "embedding_model": "medcpt",
+    "model_name": "gemini-2.0-flash"
+  }' | jq
+```

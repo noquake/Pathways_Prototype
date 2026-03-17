@@ -1,10 +1,50 @@
 import os
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, FrozenSet
 from datetime import datetime
 import uuid
 from supabase import create_client, Client
 
 PATHWAY_QUERIES_TABLE = os.getenv("SUPABASE_TABLE_PATHWAY_QUERIES", "pathway_queries")
+
+
+# --- BEGIN: Session tracking by pathway_ids ---
+class SessionManager:
+    """
+    Tracks the active query session based on the set of pathway IDs being queried.
+    A new session is started whenever the pathway_ids set changes.
+    State is in-memory and resets on server restart.
+    """
+
+    def __init__(self):
+        self._session_id: Optional[str] = None
+        self._pathway_key: Optional[FrozenSet[str]] = None
+
+    def _make_key(self, pathway_ids: Optional[List[str]], pathway_id: Optional[str]) -> FrozenSet[str]:
+        if pathway_ids:
+            return frozenset(pathway_ids)
+        if pathway_id:
+            return frozenset([pathway_id])
+        return frozenset()
+
+    def get_or_create_session(
+        self,
+        pathway_ids: Optional[List[str]] = None,
+        pathway_id: Optional[str] = None,
+    ) -> str:
+        """
+        Returns the current session_id if the pathway set matches the active session,
+        otherwise creates and returns a new session_id.
+        """
+        key = self._make_key(pathway_ids, pathway_id)
+        if self._session_id is None or key != self._pathway_key:
+            self._session_id = str(uuid.uuid4())
+            self._pathway_key = key
+            print(f"[Session] New session started: {self._session_id} | pathways={set(key) or 'none'}")
+        else:
+            print(f"[Session] Continuing session: {self._session_id}")
+        return self._session_id
+# --- END: Session tracking by pathway_ids ---
+
 
 class QueryLogger:
     """Log queries and metadata to Supabase for analytics."""
@@ -84,5 +124,6 @@ class QueryLogger:
             # Don't crash the app if logging fails
             return None
 
-# Singleton instance
+# Singleton instances
 query_logger = QueryLogger()
+session_manager = SessionManager()
