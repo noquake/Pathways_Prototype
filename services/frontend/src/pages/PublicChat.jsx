@@ -3,6 +3,16 @@ import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import "./PublicChat.css";
 
+const FEEDBACK_COMMENT_MAX_LENGTH = 500;
+const FEEDBACK_OPTIONS = [
+	"Answer satisfactory",
+	"Wrong (risky)",
+	"wrong (minor)",
+	"missing info (risky)",
+	"missing info (minor)",
+	"misc.",
+];
+
 function PublicChat({ apiUrl }) {
 	const [query, setQuery] = useState("");
 	const [messages, setMessages] = useState([]);
@@ -13,7 +23,17 @@ function PublicChat({ apiUrl }) {
 	const [pathwayLoadError, setPathwayLoadError] = useState("");
 	const [pdfLoading, setPdfLoading] = useState(false);
 	const [pdfLoadError, setPdfLoadError] = useState(false);
+	const [openFeedbackMenuId, setOpenFeedbackMenuId] = useState("");
+	const [openFeedbackEditorId, setOpenFeedbackEditorId] = useState("");
+	const [feedbackDrafts, setFeedbackDrafts] = useState({});
+	const [feedbackSelections, setFeedbackSelections] = useState({});
+	const [savingFeedbackId, setSavingFeedbackId] = useState("");
+	const [feedbackError, setFeedbackError] = useState({
+		queryId: "",
+		message: "",
+	});
 	const transcriptRef = useRef(null);
+	const feedbackTextareaRef = useRef(null);
 
 	useEffect(() => {
 		const loadPathways = async () => {
@@ -37,6 +57,47 @@ function PublicChat({ apiUrl }) {
 			transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
 		}
 	}, [messages, loading]);
+
+	useEffect(() => {
+		if (!openFeedbackMenuId && !openFeedbackEditorId) {
+			return undefined;
+		}
+
+		const handleKeyDown = (event) => {
+			if (event.key !== "Escape") {
+				return;
+			}
+
+			if (openFeedbackEditorId) {
+				const openMessage = messages.find((message) => message.queryId === openFeedbackEditorId);
+				if (openMessage) {
+					setFeedbackDrafts((prev) => ({
+						...prev,
+						[openMessage.queryId]: openMessage.feedbackComment || "",
+					}));
+					setFeedbackSelections((prev) => ({
+						...prev,
+						[openMessage.queryId]: openMessage.userFeedback || "",
+					}));
+				}
+			}
+			setOpenFeedbackMenuId("");
+			setOpenFeedbackEditorId("");
+			setFeedbackError({
+				queryId: "",
+				message: "",
+			});
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [messages, openFeedbackMenuId, openFeedbackEditorId]);
+
+	useEffect(() => {
+		if (openFeedbackEditorId && feedbackTextareaRef.current) {
+			feedbackTextareaRef.current.focus();
+		}
+	}, [openFeedbackEditorId]);
 
 	const selectedPathway = useMemo(
 		() => pathways.find((pathway) => pathway.id === selectedPathwayId),
@@ -81,6 +142,124 @@ function PublicChat({ apiUrl }) {
 		setPdfLoadError(false);
 	}, [selectedPathway, selectedResource]);
 
+	const getFeedbackDraft = (message) =>
+		Object.prototype.hasOwnProperty.call(feedbackDrafts, message.queryId)
+			? feedbackDrafts[message.queryId]
+			: message.feedbackComment || "";
+
+	const getFeedbackSelection = (message) =>
+		Object.prototype.hasOwnProperty.call(feedbackSelections, message.queryId)
+			? feedbackSelections[message.queryId]
+			: message.userFeedback || "";
+
+	const resetFeedbackEditor = (message) => {
+		setFeedbackDrafts((prev) => ({
+			...prev,
+			[message.queryId]: message.feedbackComment || "",
+		}));
+		setFeedbackSelections((prev) => ({
+			...prev,
+			[message.queryId]: message.userFeedback || "",
+		}));
+	};
+
+	const openFeedbackEditor = (message, nextSelection) => {
+		if (openFeedbackEditorId && openFeedbackEditorId !== message.queryId) {
+			const openMessage = messages.find((item) => item.queryId === openFeedbackEditorId);
+			if (openMessage) {
+				resetFeedbackEditor(openMessage);
+			}
+		}
+
+		setOpenFeedbackMenuId("");
+		setOpenFeedbackEditorId(message.queryId);
+		setFeedbackDrafts((prev) => ({
+			...prev,
+			[message.queryId]: getFeedbackDraft(message),
+		}));
+		setFeedbackSelections((prev) => ({
+			...prev,
+			[message.queryId]:
+				typeof nextSelection === "string" ? nextSelection : getFeedbackSelection(message),
+		}));
+		setFeedbackError({
+			queryId: "",
+			message: "",
+		});
+	};
+
+	const closeFeedbackEditor = (message) => {
+		setOpenFeedbackEditorId("");
+		resetFeedbackEditor(message);
+		setFeedbackError({
+			queryId: "",
+			message: "",
+		});
+	};
+
+	const handleFeedbackSubmit = async (message) => {
+		const currentDraft = getFeedbackDraft(message);
+		const trimmedComment = currentDraft.trim();
+		const selectedFeedback = getFeedbackSelection(message);
+		if ((!trimmedComment && !selectedFeedback) || savingFeedbackId) {
+			return;
+		}
+
+		setSavingFeedbackId(message.queryId);
+		setFeedbackError({
+			queryId: "",
+			message: "",
+		});
+
+		try {
+			const payload = {};
+			if (selectedFeedback) {
+				payload.user_feedback = selectedFeedback;
+			}
+			if (trimmedComment) {
+				payload.feedback_comment = trimmedComment;
+			}
+			const response = await axios.patch(
+				`${apiUrl}/queries/${encodeURIComponent(message.queryId)}/feedback`,
+				payload,
+			);
+			const savedComment = response.data.feedback_comment || message.feedbackComment || "";
+			const savedUserFeedback =
+				response.data.user_feedback || message.userFeedback || "";
+
+			setMessages((prev) =>
+				prev.map((item) =>
+					item.queryId === message.queryId
+						? {
+								...item,
+								feedbackComment: savedComment,
+								userFeedback: savedUserFeedback,
+							}
+						: item,
+				),
+			);
+			setFeedbackDrafts((prev) => ({
+				...prev,
+				[message.queryId]: savedComment,
+			}));
+			setFeedbackSelections((prev) => ({
+				...prev,
+				[message.queryId]: savedUserFeedback,
+			}));
+			setOpenFeedbackEditorId("");
+			setOpenFeedbackMenuId("");
+		} catch (error) {
+			const detail =
+				error.response?.data?.detail || "Could not save feedback. Please try again.";
+			setFeedbackError({
+				queryId: message.queryId,
+				message: detail,
+			});
+		} finally {
+			setSavingFeedbackId("");
+		}
+	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		const trimmedQuery = query.trim();
@@ -108,6 +287,9 @@ function PublicChat({ apiUrl }) {
 				content: response.data.response,
 				citations: response.data.citations || [],
 				timestamp: response.data.timestamp,
+				queryId: response.data.query_id || "",
+				feedbackComment: "",
+				userFeedback: "",
 			};
 			setMessages((prev) => [...prev, assistantMessage]);
 		} catch (error) {
@@ -118,6 +300,9 @@ function PublicChat({ apiUrl }) {
 					role: "assistant",
 					content: "Sorry, I encountered an error. Please try again.",
 					citations: [],
+					queryId: "",
+					feedbackComment: "",
+					userFeedback: "",
 				},
 			]);
 		} finally {
@@ -191,8 +376,149 @@ function PublicChat({ apiUrl }) {
 								<div className={`chat-icon ${msg.role}`}>
 									{msg.role === "user" ? "Q" : "A"}
 								</div>
-								<div className="chat-content">
-									<ReactMarkdown>{msg.content}</ReactMarkdown>
+								<div className="chat-body">
+									{msg.role === "assistant" && msg.queryId && (
+										<div className="chat-actions">
+											<button
+												type="button"
+												className="chat-action-trigger"
+												aria-label="Open feedback actions"
+												aria-haspopup="menu"
+												aria-expanded={openFeedbackMenuId === msg.queryId}
+												onClick={() => {
+													if (openFeedbackEditorId) {
+														const openMessage = messages.find(
+															(item) => item.queryId === openFeedbackEditorId,
+														);
+														if (openMessage) {
+															resetFeedbackEditor(openMessage);
+														}
+													}
+													setOpenFeedbackMenuId((currentId) =>
+														currentId === msg.queryId ? "" : msg.queryId,
+													);
+													setOpenFeedbackEditorId("");
+													setFeedbackError({
+														queryId: "",
+														message: "",
+													});
+												}}
+											>
+												...
+											</button>
+												{openFeedbackMenuId === msg.queryId && (
+													<div className="chat-action-menu" role="menu">
+															<button
+																type="button"
+																className="chat-action-menu-button"
+																role="menuitem"
+																onClick={() => openFeedbackEditor(msg)}
+															>
+																{msg.feedbackComment || msg.userFeedback
+																	? "Edit feedback"
+																	: "Leave comment"}
+															</button>
+														</div>
+													)}
+												</div>
+											)}
+											<div className="chat-content">
+												<ReactMarkdown>{msg.content}</ReactMarkdown>
+											</div>
+											{msg.role === "assistant" &&
+												(msg.feedbackComment || msg.userFeedback) &&
+												openFeedbackEditorId !== msg.queryId && (
+												<div className="feedback-note feedback-note-success">
+												Feedback saved
+											</div>
+										)}
+											{msg.role === "assistant" &&
+												msg.queryId &&
+												openFeedbackEditorId === msg.queryId && (
+												<div className="feedback-panel">
+													<div className="feedback-category-row">
+														{FEEDBACK_OPTIONS.map((option) => (
+															<button
+																key={option}
+																type="button"
+																className={`feedback-category-button ${
+																	getFeedbackSelection(msg) === option ? "selected" : ""
+																}`}
+																onClick={() => openFeedbackEditor(msg, option)}
+																disabled={savingFeedbackId === msg.queryId}
+															>
+																{option}
+															</button>
+														))}
+													</div>
+														<label
+															className="feedback-label"
+															htmlFor={`feedback-comment-${msg.queryId}`}
+														>
+															Add an optional comment about this answer
+													</label>
+													<textarea
+														id={`feedback-comment-${msg.queryId}`}
+														ref={feedbackTextareaRef}
+														className="feedback-textarea"
+														value={getFeedbackDraft(msg)}
+														onChange={(event) => {
+															const nextValue = event.target.value.slice(
+																0,
+																FEEDBACK_COMMENT_MAX_LENGTH,
+															);
+															setFeedbackDrafts((prev) => ({
+																...prev,
+																[msg.queryId]: nextValue,
+															}));
+															if (feedbackError.queryId === msg.queryId) {
+																setFeedbackError({
+																	queryId: "",
+																	message: "",
+																});
+															}
+														}}
+														rows={4}
+														maxLength={FEEDBACK_COMMENT_MAX_LENGTH}
+														placeholder="What should we improve about this answer?"
+													/>
+													<div className="feedback-panel-footer">
+														<div className="feedback-counter">
+															{getFeedbackDraft(msg).length}/
+															{FEEDBACK_COMMENT_MAX_LENGTH}
+														</div>
+														<div className="feedback-panel-actions">
+															<button
+																type="button"
+																className="feedback-button feedback-button-secondary"
+																onClick={() => closeFeedbackEditor(msg)}
+																disabled={savingFeedbackId === msg.queryId}
+															>
+																Cancel
+															</button>
+															<button
+																type="button"
+																className="feedback-button feedback-button-primary"
+																onClick={() => handleFeedbackSubmit(msg)}
+																disabled={
+																	savingFeedbackId === msg.queryId ||
+																	(!getFeedbackDraft(msg).trim() &&
+																		!getFeedbackSelection(msg))
+																}
+															>
+																{savingFeedbackId === msg.queryId
+																	? "Saving..."
+																	: "Save feedback"}
+															</button>
+														</div>
+													</div>
+													{feedbackError.queryId === msg.queryId && (
+														<div className="feedback-note feedback-note-error">
+															{feedbackError.message}
+														</div>
+													)}
+												</div>
+											)}
 								</div>
 							</div>
 						))}
