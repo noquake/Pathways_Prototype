@@ -35,6 +35,7 @@ from rag.query import rag_api_llm as original_rag_api_llm
 
 from rag.query import rag_api_llm as original_rag_api_llm
 from rag.retrieval import retrieve_chunks as retrieve_chunks_by_model
+from rag.models import EMBEDDING_MODELS
 
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 
@@ -98,7 +99,7 @@ class ChatRequest(BaseModel):
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
     pathway_tag: Optional[str] = None
-    embedding_model: Optional[str] = "medcpt"
+    embedding_model: Optional[str] = "medembed_large"
 
 
 class PractitionerChatRequest(ChatRequest):
@@ -110,6 +111,7 @@ class PathwayResourceOption(BaseModel):
     label: str
     doc_name: str
     pdf_url: str
+    medembed_id: Optional[str] = None
 
 
 class PathwayOption(BaseModel):
@@ -232,12 +234,18 @@ async def chat_public(request: ChatRequest):
     try:
         top_k = request.top_k or 5
         selected_pathway_doc_name = resolve_pathway_doc_name(request.pathway_id)
-        retrieval_pathway_ids = get_pathway_retrieval_documents(request.pathway_id) or None
+
+        # Tag-based models (e.g. medembed_large) filter by pathway_tag directly —
+        # skip expanding into document-level retrieval_pathway_ids.
+        model_config = EMBEDDING_MODELS.get(request.embedding_model, {})
+        uses_tag_filter = model_config.get("filter_arg") == "filter_pathway_tag"
+        retrieval_pathway_ids = None if uses_tag_filter else (get_pathway_retrieval_documents(request.pathway_id) or None)
 
         # --- BEGIN: Resolve session based on active pathway_ids ---
         session_id = session_manager.get_or_create_session(
             pathway_ids=retrieval_pathway_ids,
             pathway_id=request.pathway_id,
+            user_role="public",
         )
         # --- END: Resolve session based on active pathway_ids ---
 
@@ -318,6 +326,7 @@ async def chat_public(request: ChatRequest):
             llm_model=request.model_name or "gemini-2.5-flash",
             response_time_ms=response_time_ms,
             pathway_id=request.pathway_id,
+            pathway_ids=retrieval_pathway_ids,
             user_role="public",
         )
 

@@ -18,6 +18,7 @@ def retrieve_chunks(
 
     config = EMBEDDING_MODELS[model_key]
     rpc_name = rpc_function or config["rpc_function"]
+    filter_arg = config.get("filter_arg", filter_arg)
 
     # is_query=True ensures MedCPT uses its Query Encoder here
     query_emb = get_embeddings([query], model_key=model_key, is_query=True)[0]

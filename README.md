@@ -102,3 +102,9 @@ curl -s -X POST http://localhost:8000/chat/public \
     "model_name": "gemini-2.0-flash"
   }' | jq
 ```
+
+- Healthcheck
+
+```bash
+curl -s http://localhost:8000/health
+```

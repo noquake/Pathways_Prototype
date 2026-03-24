@@ -5,6 +5,7 @@ import uuid
 from supabase import create_client, Client
 
 PATHWAY_QUERIES_TABLE = os.getenv("SUPABASE_TABLE_PATHWAY_QUERIES", "pathway_queries")
+SESSIONS_TABLE = os.getenv("SUPABASE_TABLE_SESSIONS", "sessions")
 
 
 # --- BEGIN: Session tracking by pathway_ids ---
@@ -12,12 +13,13 @@ class SessionManager:
     """
     Tracks the active query session based on the set of pathway IDs being queried.
     A new session is started whenever the pathway_ids set changes.
-    State is in-memory and resets on server restart.
+    State is in-memory and resets on server restart. Persists sessions to Supabase.
     """
 
     def __init__(self):
         self._session_id: Optional[str] = None
         self._pathway_key: Optional[FrozenSet[str]] = None
+        self.client: Optional[Any] = None  # set lazily from QueryLogger
 
     def _make_key(self, pathway_ids: Optional[List[str]], pathway_id: Optional[str]) -> FrozenSet[str]:
         if pathway_ids:
@@ -30,18 +32,47 @@ class SessionManager:
         self,
         pathway_ids: Optional[List[str]] = None,
         pathway_id: Optional[str] = None,
+        user_role: str = "public",
     ) -> str:
         """
         Returns the current session_id if the pathway set matches the active session,
-        otherwise creates and returns a new session_id.
+        otherwise creates a new session (and persists it to Supabase).
+        Updates last_active_at and total_queries for continuing sessions.
         """
         key = self._make_key(pathway_ids, pathway_id)
+        ids_list = sorted(list(key))
+
         if self._session_id is None or key != self._pathway_key:
             self._session_id = str(uuid.uuid4())
             self._pathway_key = key
             print(f"[Session] New session started: {self._session_id} | pathways={set(key) or 'none'}")
+            if self.client:
+                try:
+                    self.client.table(SESSIONS_TABLE).insert({
+                        "session_id": self._session_id,
+                        "pathway_id": pathway_id,
+                        "pathway_ids": ids_list,
+                        "user_role": user_role,
+                    }).execute()
+                except Exception as e:
+                    print(f"⚠ Failed to persist new session: {e}")
         else:
             print(f"[Session] Continuing session: {self._session_id}")
+            if self.client:
+                try:
+                    current = self.client.table(SESSIONS_TABLE) \
+                        .select("total_queries") \
+                        .eq("session_id", self._session_id) \
+                        .single() \
+                        .execute()
+                    current_count = current.data["total_queries"] if current.data else 0
+                    self.client.table(SESSIONS_TABLE).update({
+                        "last_active_at": datetime.utcnow().isoformat(),
+                        "total_queries": current_count + 1,
+                    }).eq("session_id", self._session_id).execute()
+                except Exception as e:
+                    print(f"⚠ Failed to update session: {e}")
+
         return self._session_id
 # --- END: Session tracking by pathway_ids ---
 
@@ -63,6 +94,7 @@ class QueryLogger:
         else:
             self.client: Client = create_client(supabase_url, supabase_key)
             print(f"✓ Supabase logger initialized: {supabase_url[:30]}...")
+            session_manager.client = self.client
     
     def log_query(
         self,
@@ -75,6 +107,7 @@ class QueryLogger:
         llm_model: str,
         response_time_ms: int,
         pathway_id: Optional[str] = None,
+        pathway_ids: Optional[List[str]] = None,
         user_id: Optional[str] = None,
         user_role: str = "public"
     ) -> Optional[str]:
@@ -98,6 +131,7 @@ class QueryLogger:
         log_entry = {
             "session_id": session_id,
             "pathway_id": pathway_id,
+            "pathway_ids": pathway_ids or ([pathway_id] if pathway_id else []),
             "user_id": user_id or f"anon_{uuid.uuid4().hex[:8]}",
             "user_role": user_role,
             "user_query": user_query,
@@ -125,5 +159,5 @@ class QueryLogger:
             return None
 
 # Singleton instances
-query_logger = QueryLogger()
 session_manager = SessionManager()
+query_logger = QueryLogger()

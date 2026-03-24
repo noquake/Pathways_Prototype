@@ -13,6 +13,7 @@ function PublicChat({ apiUrl }) {
 	const [pathwayLoadError, setPathwayLoadError] = useState("");
 	const [pdfLoading, setPdfLoading] = useState(false);
 	const [pdfLoadError, setPdfLoadError] = useState(false);
+	const [docScopedQuery, setDocScopedQuery] = useState(false);
 	const transcriptRef = useRef(null);
 
 	useEffect(() => {
@@ -68,6 +69,7 @@ function PublicChat({ apiUrl }) {
 		}
 
 		setSelectedResourceId(selectedPathway.default_resource_id);
+		setDocScopedQuery(false);
 	}, [selectedPathway]);
 
 	useEffect(() => {
@@ -100,7 +102,9 @@ function PublicChat({ apiUrl }) {
 				query: trimmedQuery,
 				model: "gemini",
 				top_k: 5,
-				pathway_id: selectedPathwayId || null,
+				...(docScopedQuery && selectedResource?.medembed_id
+					? { pathway_id: selectedResource.medembed_id }
+					: { pathway_tag: selectedPathwayId || null }),
 			});
 
 			const assistantMessage = {
@@ -154,7 +158,19 @@ function PublicChat({ apiUrl }) {
 						)}
 					</select>
 
-					<form onSubmit={handleSubmit} className="question-form">
+					{selectedResource?.medembed_id && (
+					<button
+						type="button"
+						className={`doc-scope-toggle ${docScopedQuery ? "active" : ""}`}
+						onClick={() => setDocScopedQuery((prev) => !prev)}
+					>
+						{docScopedQuery
+							? `Asking about: ${selectedResource.label}`
+							: "Ask about this document only"}
+					</button>
+				)}
+
+				<form onSubmit={handleSubmit} className="question-form">
 						<input
 							type="text"
 							value={query}

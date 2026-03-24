@@ -38,12 +38,13 @@ EMBEDDING_MODELS: Dict[str, Dict[str, Any]] = {
         "description": "Clinical Q&A specialized"
     },
     "medembed_large": {
-    "model_name": "abhinand/MedEmbed-large-v0.1",
-    "dimension": 1024,
-    "table": "pathway_chunks_medembed_large",
-    "rpc_function": "match_chunks_medembed_large",
-    "description": "Medical domain-specific, large (1024-dim)"
-},
+        "model_name": "abhinand/MedEmbed-large-v0.1",
+        "dimension": 1024,
+        "table": "pathway_chunks_medembed_large",
+        "rpc_function": "match_chunks_medembed_large",
+        "filter_arg": "filter_pathway_tag",
+        "description": "Medical domain-specific, large (1024-dim)"
+    },
 }
 
 DEFAULT_MODEL = "minilm"

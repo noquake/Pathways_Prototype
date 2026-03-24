@@ -25,12 +25,14 @@ PATHWAY_CATALOG: List[Dict[str, Any]] = [
                 "label": "Inpatient Algorithm",
                 "doc_name": "asthma_inpatient_algorithm_-_08.22.23",
                 "pdf_url": "https://www.connecticutchildrens.org/sites/default/files/2023-09/asthma_inpatient_algorithm_-_08.22.23.pdf",
+                "medembed_id": "asthma-inpatient-pathway",
             },
             {
                 "id": "mpis-score",
                 "label": "MPIS Score",
                 "doc_name": "appendix-a-mpis-score-branded-11.5.25-separate-pdf",
                 "pdf_url": "https://www.connecticutchildrens.org/sites/default/files/2025-11/appendix-a-mpis-score-branded-11.5.25-separate-pdf.pdf",
+                "medembed_id": "asthma-appendix-a-mpis",
             },
             {
                 "id": "educational-module",
