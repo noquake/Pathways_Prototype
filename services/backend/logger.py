@@ -5,7 +5,7 @@ import uuid
 from supabase import create_client, Client
 
 PATHWAY_QUERIES_TABLE = os.getenv("SUPABASE_TABLE_PATHWAY_QUERIES", "pathway_queries")
-SESSIONS_TABLE = os.getenv("SUPABASE_TABLE_SESSIONS", "sessions")
+SESSIONS_TABLE = os.getenv("SUPABASE_TABLE_SESSIONS", "pathways_sessions")
 
 
 # --- BEGIN: Session tracking by pathway_ids ---
@@ -36,8 +36,7 @@ class SessionManager:
     ) -> str:
         """
         Returns the current session_id if the pathway set matches the active session,
-        otherwise creates a new session (and persists it to Supabase).
-        Updates last_active_at and total_queries for continuing sessions.
+        otherwise creates a new session row in Supabase and returns the new session_id.
         """
         key = self._make_key(pathway_ids, pathway_id)
         ids_list = sorted(list(key))
@@ -58,28 +57,58 @@ class SessionManager:
                     print(f"⚠ Failed to persist new session: {e}")
         else:
             print(f"[Session] Continuing session: {self._session_id}")
-            if self.client:
-                try:
-                    current = self.client.table(SESSIONS_TABLE) \
-                        .select("total_queries") \
-                        .eq("session_id", self._session_id) \
-                        .single() \
-                        .execute()
-                    current_count = current.data["total_queries"] if current.data else 0
-                    self.client.table(SESSIONS_TABLE).update({
-                        "last_active_at": datetime.utcnow().isoformat(),
-                        "total_queries": current_count + 1,
-                    }).eq("session_id", self._session_id).execute()
-                except Exception as e:
-                    print(f"⚠ Failed to update session: {e}")
 
         return self._session_id
+
+    def update_session(
+        self,
+        session_id: str,
+        response_time_ms: int,
+        retrieved_pathway_ids: Optional[List[str]] = None,
+    ) -> None:
+        """
+        Called after each completed query to update:
+        - last_active_at
+        - total_queries
+        - avg_response_time_ms (running average)
+        - pathway_ids (accumulated set of doc IDs used across queries in this session)
+        """
+        if not self.client:
+            return
+        try:
+            current = self.client.table(SESSIONS_TABLE) \
+                .select("total_queries, avg_response_time_ms, pathway_ids") \
+                .eq("session_id", session_id) \
+                .single() \
+                .execute()
+
+            if not current.data:
+                return
+
+            old_count = current.data["total_queries"] or 0
+            old_avg = current.data["avg_response_time_ms"] or 0.0
+            new_count = old_count + 1
+            new_avg = round((old_avg * old_count + response_time_ms) / new_count, 2)
+
+            # Merge newly retrieved doc IDs into the session's accumulated pathway_ids
+            existing_ids = set(current.data.get("pathway_ids") or [])
+            if retrieved_pathway_ids:
+                existing_ids.update(retrieved_pathway_ids)
+
+            self.client.table(SESSIONS_TABLE).update({
+                "last_active_at": datetime.utcnow().isoformat(),
+                "total_queries": new_count,
+                "avg_response_time_ms": new_avg,
+                "pathway_ids": sorted(list(existing_ids)),
+            }).eq("session_id", session_id).execute()
+        except Exception as e:
+            print(f"⚠ Failed to update session stats: {e}")
 # --- END: Session tracking by pathway_ids ---
 
 
 class QueryLogger:
     """Log queries and metadata to Supabase for analytics."""
-    
+
     def __init__(self):
         supabase_url = os.getenv("SUPABASE_URL")
         supabase_key = (
@@ -87,7 +116,7 @@ class QueryLogger:
             or os.getenv("SUPABASE_ANON_KEY")
             or os.getenv("SUPABASE_PUBLISHABLE_KEY")
         )
-        
+
         if not supabase_url or not supabase_key:
             print("WARNING: Supabase credentials not found. Logging disabled.")
             self.client = None
@@ -95,47 +124,51 @@ class QueryLogger:
             self.client: Client = create_client(supabase_url, supabase_key)
             print(f"✓ Supabase logger initialized: {supabase_url[:30]}...")
             session_manager.client = self.client
-    
+
     def log_query(
         self,
         session_id: str,
         user_query: str,
-        query_embedding: List[float],
         bot_response: str,
         retrieved_chunks: List[Dict[str, Any]],
         llm_provider: str,
         llm_model: str,
         response_time_ms: int,
         pathway_id: Optional[str] = None,
-        pathway_ids: Optional[List[str]] = None,
         user_id: Optional[str] = None,
         user_role: str = "public"
     ) -> Optional[str]:
         """
-        Log a complete query interaction to Supabase.
-        
+        Log a complete query interaction to Supabase and update session stats.
+
+        pathway_ids is derived from the retrieved chunks themselves so it accurately
+        reflects which documents contributed to the answer.
+
         Returns:
             query_id if successful, None if failed
         """
         if not self.client:
             print("⚠ Supabase logging skipped (not configured)")
             return None
-        
-        # Extract metadata from chunks
+
+        # Derive pathway_ids from the actual retrieved chunks
         chunk_ids = [c.get('chunk_id') for c in retrieved_chunks if 'chunk_id' in c]
         similarity_scores = [c.get('similarity_score') for c in retrieved_chunks if 'similarity_score' in c]
-        
+        retrieved_pathway_ids = sorted(list({
+            c.get('source_file') for c in retrieved_chunks
+            if c.get('source_file')
+        }))
+
         # Check for citations in response
         has_citations = any(marker in bot_response for marker in ['[1]', '[Source:', 'Citation:'])
-        
+
         log_entry = {
             "session_id": session_id,
             "pathway_id": pathway_id,
-            "pathway_ids": pathway_ids or ([pathway_id] if pathway_id else []),
+            "pathway_ids": retrieved_pathway_ids,
             "user_id": user_id or f"anon_{uuid.uuid4().hex[:8]}",
             "user_role": user_role,
             "user_query": user_query,
-            "query_embedding": query_embedding,
             "bot_response": bot_response,
             "num_chunks_retrieved": len(retrieved_chunks),
             "retrieved_chunk_ids": chunk_ids,
@@ -147,16 +180,17 @@ class QueryLogger:
             "has_citations": has_citations,
             "num_citations": bot_response.count('[Source:') if '[Source:' in bot_response else 0
         }
-        
+
         try:
             result = self.client.table(PATHWAY_QUERIES_TABLE).insert(log_entry).execute()
             query_id = result.data[0]['query_id'] if result.data else None
             print(f"✓ Logged to Supabase: query_id={query_id}")
+            session_manager.update_session(session_id, response_time_ms, retrieved_pathway_ids)
             return query_id
         except Exception as e:
             print(f"⚠ Failed to log to Supabase: {e}")
-            # Don't crash the app if logging fails
             return None
+
 
 # Singleton instances
 session_manager = SessionManager()

@@ -284,7 +284,7 @@ async def chat_public(request: ChatRequest):
                 "chunk_id": int(r["chunk_id"]),
                 "chunk_text": str(r["chunk_text"]),
                 "chunk_length": int(r["chunk_length"]) if r["chunk_length"] is not None else 0,
-                "source_file": str(r.get("source_file") or r.get("pathway_id") or ""),
+                "source_file": str(r.get("source_file") or r.get("pathway_id") or r.get("pathway_tag") or ""),
                 "similarity_score": float(r.get("distance", r.get("similarity", 0.0))),
             }
             citations.append(citation)
@@ -319,14 +319,12 @@ async def chat_public(request: ChatRequest):
         query_logger.log_query(
             session_id=session_id,
             user_query=request.query,
-            query_embedding=query_emb_list,
             bot_response=response_text,
             retrieved_chunks=citations,
             llm_provider="gemini",
             llm_model=request.model_name or "gemini-2.5-flash",
             response_time_ms=response_time_ms,
             pathway_id=request.pathway_id,
-            pathway_ids=retrieval_pathway_ids,
             user_role="public",
         )
 
