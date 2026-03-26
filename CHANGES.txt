@@ -213,4 +213,115 @@ services/frontend/src/pages/PublicChat.jsx:
   each request.
 - `use_query_rewriting` flag sent with each request, reflecting toggle state.
 
+OBSERVED PERFORMANCE: Response time approximately doubles when context-aware
+mode is enabled. This is expected — each query triggers an additional Gemini
+Flash call for rewriting before the main retrieval + generation pipeline runs.
+The feature defaults to OFF for this reason. Further optimization (e.g.
+caching, async rewriting) could reduce overhead if the feature proves valuable.
+
+--------------------------------------------------------------------------------
+6. SESSION SOURCES PANEL
+--------------------------------------------------------------------------------
+
+Goal: Show users which documents contributed to answers in the current session,
+with clickable links that navigate the PDF viewer to that document.
+
+services/frontend/src/pages/PublicChat.jsx:
+- Added `sessionSources` state (Map: source_file → {pathwayId, resourceId, label}).
+  Accumulated from citations across all assistant messages in the session.
+  Resets to empty when the selected pathway changes.
+- Added `sourceMap` memo: scans the loaded catalog to map every known
+  `medembed_id` and `resource.id` value to its pathway/resource identifiers.
+  Used to resolve raw `source_file` strings (from retrieval) to navigable refs.
+- Added `sourcesExpanded` state for the collapsible toggle (default: open).
+- Sources panel renders in the right panel above the PDF iframe, visible only
+  once at least one response has been received.
+  - Each entry shows [N] index + resource label.
+  - Clicking sets `selectedPathwayId` + `selectedResourceId`, navigating the
+    PDF viewer to that document.
+  - Active highlight when the source is the currently displayed document.
+  - Disabled (greyed) if source_file could not be mapped to a catalog resource.
+
+services/frontend/src/pages/PublicChat.css:
+- Added styles: `.session-sources`, `.session-sources-toggle`,
+  `.session-sources-chevron`, `.session-sources-list`, `.session-source-item`,
+  `.session-source-index`.
+
+NOTE: Source ordering reflects the order chunks were first seen across the
+session, not relevance rank. [1] is the first unique source encountered, not
+necessarily the highest-scoring chunk.
+
+--------------------------------------------------------------------------------
+7. CROSS-PATHWAY CONTAMINATION BUG FIX
+--------------------------------------------------------------------------------
+
+Problem: Tag-based queries were returning chunks from ALL pathways, not just the
+selected one. Asking an asthma question would pull in migraine or pneumonia
+chunks, leading to hallucinated or incorrect answers.
+
+Root cause: `request.pathway_tag` was used to key sessions and display the
+selected pathway in the UI, but it was NEVER forwarded to the retrieval RPC.
+The `retrieve_chunks` call always received `pathway_id=request.pathway_id`,
+which is None for tag-based queries (since the frontend sends `pathway_tag`,
+not `pathway_id`, in that mode). The RPC therefore ran with no filter at all,
+returning chunks from every pathway in the table.
+
+Fix in services/backend/main.py:
+- Introduced `effective_pathway_id` to carry whichever filter value is
+  appropriate for the current query mode:
+    `effective_pathway_id = (
+        None if retrieval_pathway_ids          # multi-doc expansion handles it
+        else request.pathway_id or request.pathway_tag
+    )`
+- This value is passed as `pathway_id` to `retrieve_chunks_by_model`, ensuring
+  the RPC always receives a filter argument when one is available.
+- For doc-scoped queries the explicit `filter_arg="filter_pathway_id"` override
+  is still applied on top, so the correct column is used for that RPC variant.
+
+Session keying fix (same commit):
+- `get_or_create_session` was also only receiving `pathway_id=request.pathway_id`
+  (always None for tag mode), so every tag-based query fell into the same
+  empty-frozenset session regardless of which pathway was selected.
+- Fixed by passing `pathway_id=request.pathway_id or request.pathway_tag` to
+  the session manager, so switching pathways now correctly starts a new session.
+
+================================================================================
+FUTURE IMPROVEMENTS
+================================================================================
+
+--------------------------------------------------------------------------------
+F1. SOURCE CITATION PAGE-LEVEL NAVIGATION
+--------------------------------------------------------------------------------
+
+Goal: When a user clicks a source in the session sources panel, jump directly
+to the page of the PDF where the cited chunk appears, not just the document.
+
+What's needed:
+
+1. Chunking pipeline (data ingestion):
+   - When splitting PDFs into chunks, record which page each chunk came from.
+   - Store this as a `page_number` integer column in the
+     `pathway_chunks_medembed_large` table (and any future embedding tables).
+   - This is the only non-trivial step — existing embedded documents would need
+     to either be re-processed or have page numbers back-filled.
+
+2. Supabase RPC functions:
+   - The `match_chunks_medembed_large` and `match_medembed_large_pathway_chunks`
+     RPCs must SELECT and return the `page_number` column alongside existing fields.
+
+3. Backend (services/backend/main.py):
+   - Add `page_number: Optional[int]` to the `Citation` Pydantic model.
+   - Include `page_number` when building the `client_citations` list returned
+     in `ChatResponse`.
+
+4. Frontend (services/frontend/src/pages/PublicChat.jsx):
+   - Store `page_number` on each citation when building `sessionSources`.
+   - When constructing the PDF proxy URL for the iframe, append `#page=N`:
+       `${apiUrl}/pathways/${pathwayId}/pdf?resource_id=...#page=${pageNumber}`
+   - Browsers' built-in PDF renderer (used by the iframe) natively honors
+     the `#page=N` fragment — no viewer library changes required.
+
+Cost/complexity: The pipeline change is the blocking step. The backend and
+frontend changes are small once page numbers are available in the database.
+
 ================================================================================

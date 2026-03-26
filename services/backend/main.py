@@ -246,13 +246,15 @@ async def chat_public(request: ChatRequest):
         uses_tag_filter = model_config.get("filter_arg") == "filter_pathway_tag"
         retrieval_pathway_ids = None if uses_tag_filter else (get_pathway_retrieval_documents(request.pathway_id) or None)
 
-        # --- BEGIN: Resolve session based on active pathway_ids ---
+        # --- BEGIN: Resolve session ---
+        # For tag-based queries pathway_id is None, so fall back to pathway_tag
+        # to ensure different tags create distinct sessions.
         session_id = session_manager.get_or_create_session(
             pathway_ids=retrieval_pathway_ids,
-            pathway_id=request.pathway_id,
+            pathway_id=request.pathway_id or request.pathway_tag,
             user_role="public",
         )
-        # --- END: Resolve session based on active pathway_ids ---
+        # --- END: Resolve session ---
 
         print("="*60)
         print("=== NEW QUERY RECEIVED ===")
@@ -282,11 +284,18 @@ async def chat_public(request: ChatRequest):
         # filter_pathway_id. Some models (medembed) need a separate RPC for this.
         doc_scoped = bool(request.pathway_id and not request.pathway_tag)
         doc_rpc = model_config.get("doc_rpc_function") if doc_scoped else None
+        # For tag-based queries, pathway_id is None — pass pathway_tag instead
+        # so the filter is actually applied. Without this, the RPC runs unfiltered
+        # and returns chunks from all pathways in the table.
+        effective_pathway_id = (
+            None if retrieval_pathway_ids
+            else request.pathway_id or request.pathway_tag
+        )
         results = retrieve_chunks_by_model(
             db_handle,
             retrieval_query,
             top_k=top_k,
-            pathway_id=request.pathway_id if not retrieval_pathway_ids else None,
+            pathway_id=effective_pathway_id,
             pathway_ids=retrieval_pathway_ids,
             model_key=request.embedding_model,
             rpc_function=doc_rpc,

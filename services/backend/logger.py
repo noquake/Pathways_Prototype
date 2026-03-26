@@ -49,8 +49,8 @@ class SessionManager:
                 try:
                     self.client.table(SESSIONS_TABLE).insert({
                         "session_id": self._session_id,
-                        "pathway_id": pathway_id,
-                        "pathway_ids": ids_list,
+                        "query_scope": pathway_id,
+                        "retrieved_sources": ids_list,
                         "user_role": user_role,
                     }).execute()
                 except Exception as e:
@@ -77,7 +77,7 @@ class SessionManager:
             return
         try:
             current = self.client.table(SESSIONS_TABLE) \
-                .select("total_queries, avg_response_time_ms, pathway_ids") \
+                .select("total_queries, avg_response_time_ms, retrieved_sources") \
                 .eq("session_id", session_id) \
                 .single() \
                 .execute()
@@ -90,8 +90,7 @@ class SessionManager:
             new_count = old_count + 1
             new_avg = round((old_avg * old_count + response_time_ms) / new_count, 2)
 
-            # Merge newly retrieved doc IDs into the session's accumulated pathway_ids
-            existing_ids = set(current.data.get("pathway_ids") or [])
+            existing_ids = set(current.data.get("retrieved_sources") or [])
             if retrieved_pathway_ids:
                 existing_ids.update(retrieved_pathway_ids)
 
@@ -99,7 +98,7 @@ class SessionManager:
                 "last_active_at": datetime.utcnow().isoformat(),
                 "total_queries": new_count,
                 "avg_response_time_ms": new_avg,
-                "pathway_ids": sorted(list(existing_ids)),
+                "retrieved_sources": sorted(list(existing_ids)),
             }).eq("session_id", session_id).execute()
         except Exception as e:
             print(f"⚠ Failed to update session stats: {e}")
