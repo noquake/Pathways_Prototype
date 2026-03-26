@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import "./PublicChat.css";
+import { getResourceButtonLabels } from "./publicChatResourceLabels";
 
 const FEEDBACK_COMMENT_MAX_LENGTH = 500;
 const FEEDBACK_OPTIONS = [
@@ -117,6 +118,11 @@ function PublicChat({ apiUrl }) {
 			null
 		);
 	}, [selectedPathway, selectedResourceId]);
+	const resourceButtonLabels = useMemo(
+		() =>
+			getResourceButtonLabels(selectedPathway?.resources || [], selectedPathway?.label || ""),
+		[selectedPathway],
+	);
 	const selectedPathwayPdfSrc =
 		selectedPathwayId && selectedResource
 			? `${apiUrl}/pathways/${selectedPathwayId}/pdf?resource_id=${encodeURIComponent(selectedResource.id)}`
@@ -552,7 +558,7 @@ function PublicChat({ apiUrl }) {
 										}`}
 										onClick={() => setSelectedResourceId(resource.id)}
 									>
-										{resource.label}
+										{resourceButtonLabels[resource.id] || resource.label}
 									</button>
 								))}
 							</div>
