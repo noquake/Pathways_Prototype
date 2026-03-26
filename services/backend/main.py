@@ -146,11 +146,8 @@ class ChatHistoryItem(BaseModel):
 def resolve_pathway_doc_name(pathway_id: Optional[str]) -> Optional[str]:
     if not pathway_id:
         return None
-
     pathway = get_pathway_by_id(pathway_id)
-    if not pathway:
-        raise HTTPException(status_code=400, detail=f"Unknown pathway_id: {pathway_id}")
-    return pathway["doc_name"]
+    return pathway["doc_name"] if pathway else None
 
 
 # Health check
@@ -180,6 +177,9 @@ async def get_pathway_pdf(
     resource = get_pathway_resource(pathway_id, resource_id)
     if not resource:
         raise HTTPException(status_code=404, detail=f"Unknown resource_id for pathway_id: {pathway_id}")
+
+    if not resource.get("pdf_url"):
+        raise HTTPException(status_code=404, detail="PDF not available for this resource.")
 
     upstream_headers = {}
     if range_header:
@@ -268,6 +268,10 @@ async def chat_public(request: ChatRequest):
         # print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
         # results = retrieve_chunks_by_model(db_handle, request.query, top_k=request.top_k, pathway_id=request.pathway_id, pathway_tag=request.pathway_tag,model_key=request.embedding_model)
         print(f"\n[2/6] Retrieving top {top_k} chunks...")
+        # Doc-scoped queries (pathway_id set, no pathway_tag) must filter by
+        # filter_pathway_id. Some models (medembed) need a separate RPC for this.
+        doc_scoped = bool(request.pathway_id and not request.pathway_tag)
+        doc_rpc = model_config.get("doc_rpc_function") if doc_scoped else None
         results = retrieve_chunks_by_model(
             db_handle,
             request.query,
@@ -275,6 +279,8 @@ async def chat_public(request: ChatRequest):
             pathway_id=request.pathway_id if not retrieval_pathway_ids else None,
             pathway_ids=retrieval_pathway_ids,
             model_key=request.embedding_model,
+            rpc_function=doc_rpc,
+            filter_arg="filter_pathway_id" if doc_scoped else None,
         )
         print(f"DEBUG: Retrieved {len(results)} results\n")
 

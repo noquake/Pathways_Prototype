@@ -194,6 +194,13 @@ PATHWAY_CATALOG: List[Dict[str, Any]] = [
                 "medembed_id": "asthma-appendix-c-nhlbi",
             },
             {
+                "id": "appendix-c-documentation-billing",
+                "label": "Appendix C – Documentation & Billing",
+                "doc_name": "asthma-appendix-c-documentation-billing",
+                "pdf_url": "",
+                "medembed_id": "asthma-appendix-c-documentation-billing",
+            },
+            {
                 "id": "educational-module",
                 "label": "Educational Module",
                 "doc_name": "asthma_pathway_educational_module_-9.8.23",
@@ -305,7 +312,7 @@ PATHWAY_CATALOG: List[Dict[str, Any]] = [
     # CAP – Community-Acquired Pneumonia
     # -------------------------------------------------------------------------
     {
-        "id": "cap",
+        "id": "pneumonia",
         "label": "Community-Acquired Pneumonia (CAP)",
         "default_resource_id": "algorithm",
         "doc_name": "cap-pathway-algorithm-8.25.25",
@@ -1948,7 +1955,7 @@ PATHWAY_CATALOG: List[Dict[str, Any]] = [
 ACTIVE_PATHWAY_IDS = {
     "asthma",
     "migraine",
-    "cap",
+    "pneumonia",
     "fever-sepsis-infant",
     "ssti",
 }

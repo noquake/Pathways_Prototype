@@ -43,6 +43,7 @@ EMBEDDING_MODELS: Dict[str, Dict[str, Any]] = {
         "table": "pathway_chunks_medembed_large",
         "rpc_function": "match_chunks_medembed_large",
         "filter_arg": "filter_pathway_tag",
+        "doc_rpc_function": "match_medembed_large_pathway_chunks",
         "description": "Medical domain-specific, large (1024-dim)"
     },
 }
