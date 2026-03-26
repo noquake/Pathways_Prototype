@@ -31,9 +31,7 @@ from pathways_catalog import (
 # Import existing RAG components
 from rag.embeddings import get_embeddings
 
-from rag.query import rag_api_llm as original_rag_api_llm
-
-from rag.query import rag_api_llm as original_rag_api_llm
+from rag.query import rag_api_llm as original_rag_api_llm, rewrite_query
 from rag.retrieval import retrieve_chunks as retrieve_chunks_by_model
 from rag.models import EMBEDDING_MODELS
 
@@ -92,6 +90,11 @@ def get_user_role(user_info: Optional[Dict[str, Any]] = Depends(verify_token)) -
 
 
 # Request/Response models
+class ConversationTurn(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
 class ChatRequest(BaseModel):
     query: str
     model: Optional[str] = "gemini"
@@ -100,6 +103,8 @@ class ChatRequest(BaseModel):
     pathway_id: Optional[str] = None
     pathway_tag: Optional[str] = None
     embedding_model: Optional[str] = "medembed_large"
+    conversation_history: Optional[List[ConversationTurn]] = []
+    use_query_rewriting: Optional[bool] = False
 
 
 class PractitionerChatRequest(ChatRequest):
@@ -259,14 +264,19 @@ async def chat_public(request: ChatRequest):
 
         db_handle = get_supabase_client()
 
-        print("\n[1/6] Generating embeddings...")
-        query_emb = get_embeddings([request.query], model_key=request.embedding_model, is_query=True)[0]
+        # --- Query rewriting ---
+        retrieval_query = request.query
+        if request.use_query_rewriting and request.conversation_history:
+            print("\n[1/6] Rewriting query using conversation history...")
+            retrieval_query = rewrite_query(request.query, request.conversation_history)
+            print(f"✓ Rewritten query: {retrieval_query}")
+        else:
+            print("\n[1/6] Generating embeddings...")
+
+        query_emb = get_embeddings([retrieval_query], model_key=request.embedding_model, is_query=True)[0]
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
         print(f"✓ Embedding generated: dimension={len(query_emb_list)}\n")
 
-        # Retrieve top-k chunks
-        # print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
-        # results = retrieve_chunks_by_model(db_handle, request.query, top_k=request.top_k, pathway_id=request.pathway_id, pathway_tag=request.pathway_tag,model_key=request.embedding_model)
         print(f"\n[2/6] Retrieving top {top_k} chunks...")
         # Doc-scoped queries (pathway_id set, no pathway_tag) must filter by
         # filter_pathway_id. Some models (medembed) need a separate RPC for this.
@@ -274,7 +284,7 @@ async def chat_public(request: ChatRequest):
         doc_rpc = model_config.get("doc_rpc_function") if doc_scoped else None
         results = retrieve_chunks_by_model(
             db_handle,
-            request.query,
+            retrieval_query,
             top_k=top_k,
             pathway_id=request.pathway_id if not retrieval_pathway_ids else None,
             pathway_ids=retrieval_pathway_ids,
@@ -301,19 +311,15 @@ async def chat_public(request: ChatRequest):
             print(f"  - Similarity: {citations[0]['similarity_score']:.4f}")
         
         print(f"\n[3/6] Sending to {request.model}...")
-        # Generate response using LLM
-        if request.model == "gemini":
-            # Use Gemini API (default)
-            response_text = original_rag_api_llm(db_handle, request.query, top_k=top_k, 
-                                       model_name=request.model_name, api_provider="gemini",
-                                       pathway_id=request.pathway_id,
-                                       retrieved_results=results)
-        else:
-            # Default to Gemini if unknown model specified
-            response_text = original_rag_api_llm(db_handle, request.query, top_k=top_k, 
-                                       model_name="gemini-2.5-flash", api_provider="gemini",
-                                       pathway_id=request.pathway_id,
-                                       retrieved_results=results)
+        history = [t.model_dump() for t in (request.conversation_history or [])]
+        model_name = request.model_name if request.model == "gemini" else "gemini-2.5-flash"
+        response_text = original_rag_api_llm(
+            db_handle, request.query, top_k=top_k,
+            model_name=model_name, api_provider="gemini",
+            pathway_id=request.pathway_id,
+            retrieved_results=results,
+            conversation_history=history,
+        )
         
         print(f"\n[4/6] Response received:")
         print(f"✓ Length: {len(response_text)} chars")

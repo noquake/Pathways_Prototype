@@ -16,6 +16,43 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # ollama_client = Client(host="http://localhost:11434")  # default port for local Ollama server
 
 
+def rewrite_query(query: str, conversation_history: list) -> str:
+    """
+    Use Gemini Flash to rewrite a follow-up query into a self-contained question
+    based on conversation history, improving retrieval accuracy.
+    """
+    if not GEMINI_API_KEY or not conversation_history:
+        return query
+
+    history_text = "\n".join(
+        f"{(turn.role if hasattr(turn, 'role') else turn['role']).capitalize()}: "
+        f"{turn.content if hasattr(turn, 'content') else turn['content']}"
+        for turn in conversation_history[-6:]
+    )
+
+    prompt = (
+        "Given the following conversation history and a follow-up question, "
+        "rewrite the follow-up question as a single, self-contained question "
+        "that includes all necessary context from the conversation. "
+        "Return ONLY the rewritten question with no explanation.\n\n"
+        f"Conversation history:\n{history_text}\n\n"
+        f"Follow-up question: {query}\n\n"
+        "Rewritten question:"
+    )
+
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
+        )
+        rewritten = response.text.strip()
+        return rewritten if rewritten else query
+    except Exception as e:
+        print(f"⚠ Query rewriting failed, using original: {e}")
+        return query
+
+
 def build_context(results):
     """Build prompt context string from retrieval results."""
     if results and isinstance(results[0], dict):
@@ -42,7 +79,7 @@ def build_context(results):
 # ----------------------
 # Retrieval + RAG with API-based LLMs
 # ----------------------
-def rag_api_llm(supabase, query: str, top_k: int = 5, model_name: str = "gpt-4", api_provider: str = "gemini", pathway_id: str = None, retrieved_results=None):
+def rag_api_llm(supabase, query: str, top_k: int = 5, model_name: str = "gpt-4", api_provider: str = "gemini", pathway_id: str = None, retrieved_results=None, conversation_history: list = None):
     """
     Retrieve top-k chunks and use an API-based LLM (OpenAI, Gemini, etc.) to answer the query.
     
@@ -64,7 +101,15 @@ def rag_api_llm(supabase, query: str, top_k: int = 5, model_name: str = "gpt-4",
         return "No relevant chunks found in pathway documents."
 
     context = build_context(results)
-    
+
+    history_section = ""
+    if conversation_history:
+        turns = "\n".join(
+            f"{t['role'].capitalize()}: {t['content']}"
+            for t in conversation_history[-6:]
+        )
+        history_section = f"\nConversation so far:\n{turns}\n"
+
     prompt = f"""
 You are a clinical assistant that STRICTLY follows institutional protocols.
 
@@ -75,7 +120,7 @@ CRITICAL INSTRUCTIONS:
 - DO NOT say "the context doesn't contain" - if information appears in the sources or their references, state it definitively
 - When information is in the sources, present it as established medical protocol
 - ALWAYS cite sources using [1], [2], etc. when referencing information
-
+{history_section}
 Context Sources (AUTHORITATIVE INSTITUTIONAL PROTOCOLS):
 {context}
 

@@ -48,6 +48,31 @@
 	margin-bottom: 12px;
 }
 
+.chat-toggles {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.chat-toggle-btn {
+	border: 1px solid #d9dbe0;
+	border-radius: 999px;
+	background: #ebecf0;
+	color: #4f5258;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 7px 14px;
+	white-space: nowrap;
+}
+
+.chat-toggle-btn.active {
+	background: #2f3135;
+	border-color: #2f3135;
+	color: #fff;
+}
+
 .question-form {
 	display: flex;
 	gap: 8px;

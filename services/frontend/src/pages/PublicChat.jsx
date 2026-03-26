@@ -14,6 +14,7 @@ function PublicChat({ apiUrl }) {
 	const [pdfLoading, setPdfLoading] = useState(false);
 	const [pdfLoadError, setPdfLoadError] = useState(false);
 	const [docScopedQuery, setDocScopedQuery] = useState(false);
+	const [useQueryRewriting, setUseQueryRewriting] = useState(false);
 	const transcriptRef = useRef(null);
 
 	useEffect(() => {
@@ -98,10 +99,17 @@ function PublicChat({ apiUrl }) {
 		setQuery("");
 
 		try {
+			const history = messages.slice(-6).map((m) => ({
+				role: m.role === "user" ? "user" : "assistant",
+				content: m.content,
+			}));
+
 			const response = await axios.post(`${apiUrl}/chat/public`, {
 				query: trimmedQuery,
 				model: "gemini",
 				top_k: 5,
+				conversation_history: history,
+				use_query_rewriting: useQueryRewriting,
 				...(docScopedQuery && selectedResource?.medembed_id
 					? { pathway_id: selectedResource.medembed_id }
 					: { pathway_tag: selectedPathwayId || null }),
@@ -158,17 +166,26 @@ function PublicChat({ apiUrl }) {
 						)}
 					</select>
 
-					{selectedResource?.medembed_id && (
-					<button
-						type="button"
-						className={`doc-scope-toggle ${docScopedQuery ? "active" : ""}`}
-						onClick={() => setDocScopedQuery((prev) => !prev)}
-					>
-						{docScopedQuery
-							? `Asking about: ${selectedResource.label}`
-							: "Ask about this document only"}
-					</button>
-				)}
+					<div className="chat-toggles">
+						{selectedResource?.medembed_id && (
+							<button
+								type="button"
+								className={`chat-toggle-btn ${docScopedQuery ? "active" : ""}`}
+								onClick={() => setDocScopedQuery((prev) => !prev)}
+							>
+								{docScopedQuery
+									? `Doc: ${selectedResource.label}`
+									: "This doc only"}
+							</button>
+						)}
+						<button
+							type="button"
+							className={`chat-toggle-btn ${useQueryRewriting ? "active" : ""}`}
+							onClick={() => setUseQueryRewriting((prev) => !prev)}
+						>
+							{useQueryRewriting ? "Context-aware: ON" : "Context-aware: OFF"}
+						</button>
+					</div>
 
 				<form onSubmit={handleSubmit} className="question-form">
 						<input
