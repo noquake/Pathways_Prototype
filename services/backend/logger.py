@@ -5,6 +5,7 @@ import uuid
 from supabase import create_client, Client
 
 PATHWAY_QUERIES_TABLE = os.getenv("SUPABASE_TABLE_PATHWAY_QUERIES", "pathway_queries")
+PATHWAY_SESSIONS_TABLE = os.getenv("SUPABASE_TABLE_PATHWAY_SESSIONS", "pathways_sessions")
 
 class QueryLogger:
     """Log queries and metadata to Supabase for analytics."""
@@ -54,6 +55,13 @@ class QueryLogger:
         
         # Check for citations in response
         has_citations = any(marker in bot_response for marker in ['[1]', '[Source:', 'Citation:'])
+
+        session_entry = {
+            "session_id": session_id,
+            "user_role": user_role,
+        }
+        if pathway_id:
+            session_entry["query_scope"] = pathway_id
         
         log_entry = {
             "session_id": session_id,
@@ -61,7 +69,6 @@ class QueryLogger:
             "user_id": user_id or f"anon_{uuid.uuid4().hex[:8]}",
             "user_role": user_role,
             "user_query": user_query,
-            "query_embedding": query_embedding,
             "bot_response": bot_response,
             "num_chunks_retrieved": len(retrieved_chunks),
             "retrieved_chunk_ids": chunk_ids,
@@ -75,6 +82,7 @@ class QueryLogger:
         }
         
         try:
+            self.client.table(PATHWAY_SESSIONS_TABLE).upsert(session_entry).execute()
             result = self.client.table(PATHWAY_QUERIES_TABLE).insert(log_entry).execute()
             query_id = result.data[0]['query_id'] if result.data else None
             print(f"✓ Logged to Supabase: query_id={query_id}")
