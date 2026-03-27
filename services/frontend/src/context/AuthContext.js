@@ -69,6 +69,12 @@ export const AuthProvider = ({ children }) => {
 		if (isRun.current) return;
 		isRun.current = true;
 
+		// NOTE: Keycloak login/auth features temporarily disabled.
+		// To re-enable, remove this block and uncomment the Keycloak init below.
+		setIsAuthenticated(false);
+		setIsInitialized(true);
+		return;
+
 		console.log("--- STARTING AUTH CHECK ---");
 		console.log("Current URL:", window.location.href);
 		console.log("Has code in query:", window.location.search.includes('code='));

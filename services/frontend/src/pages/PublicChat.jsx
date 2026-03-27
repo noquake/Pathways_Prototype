@@ -33,6 +33,10 @@ function PublicChat({ apiUrl }) {
 		queryId: "",
 		message: "",
 	});
+	const [docScopedQuery, setDocScopedQuery] = useState(false);
+	const [useQueryRewriting, setUseQueryRewriting] = useState(false);
+	const [sourcesExpanded, setSourcesExpanded] = useState(true);
+	const [sessionSources, setSessionSources] = useState(new Map());
 	const transcriptRef = useRef(null);
 	const feedbackTextareaRef = useRef(null);
 
@@ -104,6 +108,37 @@ function PublicChat({ apiUrl }) {
 		() => pathways.find((pathway) => pathway.id === selectedPathwayId),
 		[pathways, selectedPathwayId],
 	);
+
+	// Maps every known source_file value → { pathwayId, resourceId, label }
+	// Covers three cases:
+	//   1. pathway tag/id (e.g. "asthma") — from tag-based queries
+	//   2. resource.medembed_id (e.g. "asthma-red-flags") — from doc-scoped medembed queries
+	//   3. resource.id — catalog ID fallback
+	const sourceMap = useMemo(() => {
+		const map = new Map();
+		pathways.forEach((pathway) => {
+			map.set(pathway.id, {
+				pathwayId: pathway.id,
+				resourceId: pathway.default_resource_id,
+				label: pathway.label,
+			});
+			pathway.resources?.forEach((resource) => {
+				if (resource.medembed_id) {
+					map.set(resource.medembed_id, {
+						pathwayId: pathway.id,
+						resourceId: resource.id,
+						label: resource.label,
+					});
+				}
+				map.set(resource.id, {
+					pathwayId: pathway.id,
+					resourceId: resource.id,
+					label: resource.label,
+				});
+			});
+		});
+		return map;
+	}, [pathways]);
 	const selectedResource = useMemo(() => {
 		if (!selectedPathway) {
 			return null;
@@ -135,7 +170,28 @@ function PublicChat({ apiUrl }) {
 		}
 
 		setSelectedResourceId(selectedPathway.default_resource_id);
+		setDocScopedQuery(false);
+		setSessionSources(new Map());
 	}, [selectedPathway]);
+
+	// Accumulate unique sources from all assistant messages in this session
+	useEffect(() => {
+		const updated = new Map();
+		messages.forEach((msg) => {
+			if (msg.role !== "assistant") return;
+			msg.citations?.forEach((c) => {
+				const key = c.source_file;
+				if (!key || updated.has(key)) return;
+				const resolved = sourceMap.get(key);
+				if (resolved) {
+					updated.set(key, resolved);
+				} else {
+					updated.set(key, { pathwayId: null, resourceId: null, label: key });
+				}
+			});
+		});
+		setSessionSources(updated);
+	}, [messages, sourceMap]);
 
 	useEffect(() => {
 		if (selectedPathway && selectedResource) {
@@ -281,11 +337,20 @@ function PublicChat({ apiUrl }) {
 		setQuery("");
 
 		try {
+			const history = messages.slice(-6).map((m) => ({
+				role: m.role === "user" ? "user" : "assistant",
+				content: m.content,
+			}));
+
 			const response = await axios.post(`${apiUrl}/chat/public`, {
 				query: trimmedQuery,
 				model: "gemini",
 				top_k: 5,
-				pathway_id: selectedPathwayId || null,
+				conversation_history: history,
+				use_query_rewriting: useQueryRewriting,
+				...(docScopedQuery && selectedResource?.medembed_id
+					? { pathway_id: selectedResource.medembed_id }
+					: { pathway_tag: selectedPathwayId || null }),
 			});
 
 			const assistantMessage = {
@@ -345,7 +410,26 @@ function PublicChat({ apiUrl }) {
 						)}
 					</select>
 
-					<form onSubmit={handleSubmit} className="question-form">
+					<div className="chat-toggles">
+						{selectedResource?.medembed_id && (
+							<button
+								type="button"
+								className={`chat-toggle-btn ${docScopedQuery ? "active" : ""}`}
+								onClick={() => setDocScopedQuery((prev) => !prev)}
+							>
+								{docScopedQuery ? "Doc scope: ON" : "Doc scope: OFF"}
+							</button>
+						)}
+						<button
+							type="button"
+							className={`chat-toggle-btn ${useQueryRewriting ? "active" : ""}`}
+							onClick={() => setUseQueryRewriting((prev) => !prev)}
+						>
+							{useQueryRewriting ? "Context-aware: ON" : "Context-aware: OFF"}
+						</button>
+					</div>
+
+				<form onSubmit={handleSubmit} className="question-form">
 						<input
 							type="text"
 							value={query}
@@ -574,7 +658,43 @@ function PublicChat({ apiUrl }) {
 							</a>
 						)}
 					</div>
-					<div className="pathway-preview-shell">
+					{sessionSources.size > 0 && (
+					<div className="session-sources">
+						<button
+							type="button"
+							className="session-sources-toggle"
+							onClick={() => setSourcesExpanded((prev) => !prev)}
+						>
+							<span>Sources used this session ({sessionSources.size})</span>
+							<span className="session-sources-chevron">{sourcesExpanded ? "▲" : "▼"}</span>
+						</button>
+						{sourcesExpanded && (
+							<div className="session-sources-list">
+								{Array.from(sessionSources.entries()).map(([sourceFile, info], idx) => (
+									<button
+										key={sourceFile}
+										type="button"
+										className={`session-source-item ${
+											info.resourceId && selectedResource?.id === info.resourceId ? "active" : ""
+										}`}
+										disabled={!info.pathwayId}
+										onClick={() => {
+											if (info.pathwayId) {
+												setSelectedPathwayId(info.pathwayId);
+												setSelectedResourceId(info.resourceId);
+											}
+										}}
+									>
+										<span className="session-source-index">[{idx + 1}]</span>
+										{info.label}
+									</button>
+								))}
+							</div>
+						)}
+					</div>
+				)}
+
+				<div className="pathway-preview-shell">
 						{selectedPathway ? (
 							<>
 								{pdfLoading && !pdfLoadError && (

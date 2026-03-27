@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from supabase import create_client
 from jose import JWTError, jwt
 
-from logger import query_logger
+from logger import query_logger, session_manager
 from pathways_catalog import (
     list_pathways,
     get_pathway_by_id,
@@ -31,10 +31,9 @@ from pathways_catalog import (
 # Import existing RAG components
 from rag.embeddings import get_embeddings
 
-from rag.query import rag_api_llm as original_rag_api_llm
-
-from rag.query import rag_api_llm as original_rag_api_llm
+from rag.query import rag_api_llm as original_rag_api_llm, rewrite_query
 from rag.retrieval import retrieve_chunks as retrieve_chunks_by_model
+from rag.models import EMBEDDING_MODELS
 
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 
@@ -100,6 +99,11 @@ def get_user_role(user_info: Optional[Dict[str, Any]] = Depends(verify_token)) -
 
 
 # Request/Response models
+class ConversationTurn(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
 class ChatRequest(BaseModel):
     query: str
     model: Optional[str] = "gemini"
@@ -107,7 +111,9 @@ class ChatRequest(BaseModel):
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
     pathway_tag: Optional[str] = None
-    embedding_model: Optional[str] = "minilm_semantic"
+    embedding_model: Optional[str] = "medembed_large"
+    conversation_history: Optional[List[ConversationTurn]] = []
+    use_query_rewriting: Optional[bool] = False
 
 
 class PractitionerChatRequest(ChatRequest):
@@ -119,6 +125,7 @@ class PathwayResourceOption(BaseModel):
     label: str
     doc_name: str
     pdf_url: str
+    medembed_id: Optional[str] = None
 
 
 class PathwayOption(BaseModel):
@@ -165,11 +172,8 @@ class ChatHistoryItem(BaseModel):
 def resolve_pathway_doc_name(pathway_id: Optional[str]) -> Optional[str]:
     if not pathway_id:
         return None
-
     pathway = get_pathway_by_id(pathway_id)
-    if not pathway:
-        raise HTTPException(status_code=400, detail=f"Unknown pathway_id: {pathway_id}")
-    return pathway["doc_name"]
+    return pathway["doc_name"] if pathway else None
 
 
 # Health check
@@ -199,6 +203,9 @@ async def get_pathway_pdf(
     resource = get_pathway_resource(pathway_id, resource_id)
     if not resource:
         raise HTTPException(status_code=404, detail=f"Unknown resource_id for pathway_id: {pathway_id}")
+
+    if not resource.get("pdf_url"):
+        raise HTTPException(status_code=404, detail="PDF not available for this resource.")
 
     upstream_headers = {}
     if range_header:
@@ -248,13 +255,27 @@ async def get_pathway_pdf(
 # Public chat endpoint
 @app.post("/chat/public", response_model=ChatResponse)
 async def chat_public(request: ChatRequest):
-    session_id = str(uuid.uuid4())
     start_time = time.time()
 
     try:
         top_k = request.top_k or 5
         selected_pathway_doc_name = resolve_pathway_doc_name(request.pathway_id)
-        retrieval_pathway_ids = get_pathway_retrieval_documents(request.pathway_id) or None
+
+        # Tag-based models (e.g. medembed_large) filter by pathway_tag directly —
+        # skip expanding into document-level retrieval_pathway_ids.
+        model_config = EMBEDDING_MODELS.get(request.embedding_model, {})
+        uses_tag_filter = model_config.get("filter_arg") == "filter_pathway_tag"
+        retrieval_pathway_ids = None if uses_tag_filter else (get_pathway_retrieval_documents(request.pathway_id) or None)
+
+        # --- BEGIN: Resolve session ---
+        # For tag-based queries pathway_id is None, so fall back to pathway_tag
+        # to ensure different tags create distinct sessions.
+        session_id = session_manager.get_or_create_session(
+            pathway_ids=retrieval_pathway_ids,
+            pathway_id=request.pathway_id or request.pathway_tag,
+            user_role="public",
+        )
+        # --- END: Resolve session ---
 
         print("="*60)
         print("=== NEW QUERY RECEIVED ===")
@@ -266,22 +287,40 @@ async def chat_public(request: ChatRequest):
 
         db_handle = get_supabase_client()
 
-        print("\n[1/6] Generating embeddings...")
-        query_emb = get_embeddings([request.query], model_key=request.embedding_model, is_query=True)[0]
+        # --- Query rewriting ---
+        retrieval_query = request.query
+        if request.use_query_rewriting and request.conversation_history:
+            print("\n[1/6] Rewriting query using conversation history...")
+            retrieval_query = rewrite_query(request.query, request.conversation_history)
+            print(f"✓ Rewritten query: {retrieval_query}")
+        else:
+            print("\n[1/6] Generating embeddings...")
+
+        query_emb = get_embeddings([retrieval_query], model_key=request.embedding_model, is_query=True)[0]
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb
         print(f"✓ Embedding generated: dimension={len(query_emb_list)}\n")
 
-        # Retrieve top-k chunks
-        # print(f"\n[2/6] Retrieving top {request.top_k} chunks...")
-        # results = retrieve_chunks_by_model(db_handle, request.query, top_k=request.top_k, pathway_id=request.pathway_id, pathway_tag=request.pathway_tag,model_key=request.embedding_model)
         print(f"\n[2/6] Retrieving top {top_k} chunks...")
+        # Doc-scoped queries (pathway_id set, no pathway_tag) must filter by
+        # filter_pathway_id. Some models (medembed) need a separate RPC for this.
+        doc_scoped = bool(request.pathway_id and not request.pathway_tag)
+        doc_rpc = model_config.get("doc_rpc_function") if doc_scoped else None
+        # For tag-based queries, pathway_id is None — pass pathway_tag instead
+        # so the filter is actually applied. Without this, the RPC runs unfiltered
+        # and returns chunks from all pathways in the table.
+        effective_pathway_id = (
+            None if retrieval_pathway_ids
+            else request.pathway_id or request.pathway_tag
+        )
         results = retrieve_chunks_by_model(
             db_handle,
-            request.query,
+            retrieval_query,
             top_k=top_k,
-            pathway_id=request.pathway_id if not retrieval_pathway_ids else None,
+            pathway_id=effective_pathway_id,
             pathway_ids=retrieval_pathway_ids,
             model_key=request.embedding_model,
+            rpc_function=doc_rpc,
+            filter_arg="filter_pathway_id" if doc_scoped else None,
         )
         print(f"DEBUG: Retrieved {len(results)} results\n")
 
@@ -291,7 +330,7 @@ async def chat_public(request: ChatRequest):
                 "chunk_id": int(r["chunk_id"]),
                 "chunk_text": str(r["chunk_text"]),
                 "chunk_length": int(r["chunk_length"]) if r["chunk_length"] is not None else 0,
-                "source_file": str(r.get("source_file") or r.get("pathway_id") or ""),
+                "source_file": str(r.get("source_file") or r.get("pathway_id") or r.get("pathway_tag") or ""),
                 "similarity_score": float(r.get("distance", r.get("similarity", 0.0))),
             }
             citations.append(citation)
@@ -302,19 +341,15 @@ async def chat_public(request: ChatRequest):
             print(f"  - Similarity: {citations[0]['similarity_score']:.4f}")
         
         print(f"\n[3/6] Sending to {request.model}...")
-        # Generate response using LLM
-        if request.model == "gemini":
-            # Use Gemini API (default)
-            response_text = original_rag_api_llm(db_handle, request.query, top_k=top_k, 
-                                       model_name=request.model_name, api_provider="gemini",
-                                       pathway_id=request.pathway_id,
-                                       retrieved_results=results)
-        else:
-            # Default to Gemini if unknown model specified
-            response_text = original_rag_api_llm(db_handle, request.query, top_k=top_k, 
-                                       model_name="gemini-2.5-flash", api_provider="gemini",
-                                       pathway_id=request.pathway_id,
-                                       retrieved_results=results)
+        history = [t.model_dump() for t in (request.conversation_history or [])]
+        model_name = request.model_name if request.model == "gemini" else "gemini-2.5-flash"
+        response_text = original_rag_api_llm(
+            db_handle, request.query, top_k=top_k,
+            model_name=model_name, api_provider="gemini",
+            pathway_id=request.pathway_id,
+            retrieved_results=results,
+            conversation_history=history,
+        )
         
         print(f"\n[4/6] Response received:")
         print(f"✓ Length: {len(response_text)} chars")
@@ -326,7 +361,6 @@ async def chat_public(request: ChatRequest):
         query_id = query_logger.log_query(
             session_id=session_id,
             user_query=request.query,
-            query_embedding=query_emb_list,
             bot_response=response_text,
             retrieved_chunks=citations,
             llm_provider="gemini",

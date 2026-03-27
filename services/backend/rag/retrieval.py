@@ -11,13 +11,15 @@ def retrieve_chunks(
     pathway_ids: Optional[List[str]] = None,
     model_key: str = DEFAULT_MODEL,
     rpc_function: Optional[str] = None,
-    filter_arg: str = "filter_pathway_id",
+    filter_arg: Optional[str] = None,
 ):
     if model_key not in EMBEDDING_MODELS:
         raise ValueError(f"Unknown model: {model_key}")
 
     config = EMBEDDING_MODELS[model_key]
     rpc_name = rpc_function or config["rpc_function"]
+    # Explicit filter_arg takes precedence over model config (e.g. doc-scoped queries)
+    filter_arg = filter_arg or config.get("filter_arg", "filter_pathway_id")
 
     # is_query=True ensures MedCPT uses its Query Encoder here
     query_emb = get_embeddings([query], model_key=model_key, is_query=True)[0]

@@ -1,0 +1,327 @@
+================================================================================
+PATHWAYS – DEVELOPMENT CHANGELOG
+Connecticut Children's Hospital Clinical RAG System
+================================================================================
+
+--------------------------------------------------------------------------------
+1. SESSION SEPARATION (Supabase + Backend)
+--------------------------------------------------------------------------------
+
+Goal: Track groups of queries as sessions, where a new session starts whenever
+the set of pathway IDs being queried changes.
+
+Supabase changes:
+- Created `pathways_sessions` table with columns:
+    session_id (uuid, PK), pathway_id (varchar), pathway_ids (text[]),
+    user_role (varchar), total_queries (int), avg_response_time_ms (float),
+    last_active_at (timestamptz), created_at (timestamptz)
+- Added FK constraint on `pathway_queries.session_id` referencing
+  `pathways_sessions.session_id`
+- Dropped `query_embedding` column from `pathway_queries` (caused dimension
+  mismatch: column was vector(384), medembed produces 1024-dim vectors)
+
+New file: services/backend/logger.py
+- `SessionManager` class: tracks active session in memory using a frozenset of
+  pathway_ids as the session key. Creates a new session row in Supabase whenever
+  the pathway set changes, otherwise continues the existing session.
+- `get_or_create_session()`: inserts new session into `pathways_sessions` on
+  change, returns current session_id otherwise.
+- `update_session()`: called after each completed query — updates
+  `last_active_at`, increments `total_queries`, computes running average of
+  `avg_response_time_ms`, and accumulates retrieved `pathway_ids`.
+- `QueryLogger.log_query()`: derives `pathway_ids` from actual retrieved chunk
+  `source_file` fields (not from request filter params) so analytics accurately
+  reflect which documents contributed to each answer.
+- Singleton instantiation order matters: `session_manager = SessionManager()`
+  must be declared before `query_logger = QueryLogger()` so the Supabase client
+  reference is set correctly.
+
+Bug fixes during implementation:
+- FK constraint violation: session row must be inserted before query row.
+  Fixed by moving INSERT into `get_or_create_session`.
+- NameError on startup: `session_manager` referenced before declaration.
+  Fixed by reordering singletons.
+- Stale in-memory session_id after server restart: old UUID had no matching
+  row in new table. Fixed by restarting server to reset in-memory state.
+
+--------------------------------------------------------------------------------
+2. MEDEMBED RETRIEVAL SUPPORT
+--------------------------------------------------------------------------------
+
+Goal: Support the MedEmbed-large-v0.1 model (1024-dim) for retrieval, which
+uses a category-level `pathway_tag` filter rather than document-level
+`pathway_id`.
+
+services/backend/rag/models.py:
+- Added `medembed_large` model config with:
+    rpc_function: "match_chunks_medembed_large"
+    filter_arg: "filter_pathway_tag"
+    doc_rpc_function: "match_medembed_large_pathway_chunks"
+- `doc_rpc_function` points to a separate RPC used for document-scoped queries.
+
+services/backend/rag/retrieval.py:
+- Changed `filter_arg` parameter default from `"filter_pathway_id"` to `None`
+  so explicit caller-provided values take precedence over the model config.
+- Logic: `filter_arg = filter_arg or config.get("filter_arg", "filter_pathway_id")`
+
+services/backend/main.py:
+- Added `model_config` lookup to detect tag-based models:
+    `uses_tag_filter = model_config.get("filter_arg") == "filter_pathway_tag"`
+- For tag-based models, `retrieval_pathway_ids` is set to None (skip
+  document-level ID expansion).
+- Added `doc_scoped` flag: True when `pathway_id` is set and `pathway_tag` is
+  absent — forces `filter_pathway_id` for retrieval regardless of model default.
+- For doc-scoped medembed queries, uses `doc_rpc_function` override
+  (`match_medembed_large_pathway_chunks`).
+
+Supabase: New RPC function created via SQL:
+  `public.match_medembed_large_pathway_chunks(query_embedding, match_count,
+   filter_pathway_id)` — filters by `pathway_id` column for document-scoped
+   queries. Companion to the existing tag-based RPC.
+
+Bug fixes:
+- medembed RPC not found: existing RPC only accepts `filter_pathway_tag`.
+  Fixed by adding `filter_arg` to model config and creating the new doc-level RPC.
+- Source_file empty in citations: medembed RPC returns `pathway_tag` column
+  not `pathway_id`. Fixed by adding fallback chain in main.py:
+    `r.get("source_file") or r.get("pathway_id") or r.get("pathway_tag")`
+- resolve_pathway_doc_name raising 400 for medembed_ids: function expected
+  catalog pathway IDs but received medembed document IDs. Fixed by returning
+  None instead of raising when ID not found in catalog.
+
+--------------------------------------------------------------------------------
+3. PATHWAY TAG vs PATHWAY ID QUERY MODES
+--------------------------------------------------------------------------------
+
+Goal: Support two distinct query modes:
+  (a) Tag-based (broad): queries across all documents in a pathway category
+      using `filter_pathway_tag` (default for medembed)
+  (b) Document-scoped: queries a single specific document using
+      `filter_pathway_id` (activated by frontend toggle)
+
+services/backend/pathways_catalog.py:
+- Added `medembed_id` field to resource entries where confirmed mapping exists.
+  This is the actual `pathway_id` value in the medembed table for that document.
+  Confirmed mappings for: asthma (4 resources), migraine (6 resources),
+  CAP/pneumonia (4 resources).
+- Pathway ID for CAP corrected from "cap" to "pneumonia" to match the
+  `pathway_tag` value in `pathway_chunks_medembed_large`.
+
+services/frontend/src/pages/PublicChat.jsx:
+- Added `docScopedQuery` state (default false).
+- "Ask about this document only" toggle button — only visible when the selected
+  resource has a `medembed_id`.
+- Resets to false when selected pathway changes.
+- When active: sends `pathway_id: selectedResource.medembed_id`
+- When inactive: sends `pathway_tag: selectedPathwayId`
+
+services/backend/main.py:
+- `/pathways/{pathway_id}/pdf` endpoint: added early 404 return when
+  `resource.pdf_url` is empty, preventing 502 errors for resources without
+  known PDF URLs.
+
+--------------------------------------------------------------------------------
+4. PATHWAYS CATALOG EXPANSION
+--------------------------------------------------------------------------------
+
+Goal: Populate the catalog with all available CT Children's clinical pathways
+matched to PDF files in data/raw_files/ (174 files total).
+
+services/backend/pathways_catalog.py:
+- Expanded from 5 pathways to 67 pathways total.
+- Added 19 new pathways: ARCH, Brachial Plexus Palsy, Cardio-Oncology,
+  cCMV Screening, COVID-19 (7 resources), COVID-19 Newborn, Hemangioma,
+  Ketogenic Diet, MIS-C, Neural Tube Defect, Nephrolithiasis, Ovarian Torsion,
+  Perinatal HIV, Posterior Spinal Fusion, SSRD, Suspected Sexual Abuse,
+  Tetralogy of Fallot, Tonsillectomy/Adenoidectomy, Venous Access.
+- Filled in missing resources for existing pathways:
+    Agitation: added Appendices D–G
+    DKA: added Transport Algorithm, MS Management, Resolution & Ongoing Mgmt
+    Eating Disorder: added patient handouts (English + Spanish)
+    Nasogastric Tube: added Appendices A–C (English + Spanish caregiver guides)
+    Penicillin Allergy: added Flyer resource
+    Sepsis: added Pocket Card
+    Asthma: added Appendix C – Documentation & Billing (medembed only)
+- Added `ACTIVE_PATHWAY_IDS` set to filter the frontend dropdown to a testing
+  subset. Set to None to show all 67 pathways.
+- Current testing set: asthma, migraine, pneumonia, fever-sepsis-infant, ssti
+
+NOTE – Why some resources cannot be used for single-document retrieval:
+  The catalog contains entries for every PDF found in data/raw_files/ (174
+  files). However, having a PDF file is NOT the same as having embeddings.
+  Before a document can be queried individually, it must go through a separate
+  embedding pipeline: the PDF is chunked into passages, each passage is run
+  through the MedEmbed-large model, and the resulting 1024-dimensional vectors
+  are inserted into the `pathway_chunks_medembed_large` table in Supabase with
+  a unique `pathway_id` identifying that document.
+
+  The `medembed_id` field on a catalog resource is ONLY set when we have
+  confirmed that document's `pathway_id` exists in the medembed table (verified
+  via SQL: SELECT DISTINCT pathway_id FROM pathway_chunks_medembed_large).
+
+  As of current development, only four pathway categories have been embedded:
+    - asthma   (5 documents)
+    - migraine (6 documents)
+    - pneumonia/CAP (4 documents)
+    - anemia   (5 documents, not yet in active testing set)
+
+  All other pathways in the catalog (e.g. fever-sepsis-infant, ssti, croup,
+  etc.) have PDF files available but have NOT been embedded. For these:
+    - Broad tag-based queries still work if the pathway is embedded under a
+      matching `pathway_tag` value in the table.
+    - The "This doc only" toggle will NOT appear because there is no
+      document-level data to retrieve against.
+  To enable single-document retrieval for additional pathways, the PDFs must
+  first be processed through the embedding pipeline and inserted into Supabase.
+
+--------------------------------------------------------------------------------
+5. QUERY REWRITING + CONVERSATION HISTORY
+--------------------------------------------------------------------------------
+
+Goal: Improve multi-turn retrieval accuracy by rewriting contextual follow-up
+questions into self-contained queries before embedding/retrieval. Also pass
+conversation history to Gemini for coherent multi-turn responses.
+
+Design:
+- Query rewriting uses Gemini Flash (gemini-2.0-flash) as a lightweight
+  "monitor" LLM before the main retrieval step.
+- Only activates when `use_query_rewriting=True` AND history is non-empty.
+- First query in a session has zero overhead.
+- Rewritten query is used for embedding + retrieval only; original query is
+  passed to Gemini for generation so responses read naturally.
+- History is capped at last 6 turns (3 exchanges) to limit token usage.
+
+services/backend/rag/query.py:
+- Added `rewrite_query(query, conversation_history)` function. Calls Gemini
+  Flash to rewrite follow-up questions into standalone questions.
+  Falls back to original query on any error.
+- Updated `rag_api_llm()` to accept `conversation_history` parameter.
+  Injects prior turns into the prompt above the current question.
+
+services/backend/main.py:
+- Added `ConversationTurn` Pydantic model (role + content).
+- Added to `ChatRequest`:
+    `conversation_history: Optional[List[ConversationTurn]] = []`
+    `use_query_rewriting: Optional[bool] = False`
+- Chat endpoint calls `rewrite_query()` when enabled, uses result for retrieval.
+- Passes history to `rag_api_llm` for generation context.
+
+services/frontend/src/pages/PublicChat.jsx:
+- Added `useQueryRewriting` state (default false).
+- "Context-aware: ON/OFF" toggle button always visible in the chat UI.
+- Last 6 messages from `messages` state sent as `conversation_history` with
+  each request.
+- `use_query_rewriting` flag sent with each request, reflecting toggle state.
+
+OBSERVED PERFORMANCE: Response time approximately doubles when context-aware
+mode is enabled. This is expected — each query triggers an additional Gemini
+Flash call for rewriting before the main retrieval + generation pipeline runs.
+The feature defaults to OFF for this reason. Further optimization (e.g.
+caching, async rewriting) could reduce overhead if the feature proves valuable.
+
+--------------------------------------------------------------------------------
+6. SESSION SOURCES PANEL
+--------------------------------------------------------------------------------
+
+Goal: Show users which documents contributed to answers in the current session,
+with clickable links that navigate the PDF viewer to that document.
+
+services/frontend/src/pages/PublicChat.jsx:
+- Added `sessionSources` state (Map: source_file → {pathwayId, resourceId, label}).
+  Accumulated from citations across all assistant messages in the session.
+  Resets to empty when the selected pathway changes.
+- Added `sourceMap` memo: scans the loaded catalog to map every known
+  `medembed_id` and `resource.id` value to its pathway/resource identifiers.
+  Used to resolve raw `source_file` strings (from retrieval) to navigable refs.
+- Added `sourcesExpanded` state for the collapsible toggle (default: open).
+- Sources panel renders in the right panel above the PDF iframe, visible only
+  once at least one response has been received.
+  - Each entry shows [N] index + resource label.
+  - Clicking sets `selectedPathwayId` + `selectedResourceId`, navigating the
+    PDF viewer to that document.
+  - Active highlight when the source is the currently displayed document.
+  - Disabled (greyed) if source_file could not be mapped to a catalog resource.
+
+services/frontend/src/pages/PublicChat.css:
+- Added styles: `.session-sources`, `.session-sources-toggle`,
+  `.session-sources-chevron`, `.session-sources-list`, `.session-source-item`,
+  `.session-source-index`.
+
+NOTE: Source ordering reflects the order chunks were first seen across the
+session, not relevance rank. [1] is the first unique source encountered, not
+necessarily the highest-scoring chunk.
+
+--------------------------------------------------------------------------------
+7. CROSS-PATHWAY CONTAMINATION BUG FIX
+--------------------------------------------------------------------------------
+
+Problem: Tag-based queries were returning chunks from ALL pathways, not just the
+selected one. Asking an asthma question would pull in migraine or pneumonia
+chunks, leading to hallucinated or incorrect answers.
+
+Root cause: `request.pathway_tag` was used to key sessions and display the
+selected pathway in the UI, but it was NEVER forwarded to the retrieval RPC.
+The `retrieve_chunks` call always received `pathway_id=request.pathway_id`,
+which is None for tag-based queries (since the frontend sends `pathway_tag`,
+not `pathway_id`, in that mode). The RPC therefore ran with no filter at all,
+returning chunks from every pathway in the table.
+
+Fix in services/backend/main.py:
+- Introduced `effective_pathway_id` to carry whichever filter value is
+  appropriate for the current query mode:
+    `effective_pathway_id = (
+        None if retrieval_pathway_ids          # multi-doc expansion handles it
+        else request.pathway_id or request.pathway_tag
+    )`
+- This value is passed as `pathway_id` to `retrieve_chunks_by_model`, ensuring
+  the RPC always receives a filter argument when one is available.
+- For doc-scoped queries the explicit `filter_arg="filter_pathway_id"` override
+  is still applied on top, so the correct column is used for that RPC variant.
+
+Session keying fix (same commit):
+- `get_or_create_session` was also only receiving `pathway_id=request.pathway_id`
+  (always None for tag mode), so every tag-based query fell into the same
+  empty-frozenset session regardless of which pathway was selected.
+- Fixed by passing `pathway_id=request.pathway_id or request.pathway_tag` to
+  the session manager, so switching pathways now correctly starts a new session.
+
+================================================================================
+FUTURE IMPROVEMENTS
+================================================================================
+
+--------------------------------------------------------------------------------
+F1. SOURCE CITATION PAGE-LEVEL NAVIGATION
+--------------------------------------------------------------------------------
+
+Goal: When a user clicks a source in the session sources panel, jump directly
+to the page of the PDF where the cited chunk appears, not just the document.
+
+What's needed:
+
+1. Chunking pipeline (data ingestion):
+   - When splitting PDFs into chunks, record which page each chunk came from.
+   - Store this as a `page_number` integer column in the
+     `pathway_chunks_medembed_large` table (and any future embedding tables).
+   - This is the only non-trivial step — existing embedded documents would need
+     to either be re-processed or have page numbers back-filled.
+
+2. Supabase RPC functions:
+   - The `match_chunks_medembed_large` and `match_medembed_large_pathway_chunks`
+     RPCs must SELECT and return the `page_number` column alongside existing fields.
+
+3. Backend (services/backend/main.py):
+   - Add `page_number: Optional[int]` to the `Citation` Pydantic model.
+   - Include `page_number` when building the `client_citations` list returned
+     in `ChatResponse`.
+
+4. Frontend (services/frontend/src/pages/PublicChat.jsx):
+   - Store `page_number` on each citation when building `sessionSources`.
+   - When constructing the PDF proxy URL for the iframe, append `#page=N`:
+       `${apiUrl}/pathways/${pathwayId}/pdf?resource_id=...#page=${pageNumber}`
+   - Browsers' built-in PDF renderer (used by the iframe) natively honors
+     the `#page=N` fragment — no viewer library changes required.
+
+Cost/complexity: The pipeline change is the blocking step. The backend and
+frontend changes are small once page numbers are available in the database.
+
+================================================================================
