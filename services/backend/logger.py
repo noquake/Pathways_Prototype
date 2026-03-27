@@ -181,7 +181,6 @@ class QueryLogger:
         }
 
         try:
-            self.client.table(PATHWAY_SESSIONS_TABLE).upsert(session_entry).execute()
             result = self.client.table(PATHWAY_QUERIES_TABLE).insert(log_entry).execute()
             query_id = result.data[0]['query_id'] if result.data else None
             print(f"✓ Logged to Supabase: query_id={query_id}")
