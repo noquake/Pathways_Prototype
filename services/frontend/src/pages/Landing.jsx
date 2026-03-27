@@ -31,8 +31,8 @@ const Landing = () => {
               <span> — Ask questions about the Clinical Pathways without logging in.</span>
             </li>
             <li>
-              <a href="/explorer" className="placeholder">Pathway Explorer</a>
-              <span className="placeholder"> — coming soon</span>
+              <a href="https://www.connecticutchildrens.org/medical-professionals/clinical-pathways" target="_blank" rel="noreferrer">Pathway Explorer</a>
+              <span> — Browse the original Connecticut Children's clinical pathways this project is built on.</span>
             </li>
             <li>
               <a href="/evidence" className="placeholder">Evidence & References</a>
