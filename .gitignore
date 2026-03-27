@@ -32,3 +32,4 @@ share/
 node_modules/
 .lock
 model_cache/
+AGENTS.md

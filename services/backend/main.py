@@ -38,6 +38,15 @@ from rag.models import EMBEDDING_MODELS
 app = FastAPI(title="Pathways Clinical Chat API", version="1.0.0")
 
 PATHWAY_QUERIES_TABLE = os.getenv("SUPABASE_TABLE_PATHWAY_QUERIES", "pathway_queries")
+FEEDBACK_COMMENT_MAX_LENGTH = 500
+USER_FEEDBACK_OPTIONS = {
+    "Answer satisfactory",
+    "Wrong (risky)",
+    "wrong (minor)",
+    "missing info (risky)",
+    "missing info (minor)",
+    "misc.",
+}
 
 # CORS configuration
 app.add_middleware(
@@ -140,6 +149,18 @@ class ChatResponse(BaseModel):
     citations: List[Citation]
     timestamp: str
     role: str
+    query_id: Optional[str] = None
+
+
+class FeedbackUpdateRequest(BaseModel):
+    feedback_comment: Optional[str] = None
+    user_feedback: Optional[str] = None
+
+
+class FeedbackUpdateResponse(BaseModel):
+    query_id: str
+    feedback_comment: Optional[str] = None
+    user_feedback: Optional[str] = None
 
 
 class ChatHistoryItem(BaseModel):
@@ -337,7 +358,7 @@ async def chat_public(request: ChatRequest):
         response_time_ms = int((time.time() - start_time) * 1000)
 
         print("\n[5/6] Logging to Supabase...")
-        query_logger.log_query(
+        query_id = query_logger.log_query(
             session_id=session_id,
             user_query=request.query,
             bot_response=response_text,
@@ -366,6 +387,7 @@ async def chat_public(request: ChatRequest):
             citations=client_citations,
             timestamp=datetime.now().isoformat(),
             role="public",
+            query_id=query_id,
         )
 
         print(f"✓ Response time: {response_time_ms}ms")
@@ -385,6 +407,63 @@ async def chat_public(request: ChatRequest):
 
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/queries/{query_id}/feedback", response_model=FeedbackUpdateResponse)
+async def update_query_feedback(query_id: str, request: FeedbackUpdateRequest):
+    feedback_comment = request.feedback_comment.strip() if request.feedback_comment else None
+    user_feedback = request.user_feedback.strip() if request.user_feedback else None
+
+    if user_feedback and user_feedback not in USER_FEEDBACK_OPTIONS:
+        raise HTTPException(status_code=400, detail="user_feedback is invalid.")
+
+    if feedback_comment and len(feedback_comment) > FEEDBACK_COMMENT_MAX_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"feedback_comment cannot exceed {FEEDBACK_COMMENT_MAX_LENGTH} characters.",
+        )
+
+    if not feedback_comment and not user_feedback:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one of feedback_comment or user_feedback is required.",
+        )
+
+    try:
+        db_handle = get_supabase_client()
+        existing_query = (
+            db_handle.table(PATHWAY_QUERIES_TABLE)
+            .select("query_id, feedback_comment, user_feedback")
+            .eq("query_id", query_id)
+            .limit(1)
+            .execute()
+        )
+        if not existing_query.data:
+            raise HTTPException(status_code=404, detail="Query not found.")
+
+        existing_row = existing_query.data[0]
+        update_payload = {}
+        if user_feedback:
+            update_payload["user_feedback"] = user_feedback
+        if feedback_comment:
+            update_payload["feedback_comment"] = feedback_comment
+
+        (
+            db_handle.table(PATHWAY_QUERIES_TABLE)
+            .update(update_payload)
+            .eq("query_id", query_id)
+            .execute()
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return FeedbackUpdateResponse(
+        query_id=query_id,
+        feedback_comment=update_payload.get("feedback_comment", existing_row.get("feedback_comment")),
+        user_feedback=update_payload.get("user_feedback", existing_row.get("user_feedback")),
+    )
 
 
 # Practitioner chat endpoint
