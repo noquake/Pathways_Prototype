@@ -1,3 +1,4 @@
+import re
 from typing import List, Dict, Optional
 from sentence_transformers import SentenceTransformer
 import os
@@ -9,6 +10,7 @@ from rag.embeddings import get_embeddings
 
 # API Keys from environment variables
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+CITATION_RE = re.compile(r"\[(\d+)\]")
 
 # ----------------------
 # Models and DB
@@ -76,10 +78,75 @@ def build_context(results):
         context_lines.append(f"[{i+1}] {source}: {text}")
     return "\n\n".join(context_lines)
 
+
+def append_sources_legend(
+    answer: str,
+    chunk_document_numbers: Optional[List[Optional[int]]] = None,
+    citation_documents: Optional[List[Dict[str, str]]] = None,
+) -> str:
+    """Map chunk citations to document citations and append a PDF legend."""
+    normalized_answer = (answer or "").strip()
+    if not normalized_answer or not citation_documents or not chunk_document_numbers:
+        return normalized_answer
+
+    used_document_numbers = []
+    seen_document_numbers = set()
+    for match in CITATION_RE.finditer(normalized_answer):
+        chunk_number = int(match.group(1))
+        if not 1 <= chunk_number <= len(chunk_document_numbers):
+            continue
+        document_number = chunk_document_numbers[chunk_number - 1]
+        if document_number is None or document_number in seen_document_numbers:
+            continue
+        used_document_numbers.append(document_number)
+        seen_document_numbers.add(document_number)
+
+    if not used_document_numbers:
+        return normalized_answer
+
+    document_renumber_map = {
+        original_document_number: replacement_number
+        for replacement_number, original_document_number in enumerate(
+            used_document_numbers,
+            start=1,
+        )
+    }
+
+    def replace_citation(match: re.Match[str]) -> str:
+        chunk_number = int(match.group(1))
+        if not 1 <= chunk_number <= len(chunk_document_numbers):
+            return match.group(0)
+        document_number = chunk_document_numbers[chunk_number - 1]
+        if document_number is None:
+            return match.group(0)
+        replacement_number = document_renumber_map.get(document_number)
+        return f"[{replacement_number}]" if replacement_number is not None else match.group(0)
+
+    normalized_answer = CITATION_RE.sub(replace_citation, normalized_answer).strip()
+
+    legend_lines = ["Sources:"]
+    for replacement_number, original_number in enumerate(used_document_numbers, start=1):
+        legend_lines.append(
+            f"[{replacement_number}] {citation_documents[original_number - 1]['pdf_name']}"
+        )
+
+    return f"{normalized_answer}\n\n" + "\n".join(legend_lines)
+
 # ----------------------
 # Retrieval + RAG with API-based LLMs
 # ----------------------
-def rag_api_llm(supabase, query: str, top_k: int = 5, model_name: str = "gpt-4", api_provider: str = "gemini", pathway_id: str = None, retrieved_results=None, conversation_history: list = None):
+def rag_api_llm(
+    supabase,
+    query: str,
+    top_k: int = 5,
+    model_name: str = "gpt-4",
+    api_provider: str = "gemini",
+    pathway_id: str = None,
+    retrieved_results=None,
+    conversation_history: list = None,
+    chunk_document_numbers: Optional[List[Optional[int]]] = None,
+    citation_documents: Optional[List[Dict[str, str]]] = None,
+):
     """
     Retrieve top-k chunks and use an API-based LLM (OpenAI, Gemini, etc.) to answer the query.
     
@@ -142,6 +209,7 @@ Answer:
             temperature=0
         )
         answer = response.choices[0].message.content
+        answer = append_sources_legend(answer, chunk_document_numbers, citation_documents)
         print("\n=== OpenAI Answer ===\n")
         print(answer)
         return answer
@@ -178,7 +246,7 @@ Answer:
         )
         
         # Extract answer
-        answer = response.text
+        answer = append_sources_legend(response.text, chunk_document_numbers, citation_documents)
         print("\n=== Gemini Answer ===\n")
         print(answer)
         return answer

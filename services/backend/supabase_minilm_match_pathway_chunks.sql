@@ -14,6 +14,7 @@ returns table (
   chunk_id bigint,
   chunk_text text,
   chunk_length integer,
+  source_docs text[],
   pathway_id varchar,
   similarity double precision
 )
@@ -24,6 +25,7 @@ as $$
     pc.chunk_id,
     pc.chunk_text,
     pc.chunk_length,
+    pc.source_docs,
     pc.pathway_id,
     1 - (pc.embedding <=> query_embedding) as similarity
  
@@ -37,4 +39,3 @@ $$;
 grant execute on function public.match_semantic_pathway_chunks(vector, int, varchar)
 
 to anon, authenticated, service_role;
-

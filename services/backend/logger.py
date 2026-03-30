@@ -1,4 +1,5 @@
 import os
+import re
 from typing import List, Optional, Dict, Any, FrozenSet
 from datetime import datetime
 import uuid
@@ -6,6 +7,7 @@ from supabase import create_client, Client
 
 PATHWAY_QUERIES_TABLE = os.getenv("SUPABASE_TABLE_PATHWAY_QUERIES", "pathway_queries")
 SESSIONS_TABLE = os.getenv("SUPABASE_TABLE_SESSIONS", "pathways_sessions")
+CITATION_RE = re.compile(r"\[(\d+)\]")
 
 
 # --- BEGIN: Session tracking by pathway_ids ---
@@ -159,7 +161,8 @@ class QueryLogger:
         }))
 
         # Check for citations in response
-        has_citations = any(marker in bot_response for marker in ['[1]', '[Source:', 'Citation:'])
+        cited_numbers = CITATION_RE.findall(bot_response or "")
+        has_citations = bool(cited_numbers)
 
         log_entry = {
             "session_id": session_id,
@@ -177,7 +180,7 @@ class QueryLogger:
             "llm_model": llm_model,
             "response_time_ms": response_time_ms,
             "has_citations": has_citations,
-            "num_citations": bot_response.count('[Source:') if '[Source:' in bot_response else 0
+            "num_citations": len(set(cited_numbers)),
         }
 
         try:

@@ -26,6 +26,7 @@ from pathways_catalog import (
     get_pathway_by_id,
     get_pathway_resource,
     get_pathway_retrieval_documents,
+    resolve_document_reference,
 )
 
 # Import existing RAG components
@@ -142,6 +143,10 @@ class Citation(BaseModel):
     chunk_text: str
     chunk_length: int
     source_file: str
+    source_docs: List[str]
+    pdf_name: Optional[str] = None
+    pathway_id: Optional[str] = None
+    resource_id: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -174,6 +179,78 @@ def resolve_pathway_doc_name(pathway_id: Optional[str]) -> Optional[str]:
         return None
     pathway = get_pathway_by_id(pathway_id)
     return pathway["doc_name"] if pathway else None
+
+
+def extract_source_docs(result: Dict[str, Any]) -> List[str]:
+    raw_source_docs = result.get("source_docs")
+    if isinstance(raw_source_docs, list):
+        return [str(item).strip() for item in raw_source_docs if str(item).strip()]
+    if isinstance(raw_source_docs, str) and raw_source_docs.strip():
+        return [raw_source_docs.strip()]
+    return []
+
+
+def prepare_citation_results(
+    results: List[Dict[str, Any]],
+) -> tuple[List[Dict[str, Any]], List[Optional[int]], List[Dict[str, str]], List[Dict[str, Any]]]:
+    prompt_results: List[Dict[str, Any]] = []
+    chunk_document_numbers: List[Optional[int]] = []
+    citation_documents: List[Dict[str, str]] = []
+    citations: List[Dict[str, Any]] = []
+    citation_number_by_pdf_url: Dict[str, int] = {}
+
+    for result in results:
+        source_docs = extract_source_docs(result)
+        prompt_result = dict(result)
+        hydrated_fields = prompt_result.pop("_hydrated_fields", [])
+        for field in hydrated_fields:
+            prompt_result.pop(field, None)
+        prompt_results.append(prompt_result)
+
+        citation_number: Optional[int] = None
+        document_reference = None
+        source_doc = source_docs[0] if source_docs else None
+        if source_doc:
+            document_reference = resolve_document_reference(source_doc)
+        if not document_reference:
+            document_reference = resolve_document_reference(
+                str(result.get("pathway_id") or "").strip() or None
+            )
+
+        if document_reference and document_reference.get("pdf_url"):
+            pdf_url = str(document_reference["pdf_url"])
+            citation_number = citation_number_by_pdf_url.get(pdf_url)
+            if citation_number is None:
+                citation_number = len(citation_documents) + 1
+                citation_number_by_pdf_url[pdf_url] = citation_number
+                citation_documents.append(
+                    {
+                        "number": str(citation_number),
+                        "source_doc": source_doc or str(document_reference["doc_name"]),
+                        "pathway_id": str(document_reference["pathway_id"]),
+                        "resource_id": str(document_reference["resource_id"]),
+                        "pdf_url": pdf_url,
+                        "pdf_name": str(document_reference["pdf_basename"]),
+                    }
+                )
+
+            citations.append(
+                {
+                    "chunk_id": int(result["chunk_id"]),
+                    "chunk_text": str(result["chunk_text"]),
+                    "chunk_length": int(result["chunk_length"]) if result["chunk_length"] is not None else 0,
+                    "source_file": source_doc or str(document_reference["doc_name"]),
+                    "source_docs": source_docs,
+                    "pdf_name": str(document_reference["pdf_basename"]),
+                    "pathway_id": str(document_reference["pathway_id"]),
+                    "resource_id": str(document_reference["resource_id"]),
+                    "similarity_score": float(result.get("distance", result.get("similarity", 0.0))),
+                }
+            )
+
+        chunk_document_numbers.append(citation_number)
+
+    return prompt_results, chunk_document_numbers, citation_documents, citations
 
 
 # Health check
@@ -259,7 +336,6 @@ async def chat_public(request: ChatRequest):
 
     try:
         top_k = request.top_k or 5
-        selected_pathway_doc_name = resolve_pathway_doc_name(request.pathway_id)
 
         # Tag-based models (e.g. medembed_large) filter by pathway_tag directly —
         # skip expanding into document-level retrieval_pathway_ids.
@@ -324,20 +400,15 @@ async def chat_public(request: ChatRequest):
         )
         print(f"DEBUG: Retrieved {len(results)} results\n")
 
-        citations = []
-        for r in results:
-            citation = {
-                "chunk_id": int(r["chunk_id"]),
-                "chunk_text": str(r["chunk_text"]),
-                "chunk_length": int(r["chunk_length"]) if r["chunk_length"] is not None else 0,
-                "source_file": str(r.get("source_file") or r.get("pathway_id") or r.get("pathway_tag") or ""),
-                "similarity_score": float(r.get("distance", r.get("similarity", 0.0))),
-            }
-            citations.append(citation)
+        prompt_results, chunk_document_numbers, citation_documents, citations = prepare_citation_results(results)
+        skipped_results = len(results) - sum(1 for number in chunk_document_numbers if number is not None)
+        if skipped_results:
+            print(f"Skipped {skipped_results} retrieved chunk(s) without exact source_docs PDF mapping.")
 
         if citations:
             print("\nTop chunk:")
             print(f"  - Source: {citations[0]['source_file']}")
+            print(f"  - PDF: {citations[0]['pdf_name']}")
             print(f"  - Similarity: {citations[0]['similarity_score']:.4f}")
         
         print(f"\n[3/6] Sending to {request.model}...")
@@ -347,8 +418,10 @@ async def chat_public(request: ChatRequest):
             db_handle, request.query, top_k=top_k,
             model_name=model_name, api_provider="gemini",
             pathway_id=request.pathway_id,
-            retrieved_results=results,
+            retrieved_results=prompt_results,
             conversation_history=history,
+            chunk_document_numbers=chunk_document_numbers,
+            citation_documents=citation_documents,
         )
         
         print(f"\n[4/6] Response received:")
@@ -378,6 +451,10 @@ async def chat_public(request: ChatRequest):
                 "chunk_text": c["chunk_text"],
                 "chunk_length": c["chunk_length"],
                 "source_file": c["source_file"],
+                "source_docs": c["source_docs"],
+                "pdf_name": c["pdf_name"],
+                "pathway_id": c["pathway_id"],
+                "resource_id": c["resource_id"],
             }
             for c in citations
         ]
