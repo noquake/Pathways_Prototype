@@ -102,22 +102,11 @@ function PractitionerChat({ apiUrl, keycloak }) {
 							<div className="message-header">
 								{msg.role === "user" ? "You" : "Assistant"}
 							</div>
-							<div className="message-content">
-								<ReactMarkdown>{msg.content}</ReactMarkdown>
-							</div>
-							{msg.citations && msg.citations.length > 0 && (
-								<div className="citations">
-									<strong>Sources:</strong>
-									{msg.citations.map((cite, cIdx) => (
-										<div key={cIdx} className="citation-item">
-											<strong>{cite.source_file}</strong> (Chunk{" "}
-											{cite.chunk_index})
-										</div>
-									))}
-								</div>
-							)}
+						<div className="message-content">
+							<ReactMarkdown>{msg.content}</ReactMarkdown>
 						</div>
-					))}
+					</div>
+				))}
 					{loading && (
 						<div className="message assistant">
 							<div className="message-content">Thinking...</div>
