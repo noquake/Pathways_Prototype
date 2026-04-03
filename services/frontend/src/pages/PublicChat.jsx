@@ -34,7 +34,7 @@ function PublicChat({ apiUrl }) {
 		message: "",
 	});
 	const [docScopedQuery, setDocScopedQuery] = useState(false);
-	const [useQueryRewriting, setUseQueryRewriting] = useState(false);
+	const [useQueryRewriting, setUseQueryRewriting] = useState(true);
 	const [openCitationsId, setOpenCitationsId] = useState("");
 	const transcriptRef = useRef(null);
 	const feedbackTextareaRef = useRef(null);
