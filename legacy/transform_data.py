@@ -68,10 +68,10 @@ def save_all_document_formats(conv_res: ConversionResult, output_dir: Path):
     #     image_mode=ImageRefMode.EMBEDDED
     # )
 
-    # save_document_doctags(
-    #     conv_res.document,
-    #     output_dir / f"{doc_filename}.doctags.txt"
-    # )
+    save_document_doctags(
+        conv_res.document,
+        output_dir / f"{doc_filename}.doctags.txt"
+    )
 
 # True if successful, False otherwise
 def handle_successful_conversion(conv_res: ConversionResult, output_dir: Path) -> bool:

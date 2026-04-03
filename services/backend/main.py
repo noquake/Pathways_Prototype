@@ -32,7 +32,7 @@ from pathways_catalog import (
 # Import existing RAG components
 from rag.embeddings import get_embeddings
 
-from rag.query import rag_api_llm as original_rag_api_llm, rewrite_query
+from rag.query import rag_api_llm as original_rag_api_llm, rewrite_query, clean_query
 from rag.retrieval import retrieve_chunks as retrieve_chunks_by_model
 from rag.models import EMBEDDING_MODELS
 
@@ -364,14 +364,17 @@ async def chat_public(request: ChatRequest):
 
         db_handle = get_supabase_client()
 
-        # --- Query rewriting ---
-        retrieval_query = request.query
+        # --- Query cleaning + rewriting ---
+        print("\n[1/6] Cleaning query...")
+        retrieval_query = clean_query(request.query)
+        if retrieval_query != request.query:
+            print(f"✓ Cleaned query: {retrieval_query}")
         if request.use_query_rewriting and request.conversation_history:
-            print("\n[1/6] Rewriting query using conversation history...")
-            retrieval_query = rewrite_query(request.query, request.conversation_history)
+            print("  Rewriting query using conversation history...")
+            retrieval_query = rewrite_query(retrieval_query, request.conversation_history)
             print(f"✓ Rewritten query: {retrieval_query}")
         else:
-            print("\n[1/6] Generating embeddings...")
+            print("  Generating embeddings...")
 
         query_emb = get_embeddings([retrieval_query], model_key=request.embedding_model, is_query=True)[0]
         query_emb_list = query_emb.tolist() if hasattr(query_emb, "tolist") else query_emb

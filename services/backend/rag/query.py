@@ -18,6 +18,36 @@ CITATION_RE = re.compile(r"\[(\d+)\]")
 # ollama_client = Client(host="http://localhost:11434")  # default port for local Ollama server
 
 
+def clean_query(query: str) -> str:
+    """
+    Fix typos and grammar in every query before retrieval.
+    Uses Gemini flash so it's fast. Returns the original query on failure.
+    Medical terminology is preserved — the model is instructed not to alter it.
+    """
+    if not GEMINI_API_KEY or not query.strip():
+        return query
+
+    prompt = (
+        "Fix any spelling mistakes and grammar errors in the following clinical query. "
+        "Do NOT change medical terms, drug names, or clinical abbreviations. "
+        "Return ONLY the corrected query with no explanation or extra text.\n\n"
+        f"Query: {query}\n\n"
+        "Corrected query:"
+    )
+
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
+        )
+        cleaned = response.text.strip()
+        return cleaned if cleaned else query
+    except Exception as e:
+        print(f"⚠ Query cleaning failed, using original: {e}")
+        return query
+
+
 def rewrite_query(query: str, conversation_history: list) -> str:
     """
     Use Gemini Flash to rewrite a follow-up query into a self-contained question
