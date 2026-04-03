@@ -465,7 +465,7 @@ function PublicChat({ apiUrl }) {
 												</div>
 											)}
 											<div className="chat-content">
-												<ReactMarkdown>{msg.content}</ReactMarkdown>
+												<ReactMarkdown>{msg.content.replace(/\n\nSources:[\s\S]*$/, '').trim()}</ReactMarkdown>
 											</div>
 											{msg.role === "assistant" && msg.citations?.length > 0 && (
 												<>

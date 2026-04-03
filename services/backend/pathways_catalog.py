@@ -1118,7 +1118,12 @@ HIDDEN_SOURCE_ALIASES: List[Dict[str, str]] = [{'pathway_id': 'asthma',
  {'pathway_id': 'pneumonia',
   'source_file': 'cap-appendix-b-aki-definition',
   'preview_resource_id': 'algorithm'},
- {'pathway_id': 'pneumonia', 'source_file': 'cap-main-pathway', 'preview_resource_id': 'algorithm'}]
+ {'pathway_id': 'pneumonia', 'source_file': 'cap-main-pathway', 'preview_resource_id': 'algorithm'},
+ {'pathway_id': 'fever-sepsis-infant', 'source_file': 'fever-sepsis-infant-29-60-days', 'preview_resource_id': 'pathway'},
+ {'pathway_id': 'fever-sepsis-neonate', 'source_file': 'fever-sepsis-neonate-0-28-days', 'preview_resource_id': 'pathway'},
+ {'pathway_id': 'fever-sepsis-neonate', 'source_file': 'fever-sepsis-neonate-0-28-days-appendix-a', 'preview_resource_id': 'pathway'},
+ {'pathway_id': 'ssti', 'source_file': 'ssti-clinical-pathway', 'preview_resource_id': 'pathway'},
+ {'pathway_id': 'ssti', 'source_file': 'ssti-educational-module', 'preview_resource_id': 'educational-module'}]
 
 ACTIVE_PATHWAY_IDS = {
     "asthma",
@@ -1136,6 +1141,13 @@ def _pdf_basename_from_url(pdf_url: str) -> str:
 def _build_document_reference_by_doc_name() -> Dict[str, Dict[str, str]]:
     reference_by_doc_name: Dict[str, Dict[str, str]] = {}
 
+    def _add_reference(key: str, reference: Dict[str, str]) -> None:
+        """Index by key and its underscore-normalised variant (covers chunk source_docs format)."""
+        reference_by_doc_name.setdefault(key, reference)
+        underscore_key = key.replace("-", "_")
+        if underscore_key != key:
+            reference_by_doc_name.setdefault(underscore_key, reference)
+
     for pathway in PATHWAY_CATALOG:
         for resource in pathway["resources"]:
             doc_name = resource.get("doc_name")
@@ -1152,7 +1164,29 @@ def _build_document_reference_by_doc_name() -> Dict[str, Dict[str, str]]:
             reference_by_doc_name[doc_name] = reference
             medembed_id = resource.get("medembed_id")
             if medembed_id:
-                reference_by_doc_name[medembed_id] = reference
+                _add_reference(medembed_id, reference)
+
+    # Resolve HIDDEN_SOURCE_ALIASES so citation lookup works for chunk
+    # source_docs / pathway_id values that aren't direct catalog doc_names.
+    pathway_by_id = {p["id"]: p for p in PATHWAY_CATALOG}
+    for alias in HIDDEN_SOURCE_ALIASES:
+        pathway = pathway_by_id.get(alias["pathway_id"])
+        if not pathway:
+            continue
+        resource = next(
+            (r for r in pathway["resources"] if r["id"] == alias["preview_resource_id"]),
+            None,
+        )
+        if not resource or not resource.get("pdf_url"):
+            continue
+        ref = {
+            "pathway_id": pathway["id"],
+            "resource_id": resource["id"],
+            "doc_name": resource.get("doc_name", ""),
+            "pdf_url": resource["pdf_url"],
+            "pdf_basename": _pdf_basename_from_url(resource["pdf_url"]),
+        }
+        _add_reference(alias["source_file"], ref)
 
     return reference_by_doc_name
 

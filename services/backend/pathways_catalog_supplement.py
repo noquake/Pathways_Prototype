@@ -81,6 +81,11 @@ HIDDEN_SOURCE_ALIASES: List[Dict[str, str]] = [
         "source_file": "cap-main-pathway",
         "preview_resource_id": "algorithm",
     },
+    {"pathway_id": "fever-sepsis-infant", "source_file": "fever-sepsis-infant-29-60-days", "preview_resource_id": "pathway"},
+    {"pathway_id": "fever-sepsis-neonate", "source_file": "fever-sepsis-neonate-0-28-days", "preview_resource_id": "pathway"},
+    {"pathway_id": "fever-sepsis-neonate", "source_file": "fever-sepsis-neonate-0-28-days-appendix-a", "preview_resource_id": "pathway"},
+    {"pathway_id": "ssti", "source_file": "ssti-clinical-pathway", "preview_resource_id": "pathway"},
+    {"pathway_id": "ssti", "source_file": "ssti-educational-module", "preview_resource_id": "educational-module"},
 ]
 
 # Manual PDF URL corrections that should survive catalog regeneration.
