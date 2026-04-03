@@ -36,6 +36,7 @@ function PublicChat({ apiUrl }) {
 	const [docScopedQuery, setDocScopedQuery] = useState(false);
 	const [useQueryRewriting, setUseQueryRewriting] = useState(true);
 	const [openCitationsId, setOpenCitationsId] = useState("");
+	const [darkMode, setDarkMode] = useState(false);
 	const transcriptRef = useRef(null);
 	const feedbackTextareaRef = useRef(null);
 
@@ -330,10 +331,20 @@ function PublicChat({ apiUrl }) {
 	};
 
 	return (
-		<div className="public-chat-page">
+		<div className={`public-chat-page${darkMode ? " dark" : ""}`}>
 			<div className="public-chat-layout">
 				<section className="public-chat-main">
-					<h1 className="public-chat-title">Pathways</h1>
+					<div className="public-chat-header">
+						<a href="/" className="public-chat-title">Pathways</a>
+						<button
+							type="button"
+							className="theme-toggle"
+							onClick={() => setDarkMode((prev) => !prev)}
+							aria-label="Toggle dark mode"
+						>
+							{darkMode ? "☀" : "☾"}
+						</button>
+					</div>
 
 					<label className="pathway-select-label" htmlFor="pathway-select">
 						Selected Pathway

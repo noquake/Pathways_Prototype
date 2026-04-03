@@ -31,12 +31,12 @@ const Landing = () => {
               <span> — Ask questions about the Clinical Pathways without logging in.</span>
             </li>
             <li>
-              <a href="https://www.connecticutchildrens.org/medical-professionals/clinical-pathways" target="_blank" rel="noreferrer">Pathway Explorer</a>
-              <span> — Browse the original Connecticut Children's clinical pathways this project is built on.</span>
+              <a href="https://drive.google.com/drive/folders/1emGXMCx-WxlsVjAwMLyVEpx5XhPHmJvd?usp=drive_link" target="_blank" rel="noreferrer">Project Notes</a>
+              <span> — Documentation, research notes, and project resources.</span>
             </li>
             <li>
-              <a href="/evidence" className="placeholder">Evidence & References</a>
-              <span className="placeholder"> — coming soon</span>
+              <a href="https://www.connecticutchildrens.org/medical-professionals/clinical-pathways" target="_blank" rel="noreferrer">Pathway Explorer</a>
+              <span> — Browse the original Connecticut Children's clinical pathways this project is built on.</span>
             </li>
             <li>
               <a href="/auth" className="placeholder">Authentication & User Access</a>

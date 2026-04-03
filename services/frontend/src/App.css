@@ -41,7 +41,7 @@
 }
 
 .message.user {
-  background-color: #e3f2fd;
+  background-color: #f4f1f0;
   margin-left: 20%;
 }
 
@@ -53,14 +53,14 @@
 .message-header {
   font-weight: 600;
   margin-bottom: 8px;
-  color: #1976d2;
+  color: var(--color-primary, #630330);
 }
 
 .citations {
   margin-top: 10px;
   padding: 10px;
   background-color: #fafafa;
-  border-left: 3px solid #1976d2;
+  border-left: 3px solid var(--color-primary, #630330);
   border-radius: 4px;
 }
 
@@ -71,7 +71,7 @@
 }
 
 .citation-item strong {
-  color: #1976d2;
+  color: var(--color-primary, #630330);
 }
 
 .input-container {
@@ -90,7 +90,7 @@
 
 .submit-button {
   padding: 12px 24px;
-  background-color: #1976d2;
+  background-color: var(--color-primary, #630330);
   color: white;
   border: none;
   border-radius: 4px;
@@ -99,7 +99,7 @@
 }
 
 .submit-button:hover {
-  background-color: #1565c0;
+  background-color: #4a0224;
 }
 
 .submit-button:disabled {
