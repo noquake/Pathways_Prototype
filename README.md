@@ -1,110 +1,70 @@
-# Pathways Prototype
+# Local RAG Pipeline with Docling and PostgreSQL + pgvector
 
-A **Retrieval-Augmented Generation (RAG)** system built for the Connecticut Children's use case. The core focus is clean data processing and high-fidelity retrieval — clinical pathways are dense, structured documents and preserving their integrity from ingestion through retrieval is the priority.
+A lightweight **Retrieval-Augmented Generation** system using:
+
+- **Docling** for PDF and Word document ingestion and generation of various files for later LLM ingestion (primarily .md at this stage 12/25)
+- **SentenceTransformers** for embedding generation
+- **Docker** spinning containers for embedding and (future) usage statistics as well as pgadmin for simple monitoring of database activity via docker-compose
+- **PostgreSQL + PGVector** preferred database technology for this project and pjvector for injection of embeddings into containers
+
+This project has been designed to be as clear as possible in its execution and debugging. It streams the generation of chunks, embeddings and their injection the docker database to reduce memory usage.
+
+## TO-DO
+
+- review HNSW and graph recall solutions (graphrag)
+- citation information support in chunk generation based on document & document page origin
+- PUBLIC ASSISTANT
+  - Single-page web app (React / Next.js / simple HTML+JS)
+  - Chat UI (prompt → response)
+  - Stateless back-end calls (no session persistence)
+  - Rate-limiting + abuse protection
+  - Pathway citation display (doc name + section)
+- AUTHENTICATED PRACTITIONER
+  - Secure login
+  - Role = Practitioner
+  - Persistent conversational context
+  - Query history tied to user identity
+  - Team based collaboration?
+  - EMR/EHR integration?
+- ADMINISTRATIVE DASHBOARD
+  - Login + admin role
+  - Usage metrics:
+    - Number of queries
+    - Most accessed pathways
+    - Peak usage times
+    - Public vs staff usage split
+  - Health monitoring:
+    - System uptime
+    - Ingestion status
+    - Embedding freshness
+  - Exportable reports (CSV)
 
 ---
 
-## Description
+## Getting Started
 
-This prototype ingests clinical pathway documents, chunks and embeds them, and stores them in a vector database for semantic retrieval. A FastAPI backend handles query routing and LLM interaction, served locally via Uvicorn.
+### Prerequisites
 
-The project has pivoted away from a Docker-based development environment. Running services locally through **Uvicorn** provides significantly clearer debugging and faster iteration. Storage and database concerns have been offloaded to **Supabase**, removing the overhead of managing local containers and freeing the team to focus on what matters most: retrieval quality and prompt engineering.
-
-### Technologies
-
-| Layer                          | Tool                                                                       |
-| ------------------------------ | -------------------------------------------------------------------------- |
-| Document ingestion             | [Docling](https://github.com/DS4SD/docling) initially -> Claude Sonnet 4.6 |
-| Embeddings                     | SentenceTransformers (Various models)                                      |
-| Vector storage                 | PostgreSQL + pgvector (via Supabase)                                       |
-| Backend                        | FastAPI + Uvicorn                                                          |
-| Frontend                       | React                                                                      |
-| Code Hygiene + Static analysis | [Vulture](https://github.com/jendrikseipp/vulture)                         |
-| Auth (planned)                 | Keycloak                                                                   |
+- Python 3.11+
+- Docker
+- PostgreSQL with pgvector extension
 
 ---
 
-## Installation
-
-**Prerequisites:** Python 3.11+, Node.js
+### 1. Install Dependencies
 
 ```bash
-# Clone the repo
-git clone https://github.com/noquake/Pathways_Prototype.git
-cd Pathways_Prototype
-
-# Create and activate virtual environment
+# Create virtual environment
 python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
-.venv\Scripts\activate     # Windows
 
-# Install dependencies
+# Install Python packages
 pip install -r requirements.txt
 ```
 
-Set up your environment variables:
+### 2. Spin up psql database and administration containers
 
 ```bash
-cp .env.example .env
-# Fill in your Supabase URL, anon key, and OpenAI/LLM API key
-```
-
----
-
-## Running
-
-```bash
-# Start the backend
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-# In a separate terminal, start the frontend
-cd services/frontend
-npm install
-npm run dev
-```
-
-The API will be available at `http://localhost:8000` and the frontend at `http://localhost:5173`.
-
-To identify unused code before making changes:
-
-```bash
-pip install vulture
-vulture services/ --min-confidence 80
-```
-
----
-
-## Next Steps
-
-- **Prompt engineering** — refine system prompts to improve grounding and citation accuracy against clinical pathway content
-- **Retrieval tuning** — improve chunking strategy and similarity thresholds to maximize fidelity of returned context
-- **Session separation** — isolate conversation context per user session for cleaner multi-turn interactions
-- **User accounts** — persistent conversation history and per-user query tracking (most accessed pathways, usage patterns)
-- **Role-based access** — public assistant vs. authenticated practitioner vs. admin dashboard, via Keycloak
-
-## Useful Commands
-
-- List of available Pathways
-
-```bash
-curl -s http://localhost:8000/pathways | jq
-```
-
-- Using a different
-
-```bash
-curl -s -X POST http://localhost:8000/chat/public \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "Signs of anaphylaxis?",
-    "pathway_id": "anaphylaxis",
-    "embedding_model": "medcpt",
-    "model_name": "gemini-2.0-flash"
-  }' | jq
-```
-
-- Healthcheck
-
-```bash
-curl -s http://localhost:8000/health
+docker compose up -d
+docker ps # check status of containers
 ```
