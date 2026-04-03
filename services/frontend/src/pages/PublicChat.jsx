@@ -35,6 +35,7 @@ function PublicChat({ apiUrl }) {
 	});
 	const [docScopedQuery, setDocScopedQuery] = useState(false);
 	const [useQueryRewriting, setUseQueryRewriting] = useState(false);
+	const [openCitationsId, setOpenCitationsId] = useState("");
 	const transcriptRef = useRef(null);
 	const feedbackTextareaRef = useRef(null);
 
@@ -341,7 +342,11 @@ function PublicChat({ apiUrl }) {
 						id="pathway-select"
 						className="pathway-select"
 						value={selectedPathwayId}
-						onChange={(e) => setSelectedPathwayId(e.target.value)}
+						onChange={(e) => {
+							setSelectedPathwayId(e.target.value);
+							setMessages([]);
+							setOpenCitationsId("");
+						}}
 						disabled={pathways.length === 0}
 					>
 						{pathways.length === 0 ? (
@@ -462,6 +467,35 @@ function PublicChat({ apiUrl }) {
 											<div className="chat-content">
 												<ReactMarkdown>{msg.content}</ReactMarkdown>
 											</div>
+											{msg.role === "assistant" && msg.citations?.length > 0 && (
+												<>
+													<button
+														type="button"
+														className="citations-toggle"
+														onClick={() =>
+															setOpenCitationsId((prev) =>
+																prev === (msg.queryId || String(idx)) ? "" : (msg.queryId || String(idx))
+															)
+														}
+													>
+														{openCitationsId === (msg.queryId || String(idx))
+															? "Hide sources"
+															: `Sources (${msg.citations.length})`}
+													</button>
+													{openCitationsId === (msg.queryId || String(idx)) && (
+														<div className="citations-panel">
+															{msg.citations.map((c, ci) => (
+																<div key={c.chunk_id || ci} className="citation-item">
+																	<div className="citation-source">
+																		{c.pdf_name || c.pathway_id || c.source_file || "Unknown source"}
+																	</div>
+																	<div className="citation-text">{c.chunk_text}</div>
+																</div>
+															))}
+														</div>
+													)}
+												</>
+											)}
 											{msg.role === "assistant" &&
 												(msg.feedbackComment || msg.userFeedback) &&
 												openFeedbackEditorId !== msg.queryId && (

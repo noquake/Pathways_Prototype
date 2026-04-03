@@ -358,6 +358,51 @@
 	color: #b0454d;
 }
 
+.citations-toggle {
+	border: 1px solid #d1d4d9;
+	border-radius: 999px;
+	background: #f7f7f9;
+	color: #64676d;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 6px 12px;
+	margin-top: 10px;
+}
+
+.citations-toggle:hover {
+	background: #ebebef;
+}
+
+.citations-panel {
+	margin-top: 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.citation-item {
+	border: 1px solid #e1e2e6;
+	border-radius: 8px;
+	background: #fff;
+	padding: 10px 12px;
+}
+
+.citation-source {
+	font-size: 12px;
+	font-weight: 700;
+	color: #5b5e64;
+	margin-bottom: 6px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.citation-text {
+	font-size: 14px;
+	color: #4f5258;
+	line-height: 1.5;
+}
+
 .pathway-panel {
 	background: #f5f5f7;
 	border: 1px solid #e4e5e8;
