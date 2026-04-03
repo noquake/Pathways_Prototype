@@ -60,7 +60,12 @@ def build_context(results):
     if results and isinstance(results[0], dict):
         context_lines = []
         for i, r in enumerate(results):
-            source = r.get("source_file") or r.get("pathway_id") or "unknown"
+            source_docs_field = r.get("source_docs") or []
+            if isinstance(source_docs_field, list):
+                source_doc = source_docs_field[0] if source_docs_field else None
+            else:
+                source_doc = str(source_docs_field).strip() or None
+            source = source_doc or r.get("pathway_id") or "unknown"
             text = r.get("chunk_text", "")
             context_lines.append(f"[{i+1}] {source}: {text}")
         return "\n\n".join(context_lines)
@@ -102,7 +107,11 @@ def append_sources_legend(
         seen_document_numbers.add(document_number)
 
     if not used_document_numbers:
-        return normalized_answer
+        # LLM cited no chunks inline; still list all retrieved source docs
+        legend_lines = ["Sources:"]
+        for i, doc in enumerate(citation_documents, start=1):
+            legend_lines.append(f"[{i}] {doc['pdf_name']}")
+        return f"{normalized_answer}\n\n" + "\n".join(legend_lines)
 
     document_renumber_map = {
         original_document_number: replacement_number
@@ -129,6 +138,13 @@ def append_sources_legend(
         legend_lines.append(
             f"[{replacement_number}] {citation_documents[original_number - 1]['pdf_name']}"
         )
+
+    # Append any retrieved docs the LLM didn't explicitly cite
+    next_number = len(used_document_numbers) + 1
+    for i in range(1, len(citation_documents) + 1):
+        if i not in seen_document_numbers:
+            legend_lines.append(f"[{next_number}] {citation_documents[i - 1]['pdf_name']}")
+            next_number += 1
 
     return f"{normalized_answer}\n\n" + "\n".join(legend_lines)
 
