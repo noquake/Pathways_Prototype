@@ -1,8 +1,55 @@
+:root {
+	--bg-page:        #f4f1f0;
+	--bg-panel:       #f8f5f4;
+	--bg-card:        #f0eceb;
+	--bg-input:       #ebe7e6;
+	--bg-chat-area:   #f7f4f3;
+	--bg-citation:    #fff;
+	--border:         #e2d8d6;
+	--border-input:   #d6ccc9;
+	--border-inner:   #ddd4d1;
+	--text-primary:   #2a1a1f;
+	--text-body:      #4a3a3e;
+	--text-muted:     #7a6468;
+	--text-input:     #4a3a3e;
+	--accent:         #630330;
+	--accent-hover:   #4a0224;
+	--accent-secondary: #2d5a27;
+	--user-icon:      #630330;
+	--assistant-icon: #2d5a27;
+	--toggle-active:  #630330;
+	--toggle-text:    #fff;
+}
+
+.dark {
+	--bg-page:        #120a0d;
+	--bg-panel:       #1c1014;
+	--bg-card:        #261820;
+	--bg-input:       #2e1e26;
+	--bg-chat-area:   #201418;
+	--bg-citation:    #2a1a20;
+	--border:         #3d2530;
+	--border-input:   #4a2e38;
+	--border-inner:   #3d2530;
+	--text-primary:   #f0e8ea;
+	--text-body:      #d4c4c8;
+	--text-muted:     #8a7278;
+	--text-input:     #d0c0c4;
+	--accent:         #31081F;
+	--accent-hover:   #4a0f30;
+	--accent-secondary: #5a9e52;
+	--user-icon:      #31081F;
+	--assistant-icon: #5a9e52;
+	--toggle-active:  #31081F;
+	--toggle-text:    #fff;
+}
+
 .public-chat-page {
 	height: 100vh;
 	width: 100%;
 	padding: 12px;
 	box-sizing: border-box;
+	background: var(--bg-page);
 }
 
 .public-chat-layout {
@@ -15,34 +62,65 @@
 .public-chat-main {
 	display: flex;
 	flex-direction: column;
-	background: #f5f5f7;
-	border: 1px solid #e4e5e8;
+	background: var(--bg-panel);
+	border: 1px solid var(--border);
 	border-radius: 12px;
 	padding: 16px;
 	min-height: 0;
 }
 
+.public-chat-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
 .public-chat-title {
-	margin: 0 0 10px 0;
 	font-size: 40px;
 	line-height: 1;
-	color: #3a3a3c;
-	font-weight: 700;
+	color: var(--accent);
+	font-weight: 800;
+	text-decoration: none;
+	letter-spacing: -0.5px;
+}
+
+.public-chat-title:hover {
+	color: var(--accent-hover);
+}
+
+.dark .public-chat-title {
+	color: #fff;
+}
+
+.dark .public-chat-title:hover {
+	color: #e8d0d4;
+}
+
+.theme-toggle {
+	border: 1px solid var(--border-input);
+	border-radius: 999px;
+	background: var(--bg-input);
+	color: var(--text-body);
+	cursor: pointer;
+	font-size: 18px;
+	line-height: 1;
+	padding: 6px 10px;
 }
 
 .pathway-select-label {
 	font-size: 13px;
-	color: #70757e;
+	color: var(--text-muted);
 	font-weight: 600;
 	margin-bottom: 6px;
 }
 
 .pathway-select {
 	appearance: none;
-	border: 1px solid #d9dbe0;
+	border: 1px solid var(--border-input);
 	border-radius: 9px;
-	background: #ebecf0;
-	color: #484a4f;
+	background: var(--bg-input);
+	color: var(--text-body);
 	padding: 10px 14px;
 	font-size: 18px;
 	margin-bottom: 12px;
@@ -56,10 +134,10 @@
 }
 
 .chat-toggle-btn {
-	border: 1px solid #d9dbe0;
+	border: 1px solid var(--border-input);
 	border-radius: 999px;
-	background: #ebecf0;
-	color: #4f5258;
+	background: var(--bg-input);
+	color: var(--text-body);
 	cursor: pointer;
 	font-size: 13px;
 	font-weight: 600;
@@ -68,9 +146,9 @@
 }
 
 .chat-toggle-btn.active {
-	background: #2f3135;
-	border-color: #2f3135;
-	color: #fff;
+	background: var(--toggle-active);
+	border-color: var(--toggle-active);
+	color: var(--toggle-text);
 }
 
 .question-form {
@@ -81,28 +159,32 @@
 
 .question-input {
 	flex: 1;
-	border: 1px solid #d9dbe0;
+	border: 1px solid var(--border-input);
 	border-radius: 9px;
-	background: #ebecf0;
-	color: #4d5056;
+	background: var(--bg-input);
+	color: var(--text-input);
 	padding: 12px 14px;
 	font-size: 24px;
 	line-height: 1.2;
 }
 
 .question-input::placeholder {
-	color: #8a8d93;
+	color: var(--text-muted);
 }
 
 .question-submit {
 	width: 54px;
 	border: none;
 	border-radius: 9px;
-	background: #d2d4d9;
-	color: #676a70;
+	background: var(--accent);
+	color: #fff;
 	font-size: 28px;
 	font-weight: 700;
 	cursor: pointer;
+}
+
+.question-submit:hover:not(:disabled) {
+	background: var(--accent-hover);
 }
 
 .question-submit:disabled {
@@ -113,9 +195,9 @@
 .chat-transcript {
 	flex: 1;
 	overflow-y: auto;
-	border: 1px solid #e1e2e6;
+	border: 1px solid var(--border-inner);
 	border-radius: 10px;
-	background: #f7f7f9;
+	background: var(--bg-chat-area);
 	padding: 14px;
 }
 
@@ -123,7 +205,7 @@
 	display: grid;
 	grid-template-columns: 38px 1fr;
 	gap: 12px;
-	background: #efeff3;
+	background: var(--bg-card);
 	border-radius: 10px;
 	padding: 14px;
 	margin-bottom: 12px;
@@ -146,17 +228,17 @@
 }
 
 .chat-icon.user {
-	background: #ef7f86;
+	background: var(--user-icon);
 	color: #fff;
 }
 
 .chat-icon.assistant {
-	background: #efc15f;
+	background: var(--assistant-icon);
 	color: #fff;
 }
 
 .chat-content {
-	color: #4f5258;
+	color: var(--text-body);
 	line-height: 1.32;
 }
 
@@ -171,6 +253,7 @@
 
 .chat-card.user .chat-content {
 	font-size: 30px;
+	color: var(--text-primary);
 }
 
 .chat-card.assistant .chat-content {
@@ -359,10 +442,10 @@
 }
 
 .citations-toggle {
-	border: 1px solid #d1d4d9;
+	border: 1px solid var(--border-input);
 	border-radius: 999px;
-	background: #f7f7f9;
-	color: #64676d;
+	background: var(--bg-input);
+	color: var(--text-muted);
 	cursor: pointer;
 	font-size: 13px;
 	font-weight: 600;
@@ -371,7 +454,7 @@
 }
 
 .citations-toggle:hover {
-	background: #ebebef;
+	background: var(--bg-card);
 }
 
 .citations-panel {
@@ -382,16 +465,16 @@
 }
 
 .citation-item {
-	border: 1px solid #e1e2e6;
+	border: 1px solid var(--border-inner);
 	border-radius: 8px;
-	background: #fff;
+	background: var(--bg-citation);
 	padding: 10px 12px;
 }
 
 .citation-source {
 	font-size: 12px;
 	font-weight: 700;
-	color: #5b5e64;
+	color: var(--accent-secondary);
 	margin-bottom: 6px;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
@@ -399,13 +482,13 @@
 
 .citation-text {
 	font-size: 14px;
-	color: #4f5258;
+	color: var(--text-body);
 	line-height: 1.5;
 }
 
 .pathway-panel {
-	background: #f5f5f7;
-	border: 1px solid #e4e5e8;
+	background: var(--bg-panel);
+	border: 1px solid var(--border);
 	border-radius: 12px;
 	padding: 16px;
 	display: flex;
@@ -421,8 +504,8 @@
 }
 
 .pathway-panel-title {
-	background: #d2d4d9;
-	color: #2f3135;
+	background: var(--accent);
+	color: #fff;
 	font-size: 19px;
 	font-weight: 700;
 	line-height: 1.25;
@@ -433,7 +516,7 @@
 
 .pathway-panel-link {
 	align-self: flex-end;
-	color: #4f5258;
+	color: var(--accent);
 	font-size: 14px;
 	font-weight: 600;
 	text-decoration: none;
@@ -450,10 +533,10 @@
 }
 
 .pathway-resource-button {
-	border: 1px solid #d9dbe0;
+	border: 1px solid var(--border-input);
 	border-radius: 999px;
-	background: #ebecf0;
-	color: #4f5258;
+	background: var(--bg-input);
+	color: var(--text-body);
 	cursor: pointer;
 	font-size: 13px;
 	font-weight: 600;
@@ -461,8 +544,8 @@
 }
 
 .pathway-resource-button.active {
-	background: #2f3135;
-	border-color: #2f3135;
+	background: var(--accent);
+	border-color: var(--accent);
 	color: #fff;
 }
 
