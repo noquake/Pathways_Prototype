@@ -8,6 +8,7 @@ function PractitionerChat({ apiUrl, keycloak }) {
 	const [messages, setMessages] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [history, setHistory] = useState([]);
+	const [copiedQueryId, setCopiedQueryId] = useState("");
 
 	useEffect(() => {
 		// Load conversation history
@@ -16,6 +17,13 @@ function PractitionerChat({ apiUrl, keycloak }) {
 			loadHistory(userId);
 		}
 	}, [keycloak]);
+
+	const handleCopySessionId = (queryId) => {
+		navigator.clipboard.writeText(queryId).then(() => {
+			setCopiedQueryId(queryId);
+			setTimeout(() => setCopiedQueryId(""), 1500);
+		});
+	};
 
 	const loadHistory = async (userId) => {
 		try {
@@ -61,6 +69,7 @@ function PractitionerChat({ apiUrl, keycloak }) {
 				content: response.data.response,
 				citations: response.data.citations || [],
 				timestamp: response.data.timestamp,
+				queryId: response.data.query_id || "",
 			};
 			setMessages((prev) => [...prev, assistantMessage]);
 		} catch (error) {
@@ -105,6 +114,18 @@ function PractitionerChat({ apiUrl, keycloak }) {
 						<div className="message-content">
 							<ReactMarkdown>{msg.content}</ReactMarkdown>
 						</div>
+						{msg.role === "assistant" && msg.queryId && (
+							<button
+								type="button"
+								className="session-id-badge"
+								onClick={() => handleCopySessionId(msg.queryId)}
+								title="Click to copy session ID"
+							>
+								{copiedQueryId === msg.queryId
+									? "Copied!"
+									: `ID: ${msg.queryId}`}
+							</button>
+						)}
 					</div>
 				))}
 					{loading && (

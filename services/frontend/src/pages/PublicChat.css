@@ -427,6 +427,31 @@
 	color: #fff;
 }
 
+.session-id-badge {
+	display: inline-block;
+	margin-top: 10px;
+	border: 1px solid #d1d4d9;
+	border-radius: 999px;
+	background: #f0f0f4;
+	color: #7a7d83;
+	cursor: pointer;
+	font-size: 11px;
+	font-family: monospace;
+	font-weight: 600;
+	padding: 3px 10px;
+	letter-spacing: 0.01em;
+	transition: background 0.1s, color 0.1s;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.session-id-badge:hover {
+	background: #e3e4e8;
+	color: #4f5258;
+}
+
 .feedback-note {
 	font-size: 13px;
 	font-weight: 600;
