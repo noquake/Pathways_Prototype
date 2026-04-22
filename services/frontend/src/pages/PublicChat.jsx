@@ -37,6 +37,7 @@ function PublicChat({ apiUrl }) {
 	const [useQueryRewriting, setUseQueryRewriting] = useState(true);
 	const [openCitationsId, setOpenCitationsId] = useState("");
 	const [darkMode, setDarkMode] = useState(false);
+	const [copiedQueryId, setCopiedQueryId] = useState("");
 	const transcriptRef = useRef(null);
 	const feedbackTextareaRef = useRef(null);
 
@@ -162,6 +163,13 @@ function PublicChat({ apiUrl }) {
 		Object.prototype.hasOwnProperty.call(feedbackSelections, message.queryId)
 			? feedbackSelections[message.queryId]
 			: message.userFeedback || "";
+
+	const handleCopySessionId = (queryId) => {
+		navigator.clipboard.writeText(queryId).then(() => {
+			setCopiedQueryId(queryId);
+			setTimeout(() => setCopiedQueryId(""), 1500);
+		});
+	};
 
 	const resetFeedbackEditor = (message) => {
 		setFeedbackDrafts((prev) => ({
@@ -478,6 +486,18 @@ function PublicChat({ apiUrl }) {
 											<div className="chat-content">
 												<ReactMarkdown>{msg.content.replace(/\n\nSources:[\s\S]*$/, '').trim()}</ReactMarkdown>
 											</div>
+											{msg.role === "assistant" && msg.queryId && (
+												<button
+													type="button"
+													className="session-id-badge"
+													onClick={() => handleCopySessionId(msg.queryId)}
+													title="Click to copy session ID"
+												>
+													{copiedQueryId === msg.queryId
+														? "Copied!"
+														: `ID: ${msg.queryId}`}
+												</button>
+											)}
 											{msg.role === "assistant" && msg.citations?.length > 0 && (
 												<>
 													<button
