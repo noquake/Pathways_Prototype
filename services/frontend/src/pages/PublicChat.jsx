@@ -486,6 +486,18 @@ function PublicChat({ apiUrl }) {
 											<div className="chat-content">
 												<ReactMarkdown>{msg.content.replace(/\n\nSources:[\s\S]*$/, '').trim()}</ReactMarkdown>
 											</div>
+											{msg.role === "assistant" && msg.queryId && (
+												<button
+													type="button"
+													className="session-id-badge"
+													onClick={() => handleCopySessionId(msg.queryId)}
+													title="Click to copy session ID"
+												>
+													{copiedQueryId === msg.queryId
+														? "Copied!"
+														: `ID: ${msg.queryId}`}
+												</button>
+											)}
 											{msg.role === "assistant" && msg.citations?.length > 0 && (
 												<>
 													<button
@@ -514,18 +526,6 @@ function PublicChat({ apiUrl }) {
 														</div>
 													)}
 												</>
-											)}
-											{msg.role === "assistant" && msg.queryId && (
-												<button
-													type="button"
-													className="session-id-badge"
-													onClick={() => handleCopySessionId(msg.queryId)}
-													title="Click to copy session ID"
-												>
-													{copiedQueryId === msg.queryId
-														? "Copied!"
-														: `ID: ${msg.queryId}`}
-												</button>
 											)}
 											{msg.role === "assistant" &&
 												(msg.feedbackComment || msg.userFeedback) &&

@@ -435,7 +435,7 @@
 	background: #f0f0f4;
 	color: #7a7d83;
 	cursor: pointer;
-	font-size: 11px;
+	font-size: 15px;
 	font-family: monospace;
 	font-weight: 600;
 	padding: 3px 10px;
@@ -445,6 +445,7 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	align-self: flex-start;
 }
 
 .session-id-badge:hover {
