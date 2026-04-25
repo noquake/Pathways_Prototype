@@ -12,6 +12,7 @@
 \usepackage{ragged2e}
 \usepackage{epstopdf}
 \usepackage{array}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,calc,positioning,shadows}
 
@@ -36,7 +37,7 @@
 \setlength{\onecolwid}{0.29\paperwidth}
 \setlength{\twocolwid}{0.610\paperwidth}
 \setlength{\threecolwid}{0.815\paperwidth}
-\setlength{\topmargin}{-0.5in}
+\setlength{\topmargin}{-0.75in}
 
 % Theme support: the template expects a garnet color.
 \definecolor{garnet}{HTML}{741947}
@@ -55,6 +56,11 @@
 \definecolor{PathwaysPurple}{HTML}{7B2DA0}
 
 \setbeamercolor{background canvas}{bg=PathwaysCream}
+\setbeamertemplate{background canvas}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[PathwaysCream] (current page.south west) rectangle (current page.north east);
+  \end{tikzpicture}%
+}
 \setbeamercolor{block title}{fg=PathwaysBurgundy,bg=PathwaysCream}
 \setbeamercolor{block body}{fg=black,bg=PathwaysCream}
 \setbeamercolor{block alerted title}{fg=white,bg=PathwaysBurgundy}
@@ -169,54 +175,60 @@
 %-----------------------------------------------------------
 \setbeamertemplate{headline}{
  \leavevmode
- \vskip0.35cm
+ \vspace*{\dimexpr1cm+20pt\relax}
   \begin{columns}[c,totalwidth=\textwidth]
    \begin{column}{0.16\textwidth}
      \centering
-     \includegraphics[height=4.2cm]{trinityLogo.png}
+     \includegraphics[height=5.1cm]{trinityLogo.png}
    \end{column}
    \begin{column}{0.68\textwidth}
     \centering
-    {\color{PathwaysBurgundy}\fontsize{80pt}{86pt}\selectfont\textbf{\inserttitle}\\[0.35ex]}
-    {\color{PathwaysGreen}\Large\itshape Intelligent document search for pediatric clinical decision support\\[0.9ex]}
-    {\color{PathwaysGray}\large \insertauthor\\[0.5ex]}
+    {\color{PathwaysBurgundy}\fontsize{68pt}{72pt}\selectfont\textbf{\inserttitle}\\[0.15ex]}
+    {\color{PathwaysGreen}\Large\itshape Intelligent document search for pediatric clinical decision support\\[0.4ex]}
+    {\color{PathwaysGray}\large \insertauthor\\[0.25ex]}
     {\color{PathwaysGray}\normalsize \insertinstitute}
    \end{column}
    \begin{column}{0.16\textwidth}
      \centering
-     \includegraphics[width=0.92\linewidth]{pathways_assets/ct_childrens_logo.png}
+     \includegraphics[width=0.85\linewidth]{pathways_assets/ct_childrens_logo.png}
    \end{column}
   \end{columns}
- \vspace{0.18in}
+ \vspace{0.06in}
  \centering
  {\color{PathwaysBurgundy}\rule{0.97\textwidth}{0.07cm}}
- \vspace{0.10in}
+ \vspace{0.04in}
 }
 
 % Cream-on-cream block titles with a burgundy underline rule. Left-aligned to
 % give the poster a cleaner editorial feel (matches the deck's left-aligned
-% section titles). Extra top padding prevents the previous block's body from
-% crowding the next block's title.
+% section titles). Keep the title-rule gap tight and place breathing room
+% between sections instead.
 \setbeamertemplate{block begin}
 {
   \par\vskip1.4ex
-  \begin{beamercolorbox}[colsep*=0ex,dp={1.4ex},leftskip=0pt]{block title}
-    \usebeamerfont{block title}\Large\textbf{\insertblocktitle}
-    \vskip0.15cm
+  \begin{beamercolorbox}[colsep*=0ex,dp={0.5ex},leftskip=0pt]{block title}
+    \usebeamerfont{block title}\Large\textbf{\insertblocktitle}\par
+    \vspace{-0.7\baselineskip}\vspace{2pt}
     {\color{PathwaysBurgundy!80}\rule{\linewidth}{0.055cm}}
   \end{beamercolorbox}
   {\parskip0pt\par}
   \usebeamerfont{block body}
-  \vskip-0.15cm
+  \vskip2pt
   \begin{beamercolorbox}[colsep*=0ex,vmode]{block body}
   \justifying
+}
+
+\setbeamertemplate{block end}
+{
+  \end{beamercolorbox}
+  \vskip15pt
 }
 
 %-----------------------------------------------------------
 % Title information
 %-----------------------------------------------------------
 \title{The Pathways Project}
-\author{Kwaku Agyapong \, \textperiodcentered \, Kitae Hwang}
+\author{Kwaku Agyapong \textquoteright 26 \, \textperiodcentered \, Ki Tae Hwang \textquoteright 26}
 \institute{CT Children's Medical Center \, $\times$ \, AIQUI Sandbox \hspace{0.8em} | \hspace{0.8em} Advisor: Kenneth Kousen \hspace{0.8em} | \hspace{0.8em} Trinity College Senior Seminar}
 
 \begin{document}
@@ -253,11 +265,13 @@ Clinical pathways are dense, multi-document resources. The project focuses on tu
 \end{itemize}
 \end{block}
 
+\vspace{5pt}
 \begin{block}{Clinical Pathway Source}
 \centering
-\includegraphics[width=0.88\linewidth,height=0.175\paperheight,keepaspectratio]{pathways_assets/clinical_pathway_crop.png}
+\includegraphics[width=0.72\linewidth,height=0.19\paperheight,keepaspectratio]{pathways_assets/clinical_pathway_flowchart_bw.png}\\[0.15em]
 \figcaption{Anaphylaxis pathway: triage, treatment, and disposition algorithm.}
 \end{block}
+\vspace{5pt}
 
 \begin{block}{Success Criteria}
 \normalsize
@@ -293,7 +307,7 @@ Retrieval augmented generation turns a user query into a vector search over embe
 \item Ground-truth sources at CT Children's live in versioned PDFs, not in the pre-training corpus.
 \end{itemize}
 \end{block}
-
+\vspace{0.5em}
 \begin{block}{Heavy-Digestion Pipeline}
 \normalsize
 Raw PDFs carry broken tables, split paragraphs, and embedded figures that a direct ingest would dump into the index as noise. The heavy-digestion pipeline does the expensive document work \emph{once}, up front, so retrieval at query-time is fast and precise.
@@ -304,10 +318,12 @@ Raw PDFs carry broken tables, split paragraphs, and embedded figures that a dire
 \figcaption{Document transformation $\rightarrow$ chunking $\rightarrow$ embedding $\rightarrow$ vector storage $\rightarrow$ pathway filtering.}
 \end{block}
 
+\vspace{20pt}
 \begin{alertblock}{Design Principle}
 \normalsize
 Do more document work \emph{before} retrieval, so the chatbot can do less guessing \emph{during} clinical question answering.
 \end{alertblock}
+\vspace{1em}
 
 \begin{block}{Direct Ingest vs.\ Heavy Digest}
 \small
@@ -359,32 +375,48 @@ The demo lets a user select a pathway, ask a question, and inspect the source PD
 \end{itemize}
 \end{block}
 
-\begin{block}{Monitoring and Future Improvements}
-\normalsize
-\centering
-\includegraphics[width=0.97\linewidth,height=0.13\paperheight,keepaspectratio]{pathways_assets/supabase_table_crop.png}
-\figcaption{Supabase session table: per-query timestamps, user ids, pathway ids, latencies.}
+\begin{block}{Answer Quality Across Rounds}
+\small
+Three evaluation rounds against a fixed 15-question clinical benchmark (Migraine, CAP, Asthma~ED). Each round changed one layer of the stack---chunking, embedding, then pathway tagging---so gains could be attributed to specific decisions.
 
-\vspace{0.6em}
+\vspace{0.5em}
+\setlength{\tabcolsep}{0.3em}
+\renewcommand{\arraystretch}{1.25}
+\begin{center}
+\begin{tabular}{@{}p{0.42\linewidth} C{0.15\linewidth} C{0.15\linewidth} C{0.17\linewidth}@{}}
+\textbf{\color{PathwaysGray}\scshape question}
+ & \textbf{\color{PathwaysGray}\scshape R1}
+ & \textbf{\color{PathwaysGray}\scshape R2}
+ & \textbf{\color{PathwaysGray}\scshape R3}\\
+\hline
+CAP: antibiotic course length        & 5\%  & 90\% & \textbf{92\%} \\
+CAP: admission criteria              & 10\% & 35\% & \textbf{85\%} \\
+Asthma: MPIS score calculation       & 58\% & 65\% & \textbf{80\%} \\
+\end{tabular}
+
+\vspace{0.3em}
+{\footnotesize\color{PathwaysGray}\itshape R1: MiniLM 384-dim, fixed chunks. R2: MedCPT 768-dim, semantic chunks + Claude image-to-text. R3: MedEmbed 1024-dim + pathway tagging.}
+\end{center}
+
+\vspace{0.4em}
 \justifying
 \begin{itemize}
-\item Usage dashboard for session stats, response times, and retrieval behavior.
-\item Response feedback so clinicians can grade answer quality.
-\item Lighter preprocessing; continued prompt iteration.
+\item \textbf{R1$\rightarrow$R2: the step change.} Semantic chunking and a clinical encoder drove the biggest gains---content trapped in figures was recovered by Claude image-to-text.
+\item \textbf{R2$\rightarrow$R3: structure over dimensionality.} 1024-dim was marginal; \textbf{pathway tagging} unlocked CAP admission criteria by routing queries to the right document subset.
+\item \textbf{Remaining failures are semantic}, not structural---ambiguous clinical terms need query-side prompting.
 \end{itemize}
 \end{block}
 
 \begin{block}{Takeaways}
 \normalsize
-\centering
-\phasebox{PathwaysGreen}{Clinical alignment}{communication with CT Children's}
-\hfill
-\phasebox{PathwaysBurgundy}{Prior art}{learning from Seattle and Arizona}
-\hfill
-\phasebox{PathwaysPurple}{Impact}{building something that matters}
-
-\vspace{0.55em}
 \justifying
+\begin{itemize}
+\item \textbf{Clinical alignment} --- communication with CT~Children's.
+\item \textbf{Prior art} --- learning from Seattle and Arizona.
+\item \textbf{Impact} --- building something that matters.
+\end{itemize}
+
+\vspace{0.3em}
 \textbf{Next step:} validate retrieval quality against pathway-specific questions, then connect monitoring and feedback data back into the document-processing pipeline.
 \end{block}
 
