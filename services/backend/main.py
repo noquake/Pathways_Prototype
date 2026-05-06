@@ -109,7 +109,7 @@ class ConversationTurn(BaseModel):
 class ChatRequest(BaseModel):
     query: str
     model: Optional[str] = "gemini"
-    model_name: Optional[str] = "gemini-2.5-flash"
+    model_name: Optional[str] = "gemini-3.1-flash-lite-preview"
     top_k: Optional[int] = 5
     pathway_id: Optional[str] = None
     pathway_tag: Optional[str] = None
@@ -417,7 +417,7 @@ async def chat_public(request: ChatRequest):
         
         print(f"\n[3/6] Sending to {request.model}...")
         history = [t.model_dump() for t in (request.conversation_history or [])]
-        model_name = request.model_name if request.model == "gemini" else "gemini-2.5-flash"
+        model_name = request.model_name if request.model == "gemini" else "gemini-3.1-flash-lite-preview"
         response_text = original_rag_api_llm(
             db_handle, request.query, top_k=top_k,
             model_name=model_name, api_provider="gemini",
@@ -441,7 +441,7 @@ async def chat_public(request: ChatRequest):
             bot_response=response_text,
             retrieved_chunks=citations,
             llm_provider="gemini",
-            llm_model=request.model_name or "gemini-2.5-flash",
+            llm_model=request.model_name or "gemini-3.1-flash-lite-preview",
             response_time_ms=response_time_ms,
             pathway_id=request.pathway_id,
             user_role="public",
@@ -609,7 +609,7 @@ async def update_query_feedback(query_id: str, request: FeedbackUpdateRequest):
 #         else:
 #             # Default to Gemini
 #             response_text = rag_api_llm(db_handle, request.query, top_k=request.top_k, 
-#                                        model_name="gemini-2.5-flash", api_provider="gemini",
+#                                        model_name="gemini-3.1-flash-lite-preview", api_provider="gemini",
 #                                        pathway_id=request.pathway_id, retrieved_results=results)
 
 #         response_time_ms = int((time.time() - start_time) * 1000)

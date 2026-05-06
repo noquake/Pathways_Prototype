@@ -38,7 +38,7 @@ def clean_query(query: str) -> str:
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3.1-flash-lite-preview",
             contents=prompt,
         )
         cleaned = response.text.strip()
@@ -75,7 +75,7 @@ def rewrite_query(query: str, conversation_history: list) -> str:
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3.1-flash-lite-preview",
             contents=prompt,
         )
         rewritten = response.text.strip()
@@ -273,6 +273,7 @@ Answer:
             "gemini-2.5-flash": "gemini-2.5-flash",
             "gemini-2.5-pro": "gemini-2.5-pro",
             "gemini-2.0-flash": "gemini-2.0-flash",
+            "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
             "gemini-pro": "gemini-2.5-flash",  # Map old name to new model
             "gemini-pro-vision": "gemini-2.5-pro",
             "gemini-flash-latest": "gemini-flash-latest",
@@ -281,9 +282,9 @@ Answer:
         
         # Get the correct model name
         if model_name.startswith("gpt"):
-            model_name = "gemini-2.5-flash"  # Default for OpenAI model names
-        
-        actual_model = model_mapping.get(model_name, "gemini-2.5-flash")
+            model_name = "gemini-3.1-flash-lite-preview"  # Default for OpenAI model names
+
+        actual_model = model_mapping.get(model_name, "gemini-3.1-flash-lite-preview")
         
         # Generate response using new API
         response = client.models.generate_content(
@@ -361,5 +362,5 @@ if __name__ == "__main__":
     )
 
     query = input("Enter your query: ")
-    # Use Gemini by default (with gemini-2.5-flash for faster responses)
-    rag_api_llm(supabase, query, top_k=5, model_name="gemini-2.5-flash", api_provider="gemini")
+    # Use Gemini by default (with gemini-3.1-flash-lite-preview for faster responses)
+    rag_api_llm(supabase, query, top_k=5, model_name="gemini-3.1-flash-lite-preview", api_provider="gemini")
